@@ -410,9 +410,11 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.set_gui_for_selected_scheme(scene, first_team, second_team, additional_player, first_team_position, can_undo, can_redo)
 
     def set_gui_for_selected_scheme(self, scene: 'Field', first_team: Optional['TeamType'],
-                                    second_team: Optional['TeamType'], additional_player: bool,
+                                    second_team: Optional['TeamType'], additional_player_state: bool,
                                     first_team_position: int, can_undo: bool, can_redo: bool) -> None:
         getattr(self, f'pushButton_{scene.mode.name.lower()}').setChecked(True)
+        first_team_state = bool(first_team)
+        second_team_state = bool(second_team)
         if first_team_position:
             self.lineEdit_yards.setText(str(first_team_position))
         self.action_undo.setEnabled(can_undo)
@@ -424,23 +426,35 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.pushButton_font_underline.setChecked(scene.underline)
         self.comboBox_line_thickness.setCurrentText(str(scene.line_thickness))
         self.pushButton_color_current.setStyleSheet(f'background-color: {scene.color};')
-        if first_team:
+        self.comboBox_team_type.setEnabled(not first_team_state)
+        self.lineEdit_yards.setEnabled(not first_team_state)
+        self.pushButton_place_first_team.setEnabled(not first_team_state)
+        self.pushButton_remove_all_players.setEnabled(first_team_state)
+        if first_team_state:
             self.comboBox_team_type.setCurrentIndex(first_team.value)
-            self.comboBox_team_type.setEnabled(False)
+            self.pushButton_place_second_team.setEnabled(not second_team_state)
+            self.pushButton_remove_second_team.setEnabled(second_team_state)
+            self.comboBox_second_players_symbol.setEnabled(second_team_state)
+            self.comboBox_second_players_symbol.setVisible(second_team_state)
             if first_team in (TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
                 self.pushButton_add_additional_off_player.setVisible(False)
                 self.pushButton_del_additional_off_player.setVisible(False)
             else:
                 self.pushButton_add_additional_off_player.setVisible(True)
                 self.pushButton_del_additional_off_player.setVisible(True)
-                self.pushButton_add_additional_off_player.setEnabled(not additional_player)
-                self.pushButton_del_additional_off_player.setEnabled(additional_player)
-            self.pushButton_place_second_team.setEnabled(not bool(second_team))
-            self.pushButton_remove_second_team.setEnabled(bool(second_team))
-            self.comboBox_second_players_symbol.setEnabled(bool(second_team))
-            self.comboBox_second_players_symbol.setVisible(bool(second_team))
+                self.pushButton_add_additional_off_player.setEnabled(not additional_player_state)
+                self.pushButton_del_additional_off_player.setEnabled(additional_player_state)
         else:
-            self.set_gui_all_teams_deleted()
+            if self.playbook_type is PlaybookType.FOOTBALL:
+                self.comboBox_team_type.setEnabled(True)
+            self.pushButton_add_additional_off_player.setVisible(False)
+            self.pushButton_del_additional_off_player.setVisible(False)
+            self.pushButton_add_additional_off_player.setEnabled(False)
+            self.pushButton_del_additional_off_player.setEnabled(False)
+            self.pushButton_place_second_team.setEnabled(False)
+            self.pushButton_remove_second_team.setEnabled(False)
+            self.comboBox_second_players_symbol.setEnabled(False)
+            self.comboBox_second_players_symbol.setVisible(False)
 
     def set_current_zoom(self, zoom: int) -> None:
         self.label_current_zoom.setText(f'Приближение: {str(zoom)}%')
@@ -619,20 +633,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
 
 
-    def set_gui_all_teams_deleted(self):
-        if self.playbook_type is PlaybookType.FOOTBALL:
-            self.comboBox_team_type.setEnabled(True)
-        self.lineEdit_yards.setEnabled(True)
-        self.pushButton_place_first_team.setEnabled(True)
-        self.pushButton_add_additional_off_player.setVisible(False)
-        self.pushButton_del_additional_off_player.setVisible(False)
-        self.pushButton_add_additional_off_player.setEnabled(False)
-        self.pushButton_del_additional_off_player.setEnabled(False)
-        self.pushButton_place_second_team.setEnabled(False)
-        self.pushButton_remove_second_team.setEnabled(False)
-        self.pushButton_remove_all_players.setEnabled(False)
-        self.comboBox_second_players_symbol.setEnabled(False)
-        self.comboBox_second_players_symbol.setVisible(False)
+
 
 
 
