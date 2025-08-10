@@ -76,7 +76,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         for i, color in enumerate(Config.DEFAULT_COLORS):
             button = getattr(self, f'pushButton_color_{i}')
             button.setStyleSheet(f'background-color: {color};')
-            button.pressed.connect(lambda color=color: self.set_color(color))
+            button.pressed.connect(lambda color=color: self._set_color(color))
 
         # self.comboBox_team_type.setEnabled(False)
         # self.lineEdit_yards.setEnabled(False)
@@ -102,8 +102,8 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
 
         self.toolBar_main.topLevelChanged.connect(lambda topLevel: self.toolBarAreaChanged.emit(self.toolBarArea(self.toolBar_main)) if not topLevel else ...)
-        self.lineEdit_yards.textChanged.connect(lambda text: getattr(self, f'check_max_yards_{self.playbook_type.name}'.lower())(text))
-        self.pushButton_color_current.clicked.connect(self.get_user_color)
+        self.lineEdit_yards.textChanged.connect(lambda text: getattr(self, f'_check_max_yards_{self.playbook_type.name}'.lower())(text))
+        self.pushButton_color_current.clicked.connect(self._get_user_color)
 
         self.listWidget_schemes.itemDoubleClicked.connect(lambda scheme_widget: self.schemeItemDoubleClicked.emit(scheme_widget.model_uuid))
         self.pushButton_remove_scheme.clicked.connect(lambda: self.removeSchemeBtnClicked.emit(self.listWidget_schemes.currentItem().model_uuid, self.listWidget_schemes.currentItem().text()))
@@ -111,17 +111,22 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.pushButton_move_down_scheme.clicked.connect(lambda: self.moveDownSchemeBtnClicked.emit(self.listWidget_schemes.currentItem().model_uuid, self.listWidget_schemes.currentRow()))
         self.pushButton_edit_scheme.clicked.connect(lambda: self.editSchemeClicked.emit(self.listWidget_schemes.currentItem().model_uuid))
 
-        self.pushButton_place_first_team.clicked.connect(self.on_place_first_team_btn_click)
+        self.pushButton_place_first_team.clicked.connect(self._on_place_first_team_btn_click)
         self.pushButton_place_second_team.clicked.connect(lambda: self.placeSecondTeamClicked.emit(TeamType(self.comboBox_team_type.currentIndex() + 4)))
         self.pushButton_add_additional_off_player.clicked.connect(lambda: self.placeAdditionalPlayerClicked.emit())
         self.comboBox_second_players_symbol.currentIndexChanged.connect(lambda: self.secondTeamSymbolChanged.emit(SymbolType(self.comboBox_second_players_symbol.currentIndex())))
 
         self.comboBox_line_thickness.currentTextChanged.connect(lambda thickness: self.selected_scene.set_config('line_thickness', int(thickness)) if self.selected_scene else ...)
-        self.comboBox_font_type.currentFontChanged.connect(lambda font: self.combobox_font_changed(self.selected_scene, font.family()) if self.selected_scene else ...)
-        self.comboBox_font_size.currentTextChanged.connect(lambda font_size: self.font_size_changed(self.selected_scene, font_size) if self.selected_scene else ...)
-        self.pushButton_font_bold.toggled.connect(lambda bold_condition: self.bold_changed(self.selected_scene, bold_condition) if self.selected_scene else ...)
-        self.pushButton_font_italic.toggled.connect(lambda italic_condition: self.italic_changed(self.selected_scene, italic_condition) if self.selected_scene else ...)
-        self.pushButton_font_underline.toggled.connect(lambda underline_condition: self.underline_changed(self.selected_scene, underline_condition) if self.selected_scene else ...)
+        self.comboBox_font_type.currentFontChanged.connect(lambda font: self._combobox_font_changed(self.selected_scene,
+                                                                                                    font.family()) if self.selected_scene else ...)
+        self.comboBox_font_size.currentTextChanged.connect(lambda font_size: self._font_size_changed(
+            self.selected_scene, font_size) if self.selected_scene else ...)
+        self.pushButton_font_bold.toggled.connect(lambda bold_condition: self._bold_changed(self.selected_scene,
+                                                                                            bold_condition) if self.selected_scene else ...)
+        self.pushButton_font_italic.toggled.connect(lambda italic_condition: self._italic_changed(self.selected_scene,
+                                                                                                  italic_condition) if self.selected_scene else ...)
+        self.pushButton_font_underline.toggled.connect(lambda underline_condition: self._underline_changed(
+            self.selected_scene, underline_condition) if self.selected_scene else ...)
 
 
         self.set_initial_gui_state()
@@ -152,14 +157,14 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         dialog = DialogOpenPlaybook(playbook_info, parent=self)
         dialog.exec()
 
-    def check_max_yards_football(self, value: str) -> None:
+    def _check_max_yards_football(self, value: str) -> None:
         try:
             if int(value) > 100:
                 self.lineEdit_yards.setText('100')
         except ValueError:
             pass
 
-    def check_max_yards_flag(self, value: str) -> None:
+    def _check_max_yards_flag(self, value: str) -> None:
         try:
             if int(value) > 50:
                 self.lineEdit_yards.setText('50')
@@ -398,7 +403,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
             self.selected_scheme.setIcon(QIcon(QPixmap(f'://themes/{self.theme.name.lower()}_theme/check_box-0.png')))
         self.selected_scheme = scheme_widget
         self.selected_scene = scene
-        self.connect_signals_from_scene(scene)
+        self._connect_signals_from_scene(scene)
         self.listWidget_schemes.setCurrentItem(scheme_widget)
         self.graphics_view.setScene(scene)
         self.selected_scheme.setForeground(getattr(Config, f'{self.theme.name}_THEME_LIST_WIDGET_ITEM_SELECTED_COLOR'))
@@ -407,11 +412,11 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
             self.graphics_view.centerOn(view_point_x, view_point_y)
         if zoom is not None:
             self.set_current_zoom(zoom)
-        self.set_gui_for_selected_scheme(scene, first_team, second_team, additional_player, first_team_position, can_undo, can_redo)
+        self._set_gui_for_selected_scheme(scene, first_team, second_team, additional_player, first_team_position, can_undo, can_redo)
 
-    def set_gui_for_selected_scheme(self, scene: 'Field', first_team: Optional['TeamType'],
-                                    second_team: Optional['TeamType'], additional_player_state: bool,
-                                    first_team_position: int, can_undo: bool, can_redo: bool) -> None:
+    def _set_gui_for_selected_scheme(self, scene: 'Field', first_team: Optional['TeamType'],
+                                     second_team: Optional['TeamType'], additional_player_state: bool,
+                                     first_team_position: int, can_undo: bool, can_redo: bool) -> None:
         getattr(self, f'pushButton_{scene.mode.name.lower()}').setChecked(True)
         first_team_state = bool(first_team)
         second_team_state = bool(second_team)
@@ -460,10 +465,10 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.label_current_zoom.setText(f'Приближение: {str(zoom)}%')
         self.graphics_view.set_current_zoom(zoom)
 
-    def connect_signals_from_scene(self, scene: 'Field'):
+    def _connect_signals_from_scene(self, scene: 'Field'):
         scene.modeChanged.connect(lambda mode: getattr(self, f'pushButton_{mode.name.lower()}').setChecked(True))
-        scene.labelSelected.connect(self.set_gui_config_from_label)
-        scene.labelDeselected.connect(self.set_gui_config_from_scene)
+        scene.labelSelected.connect(self._set_gui_config_from_label)
+        scene.labelDeselected.connect(self._set_gui_config_from_scene)
 
     def move_scheme_widget(self, last_index: int, new_index: int) -> None:
         scheme_widget = self.listWidget_schemes.takeItem(last_index)
@@ -476,23 +481,23 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
     def set_redo_action_enabled(self, is_enabled: bool) -> None:
         self.action_redo.setEnabled(is_enabled)
 
-    def validate_yards_football(self, value: str) -> None:
+    def _validate_yards_football(self, value: str) -> None:
         if not value.isdigit():  # Защита от пустого поля ввода ярдов
             value = '50'
             self.lineEdit_yards.setText('50')
-        self.check_max_yards_football(value)
+        self._check_max_yards_football(value)
         if self.comboBox_team_type.currentIndex() == 1:  # Кикофф пробивается либо с 75 ярдов, либо с 65
             self.lineEdit_yards.setText('75') if int(value) >= 70 else self.lineEdit_yards.setText('65')
         elif self.comboBox_team_type.currentIndex() == 2:  # Пант нет смысла пробивать если до зачётной зоны меньше 20 ярдов
             if int(value) <= 20:
                 self.lineEdit_yards.setText('20')
 
-    def validate_yards_flag(self, value: str) -> None:
+    def _validate_yards_flag(self, value: str) -> None:
         if not value.isdigit():
             self.lineEdit_yards.setText('25')
 
-    def on_place_first_team_btn_click(self) -> None:
-        getattr(self, f'validate_yards_{self.playbook_type.name}'.lower())(self.lineEdit_yards.text())
+    def _on_place_first_team_btn_click(self) -> None:
+        getattr(self, f'_validate_yards_{self.playbook_type.name}'.lower())(self.lineEdit_yards.text())
         self.placeFirstTeamClicked.emit(TeamType(self.comboBox_team_type.currentIndex()),
                                         int(self.lineEdit_yards.text()))
 
@@ -545,17 +550,17 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.pushButton_add_additional_off_player.setEnabled(True)
         self.pushButton_del_additional_off_player.setEnabled(False)
 
-    def set_color(self, color: str):
+    def _set_color(self, color: str):
         self.pushButton_color_current.setStyleSheet(f'background-color: {color};')
         if self.selected_scene:
-            self.color_changed(self.selected_scene, color)
+            self._color_changed(self.selected_scene, color)
 
-    def get_user_color(self):
+    def _get_user_color(self):
         user_color_dialog = QColorDialog(parent=self)
         if user_color_dialog.exec():
-            self.set_color(user_color_dialog.selectedColor().name())
+            self._set_color(user_color_dialog.selectedColor().name())
 
-    def combobox_font_changed(self, scene: 'Field', font: str):
+    def _combobox_font_changed(self, scene: 'Field', font: str):
         if self.edited_label:
             edited_label_font = self.edited_label.font()
             edited_label_font.setFamily(font)
@@ -564,7 +569,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         else:
             scene.set_config('font_type', font)
 
-    def font_size_changed(self, scene: 'Field', font_size: str):
+    def _font_size_changed(self, scene: 'Field', font_size: str):
         if self.edited_label:
             edited_label_font = self.edited_label.font()
             edited_label_font.setPointSize(int(font_size))
@@ -573,7 +578,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         else:
             scene.set_config('font_size', int(font_size))
 
-    def bold_changed(self, scene: 'Field', bold: bool):
+    def _bold_changed(self, scene: 'Field', bold: bool):
         if self.edited_label:
             edited_label_font = self.edited_label.font()
             edited_label_font.setBold(bold)
@@ -582,7 +587,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         else:
             scene.set_config('bold', bold)
 
-    def italic_changed(self, scene: 'Field', italic: bool):
+    def _italic_changed(self, scene: 'Field', italic: bool):
         if self.edited_label:
             edited_label_font = self.edited_label.font()
             edited_label_font.setItalic(italic)
@@ -591,7 +596,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         else:
             scene.set_config('italic', italic)
 
-    def underline_changed(self, scene: 'Field', underline: bool):
+    def _underline_changed(self, scene: 'Field', underline: bool):
         if self.edited_label:
             edited_label_font = self.edited_label.font()
             edited_label_font.setUnderline(underline)
@@ -600,7 +605,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         else:
             scene.set_config('underline', underline)
 
-    def color_changed(self, scene: 'Field', color: str):
+    def _color_changed(self, scene: 'Field', color: str):
         if self.edited_label:
             text_cursor = self.edited_label.textCursor()
             self.edited_label.selectAll()
@@ -610,7 +615,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         elif scene:
             scene.set_config('color', color)
 
-    def set_gui_config_from_scene(self):
+    def _set_gui_config_from_scene(self):
         self.edited_label = None
         self.comboBox_font_type.setCurrentFont(self.selected_scene.font_type)
         self.comboBox_font_size.setCurrentText(str(self.selected_scene.font_size))
@@ -619,7 +624,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.pushButton_font_underline.setChecked(self.selected_scene.underline)
         self.pushButton_color_current.setStyleSheet(f'background-color: {self.selected_scene.color};')
 
-    def set_gui_config_from_label(self, label: 'ProxyTextEdit'):
+    def _set_gui_config_from_label(self, label: 'ProxyTextEdit'):
         self.edited_label = label
         self.comboBox_font_type.setCurrentFont(label.font())
         self.comboBox_font_size.setCurrentText(str(label.font().pointSize()))

@@ -81,7 +81,8 @@ class PlaybookManager:
                 # Это позволяет находить index ORM-модели соответствующей DTO-модели.
                 self._update_scheme_orm(scheme_dto, scheme_orm)
             else:
-                new_scheme_orm = mapper.create_scheme_orm(scheme_dto)  # создаётся схема и все вложенные объекты (фигуры, надписи и тд.)
+                new_scheme_orm = mapper.create_scheme_orm_with_nested_items(
+                    scheme_dto)  # создаётся схема и все вложенные объекты (фигуры, надписи и тд.)
                 playbook_from_db.schemes.append(new_scheme_orm)
                 continue
             for figure_dto in scheme_dto.figures:
@@ -117,7 +118,8 @@ class PlaybookManager:
                     # Это позволяет находить index ORM-модели соответствующей DTO-модели.
                     self._update_player_orm(player_dto, player_orm)
                 else:
-                    new_player_orm = mapper.create_player_orm(player_dto)  # создаётся игрок и все вложенные объекты (действия)
+                    new_player_orm = mapper.create_player_orm_with_nested_items(
+                        player_dto)  # создаётся игрок и все вложенные объекты (действия)
                     scheme_orm.players.append(new_player_orm)
                     continue
                 for action_dto in player_dto.actions:
