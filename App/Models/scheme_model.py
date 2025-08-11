@@ -79,6 +79,18 @@ class SchemeModel(QObject):
     def uuid(self) -> 'UUID':
         return self._uuid
 
+    def set_new_uuid(self) -> None:
+        self._uuid = uuid4()
+        self._set_scheme_items_new_uuid()
+
+    def _set_scheme_items_new_uuid(self) -> None:
+        for item_model in chain(
+                self._first_team_players, self._second_team_players, [self._additional_player],
+                self._figures, self._labels, self._pencil_lines
+        ):
+            if item_model:
+                item_model.set_new_uuid()
+
     @property
     def name(self) -> str:
         return self._name

@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
+from itertools import chain
 
 from PySide6.QtCore import QObject, Signal
 
@@ -41,6 +42,15 @@ class ActionModel(QObject):
     @property
     def uuid(self) -> 'UUID':
         return self._uuid
+
+    def set_new_uuid(self) -> None:
+        self._uuid = uuid4()
+        self._set_lines_and_final_actions_new_uuid()
+
+    def _set_lines_and_final_actions_new_uuid(self) -> None:
+        for action_part_model in chain(self._lines, self._final_actions):
+            if action_part_model:
+                action_part_model.set_new_uuid()
 
     @property
     def lines(self) -> list['ActionLineModel']:

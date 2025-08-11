@@ -20,6 +20,9 @@ class FinalActionModel:
     def uuid(self) -> 'UUID':
         return self._uuid
 
+    def set_new_uuid(self) -> None:
+        self._uuid = uuid4()
+
     @property
     def action_type(self) -> 'ActionLineType':
         return self._action_type

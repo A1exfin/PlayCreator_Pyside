@@ -80,6 +80,14 @@ class PlaybookModel(QObject):
     def uuid(self) -> 'UUID':
         return self._uuid
 
+    def set_new_uuid_for_all_items(self) -> None:
+        self._uuid = uuid4()
+        self._set_schemes_new_uuid()
+
+    def _set_schemes_new_uuid(self) -> None:
+        for scheme_model in self._schemes:
+            scheme_model.set_new_uuid()
+
     @property
     def name(self) -> str:
         return self._name

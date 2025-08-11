@@ -58,6 +58,15 @@ class PlayerModel(QObject):
     def uuid(self) -> 'UUID':
         return self._uuid
 
+    def set_new_uuid(self) -> None:
+        self._uuid = uuid4()
+        self._set_actions_new_uuid()
+
+    def _set_actions_new_uuid(self) -> None:
+        for action_model in self._actions:
+            if action_model:
+                action_model.set_new_uuid()
+
     @property
     def x(self) -> float:
         return self._x

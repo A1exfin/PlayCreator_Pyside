@@ -139,6 +139,7 @@ class PlaybookPresenter:
         dialog_input.exec()
         if dialog_input.result():
             self._model.name = dialog_input.get_data().text
+            self._model.set_new_uuid_for_all_items()
             dialog_progress = DialogProgressBar(self._view, 'Сохранение плейбука')
             dialog_progress.show()
             try:

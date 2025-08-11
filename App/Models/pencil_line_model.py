@@ -39,6 +39,9 @@ class PencilLineModel:
     def uuid(self) -> 'UUID':
         return self._uuid
 
+    def set_new_uuid(self) -> None:
+        self._uuid = uuid4()
+
     @property
     def x1(self) -> float:
         return self._x1

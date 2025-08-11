@@ -53,6 +53,9 @@ class FigureModel(QObject):
     def uuid(self) -> 'UUID':
         return self._uuid
 
+    def set_new_uuid(self) -> None:
+        self._uuid = uuid4()
+
     @property
     def figure_type(self):
         return self._figure_type

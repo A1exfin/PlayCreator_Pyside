@@ -51,6 +51,9 @@ class LabelModel(QObject):
     def uuid(self) -> 'UUID':
         return self._uuid
 
+    def set_new_uuid(self) -> None:
+        self._uuid = uuid4()
+
     @property
     def x(self) -> float:
         return self._x
