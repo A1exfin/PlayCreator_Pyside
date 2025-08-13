@@ -12,7 +12,7 @@ from Config import DB_URL
 
 engine = create_engine(
     url=DB_URL,
-    echo=True
+    # echo=True
 )
 
 

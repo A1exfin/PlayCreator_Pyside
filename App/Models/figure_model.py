@@ -128,3 +128,10 @@ class FigureModel(QObject):
                 'x': self._x, 'y': self._y, 'width': self._width, 'height': self._height,
                 'border': self._border, 'border_thickness': self._border_thickness, 'border_color': self._border_color,
                 'fill': self._fill, 'fill_opacity': self._fill_opacity, 'fill_color': self._fill_color}
+
+    def __repr__(self) -> str:
+        return f'\n\t\t\t\t<{self.__class__.__name__} (id_local_db: {self._id_local_db}; id_api: {self._id_api}; ' \
+               f'uuid: {self._uuid}; x: {self._x}; y: {self._y}; width: {self._width}; height: {self._height}; ' \
+               f'figure_type: {self._figure_type}; border: {self._border}; border_thickness: {self._border_thickness}; ' \
+               f'border_color: {self._border_color}; fill: {self._fill}; fill_opacity: {self._fill_opacity}; ' \
+               f'fill_color: {self._fill_color}) at {hex(id(self))}>'

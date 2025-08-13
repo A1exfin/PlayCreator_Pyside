@@ -127,3 +127,10 @@ class LabelModel(QObject):
                 'text': self._text, 'font_type': self._font_type, 'font_size': self._font_size,
                 'font_bold': self._font_bold, 'font_italic': self._font_italic, 'font_underline': self._font_underline,
                 'font_color': self._font_color}
+
+    def __repr__(self) -> str:
+        return f'\n\t\t\t\t<{self.__class__.__name__} (id_local_db: {self._id_local_db}; id_api: {self._id_api}; ' \
+               f'uuid: {self._uuid}; x: {self._x}; y: {self._y}; width: {self._width}; height: {self._height}; ' \
+               f'text: {self._text}; font_type: {self._font_type}; font_size: {self._font_size}; ' \
+               f'font_bold: {self._font_bold}; font_italic: {self._font_italic}; font_underline: {self._font_underline}; ' \
+               f'font_color: {self._font_color}) at {hex(id(self))}>'

@@ -59,3 +59,9 @@ class FinalActionModel:
         return {'uuid': self._uuid, 'action_type': self._action_type,
                 'x': self._x, 'y': self._y, 'angle': self._angle,
                 'line_thickness': self._line_thickness, 'color': self._color}
+
+    def __repr__(self):
+        return f'\n\t\t\t\t\t\t\t\t<{self.__class__.__name__} (uuid: {self._uuid}; ' \
+               f'x: {self._x}; y: {self._y}; action_type: {self._action_type}; angle: {self._angle}; ' \
+               f'line_thickness: {self._line_thickness}; color: {self._color}; ' \
+               f'at {hex(id(self))}>'

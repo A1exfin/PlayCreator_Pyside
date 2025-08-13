@@ -167,3 +167,11 @@ class PlayerModel(QObject):
                 'text': self._text, 'text_color': self._text_color, 'player_color': self._player_color,
                 'fill_type': self._fill_type, 'symbol_type': self._symbol_type,
                 'actions': list()}
+
+    def __repr__(self) -> str:
+        return f'\n\t\t\t\t<{self.__class__.__name__} (id_local_db: {self._id_local_db}; id_api: {self._id_api}; ' \
+               f'uuid: {self._uuid}; x: {self._x}; y: {self._y}; team_type: {self._team_type}; ' \
+               f'player_position: {self._position}; text: {self._text}; text_color: {self._text_color}; ' \
+               f'player_color: {self._player_color}; fill_type: {self._fill_type}; symbol_type: {self._symbol_type}; ' \
+               f'at {hex(id(self))}' \
+               f'\n\t\t\t\t\tactions: {self._actions}>'

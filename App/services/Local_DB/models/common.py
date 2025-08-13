@@ -29,7 +29,7 @@ class EnumInt(TypeDecorator, ABC):
         return value.value if value else None
 
     def process_result_value(self, value: Optional[int], dialect: 'Dialect') -> Optional['Enum']:
-        return self._enum_type(value) if value else None
+        return self._enum_type(value) if value is not None else value
 
 
 pk = Annotated[int, mapped_column(primary_key=True, autoincrement=True)]

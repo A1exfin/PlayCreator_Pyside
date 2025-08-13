@@ -27,7 +27,7 @@ class ActionLineOutDTO(ActionLineBaseDTO):
 
 
 class ActionOutDTO(ActionBaseDTO):
-    lines: Annotated[list[ActionLineOutDTO], Field(default_factory=list)]
+    action_lines: Annotated[list[ActionLineOutDTO], Field(default_factory=list)]
     final_actions: Annotated[list[FinalActionOutDTO], Field(default_factory=list)]
 
 

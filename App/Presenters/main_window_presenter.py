@@ -2,17 +2,20 @@ from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import Qt
 
-from Config.Enums import AppTheme
-from Views.Dialog_windows import DialogInfo, DialogAbout, DialogNewPlaybook
-from Models import PlaybookModel
+from Config.Enums import AppTheme, TeamType
+from Views.Dialog_windows import DialogInfo, DialogAbout, DialogNewPlaybook, DialogOpenPlaybook
+from Models import PlaybookModel, SchemeModel, FigureModel, LabelModel, PencilLineModel, PlayerModel, ActionModel,\
+    ActionLineModel, FinalActionModel
 from .playbook_presenter import PlaybookPresenter
+from services.Local_DB.repository.playbook_repository import PlaybookManager
+from services.Local_DB import get_session
 
 if TYPE_CHECKING:
     from uuid import UUID
     from Models import MainWindowModel
     from PlayCreator_main import PlayCreatorApp
-    from Views import SchemeWidget
-    from Config.Enums import TeamType, SymbolType
+    from services.Local_DB.DTO.input_DTO import PlaybookInputDTO
+    from Config.Enums import SymbolType
 
 
 __all__ = ('MainWindowPresenter', )
@@ -23,6 +26,7 @@ class MainWindowPresenter:
         self._model: Optional['MainWindowModel'] = None
         self._view: Optional['PlayCreatorApp'] = None
         self._playbook_presenter: Optional['PlaybookPresenter'] = None
+        self._playbook_manager = PlaybookManager(next(get_session()))
 
     def set_model_and_view(self, model: 'MainWindowModel', view: 'PlayCreatorApp') -> None:
         self._model = model
@@ -55,6 +59,7 @@ class MainWindowPresenter:
         view.action_save_all_like_picture.triggered.connect(self._transfer_to_playbook_presenter_save_all_like_picture)
         view.action_save_playbook_local.triggered.connect(self._transfer_to_playbook_presenter_save_playbook_local)
         view.action_save_playbook_local_as.triggered.connect(self._transfer_to_playbook_presenter_save_playbook_local_as)
+        view.action_open_local_playbook.triggered.connect(self._handle_open_playbook_local)
 
         view.pushButton_add_scheme.clicked.connect(self._transfer_to_playbook_presenter_add_scheme_clicked)
         view.schemeItemDoubleClicked.connect(self._transfer_to_playbook_presenter_select_scheme_clicked)
@@ -154,6 +159,72 @@ class MainWindowPresenter:
         self._playbook_presenter = playbook_presenter
         self._view.set_playbook(playbook_model.name, playbook_model.playbook_type, playbook_model.info)
 
+    def _handle_open_playbook_local(self) -> None:
+        local_playbooks_info = self._playbook_manager.get_all_obj_info()
+        dialog_open_local_playbook = DialogOpenPlaybook(local_playbooks_info, self._playbook_manager.delete_by_id, parent=self._view)
+        dialog_open_local_playbook.exec()
+        if dialog_open_local_playbook.result():
+            data = dialog_open_local_playbook.get_data()
+            playbook_dto = self._playbook_manager.get_by_id(data.selected_playbook_id)
+            self._parse_playbook_dto_to_models(playbook_dto)
+
+    def _parse_playbook_dto_to_models(self, playbook_dto: 'PlaybookInputDTO') -> None:
+        playbook_model = PlaybookModel(**playbook_dto.model_dump(exclude={'id', 'schemes'}), id_local_db=playbook_dto.id)
+        self._model.playbook = playbook_model
+        for scheme_dto in playbook_dto.schemes:
+            scheme_model = SchemeModel(
+                **scheme_dto.model_dump(exclude={'id', 'row_index', 'figures', 'labels', 'pencil_lines', 'players'}),
+                id_local_db=scheme_dto.id, add_deleted_item_ids_func=playbook_model.add_deleted_ids
+            )
+            playbook_model.add_scheme(scheme_model, scheme_dto.row_index)
+            for figure_dto in scheme_dto.figures:
+                figure_model = FigureModel(**figure_dto.model_dump(exclude={'id'}), id_local_db=figure_dto.id)
+                scheme_model.add_figure(figure_model)
+            for label_dto in scheme_dto.labels:
+                label_model = LabelModel(**label_dto.model_dump(exclude={'id'}), id_local_db=label_dto.id)
+                scheme_model.add_label(label_model)
+            for pencil_line_dto in scheme_dto.pencil_lines:
+                pencil_lines_lst = []
+                pencil_line_model = PencilLineModel(**pencil_line_dto.model_dump(exclude={'id'}), id_local_db=pencil_line_dto.id)
+                pencil_lines_lst.append(pencil_line_model)
+                scheme_model.add_pencil_lines(pencil_lines_lst)
+            for player_dto in scheme_dto.players:
+                player_model = PlayerModel(
+                    **player_dto.model_dump(exclude={'id', 'actions'}),
+                    id_local_db=playbook_dto.id, add_deleted_item_ids_func=playbook_model.add_deleted_ids
+                )
+                if player_model.team_type in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
+                    scheme_model.add_first_team_players([player_model], scheme_dto.first_team, scheme_dto.first_team_position)
+                if player_model.team_type in (TeamType.DEFENCE, TeamType.KICK_RET, TeamType.PUNT_RET, TeamType.FIELD_GOAL_DEF):
+                    scheme_model.add_second_team_players([player_model], scheme_dto.second_team)
+                if player_model.team_type is TeamType.OFFENCE_ADD:
+                    scheme_model.additional_player = player_model
+                for action_dto in player_dto.actions:
+                    action_lines_lst = []
+                    final_actions_lst = []
+                    action_model = ActionModel(**action_dto.model_dump(exclude={'id', 'action_lines', 'final_actions'}),
+                                               id_local_db=action_dto.id)
+                    player_model.add_action(action_model)
+                    # print(f'{action_dto.action_lines = }')
+                    for action_line_dto in action_dto.action_lines:
+                        action_line_model = ActionLineModel(**action_line_dto.model_dump(exclude={'id'}))
+                        action_lines_lst.append(action_line_model)
+                    for final_action_dto in action_dto.final_actions:
+                        final_action_model = FinalActionModel(**final_action_dto.model_dump(exclude={'id'}))
+                        final_actions_lst.append(final_action_model)
+                    action_model.add_action_parts(action_lines_lst, final_actions_lst)
+
+        # print(f'{playbook_model = }')
+
+
+    def _transfer_to_playbook_presenter_save_playbook_local(self) -> None:
+        self._playbook_presenter.handle_save_playbook_local(self._playbook_manager)
+
+    def _transfer_to_playbook_presenter_save_playbook_local_as(self) -> None:
+        self._playbook_presenter.handle_save_playbook_local_as(self._playbook_manager)
+
+
+
     def _transfer_to_playbook_presenter_add_scheme_clicked(self) -> None:
         self._playbook_presenter.handle_add_scheme()
 
@@ -236,9 +307,3 @@ class MainWindowPresenter:
 
     def _transfer_to_playbook_presenter_save_all_like_picture(self) -> None:
         self._playbook_presenter.handle_save_all_schemes_like_picture()
-
-    def _transfer_to_playbook_presenter_save_playbook_local(self) -> None:
-        self._playbook_presenter.handle_save_playbook_local()
-
-    def _transfer_to_playbook_presenter_save_playbook_local_as(self) -> None:
-        self._playbook_presenter.handle_save_playbook_local_as()

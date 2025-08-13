@@ -41,10 +41,10 @@ class PlaybookORM(Base):
     deleted_players: list[int] = []
     deleted_actions: list[int] = []
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.id == other.id if isinstance(other, PlaybookOutDTO) else super().__eq__(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \
                f'name: {self.name}; playbook_type: {self.playbook_type}; info: {self.info}; ' \
                f'deleted_schemes: {self.deleted_schemes}; deleted_figures: {self.deleted_figures}; ' \

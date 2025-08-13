@@ -40,10 +40,10 @@ class PlayerORM(Base):
     actions: Mapped[list['ActionORM']] = relationship(back_populates='player', cascade='all, delete-orphan',
                                                       lazy='selectin')
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.id == other.id if isinstance(other, PlayerOutDTO) else super().__eq__(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'\n\t\t\t\t<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \
                f'x: {self.x}; y: {self.y}; team_type: {self.team_type}; player_position: {self.position}; ' \
                f'text: {self.text}; text_color: {self.text_color}; player_color: {self.player_color}; ' \

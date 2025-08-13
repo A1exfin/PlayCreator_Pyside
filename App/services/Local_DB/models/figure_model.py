@@ -37,10 +37,10 @@ class FigureORM(Base):
     scheme_id: Mapped[scheme_fk]
     scheme: Mapped['SchemeORM'] = relationship(back_populates='figures')
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.id == other.id if isinstance(other, FigureOutDTO) else super().__eq__(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'\n\t\t\t\t<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \
                f'x: {self.x}; y: {self.y}; width: {self.width}; height: {self.height}; figure_type: {self.figure_type}; ' \
                f'border: {self.border}; border_thickness: {self.border_thickness}; border_color: {self.border_color}; ' \

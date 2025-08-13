@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 from collections import namedtuple
+from datetime import datetime
 
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QTableWidget,  QTableWidgetItem, QAbstractItemView, \
     QSpacerItem, QSizePolicy, QPushButton, QHeaderView, QMessageBox
@@ -8,6 +9,7 @@ from PySide6.QtCore import Qt
 
 from .widgets.button_box import ButtonBox
 from .dialog_info import DialogInfo
+from Config.Enums import PlaybookType
 # from Local_DB.queryes import delete_playbook
 
 if TYPE_CHECKING:
@@ -19,9 +21,10 @@ open_playbook_data = namedtuple('OpenPlaybookData', 'selected_playbook_id delete
 
 
 class DialogOpenPlaybook(QDialog):
-    def __init__(self, playbook_info: list[tuple, ...], parent: 'QWidget' = None, flags=Qt.WindowFlags()):
+    def __init__(self, playbook_info: list[tuple], delete_playbook_by_id_func: callable, parent: 'QWidget' = None, flags=Qt.WindowFlags()):
         super().__init__(parent, flags)
         self._deleted_playbooks_ids = []
+        self._delete_playbook_by_id_func = delete_playbook_by_id_func
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.setWindowTitle('Выбор плейбука')
         self.setFixedSize(600, 400)
@@ -67,15 +70,15 @@ class DialogOpenPlaybook(QDialog):
             item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
             self._table_playbooks.setItem(i, 1, item)
 
-            item = QTableWidgetItem(playbook[2].name)
+            item = QTableWidgetItem(PlaybookType(playbook[2]).name.capitalize())
             item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
             self._table_playbooks.setItem(i, 2, item)
 
-            item = QTableWidgetItem(playbook[3])
+            item = QTableWidgetItem(self._get_formated_date(playbook[3]))
             item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
             self._table_playbooks.setItem(i, 3, item)
 
-            item = QTableWidgetItem(playbook[4])
+            item = QTableWidgetItem(self._get_formated_date(playbook[4]))
             item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
             self._table_playbooks.setItem(i, 4, item)
         # self.table_playbooks.sortItems(0, Qt.SortOrder.DescendingOrder)
@@ -102,6 +105,10 @@ class DialogOpenPlaybook(QDialog):
         self._button_box.declined.connect(self.reject)
         self._button_remove.clicked.connect(self._remove_playbook)
 
+    def _get_formated_date(self, date: str) -> str:
+        d = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+        return d.strftime('%d.%m.%y %H:%M')
+
     def _playbook_selected(self):
         if self._table_playbooks.rowCount() > 0:
             self.accept()
@@ -109,7 +116,7 @@ class DialogOpenPlaybook(QDialog):
     def get_data(self) -> 'open_playbook_data':
         return open_playbook_data(
             int(self._table_playbooks.item(self._table_playbooks.currentRow(), 0).text()),
-            self._deleted_playbooks_ids
+            tuple(self._deleted_playbooks_ids)
         )
 
     def _remove_playbook(self):
@@ -117,9 +124,11 @@ class DialogOpenPlaybook(QDialog):
         playbook_name = self._table_playbooks.item(self._table_playbooks.currentRow(), 1).text()
 
         dialog_deleted_playbook = DialogInfo('Удаление плейбука',
-                                             f'Вы уверены что хотите удалить плейбук: "{playbook_name}"?', parent=self)
+                                             f'Вы уверены что хотите удалить плейбук: "{playbook_name}"?',
+                                             check_box=False, parent=self)
         dialog_deleted_playbook.exec()
         if dialog_deleted_playbook.result():
+            self._delete_playbook_by_id_func(playbook_id)
             self._table_playbooks.removeRow(self._table_playbooks.currentRow())
             self._deleted_playbooks_ids.append(playbook_id)
         if self._table_playbooks.rowCount() <= 0:

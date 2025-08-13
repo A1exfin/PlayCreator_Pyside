@@ -48,13 +48,16 @@ class SchemeORM(Base):
     pencil_lines: Mapped[list['PencilLineORM']] = relationship(back_populates='scheme', cascade='all, delete-orphan',
                                                                lazy='selectin')
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.id == other.id if isinstance(other, SchemeOutDTO) else super().__eq__(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'\n\t\t<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \
-               f'name: {self.name}; row_index: {self.row_index}; ' \
+               f'name: {self.name}; row_index: {self.row_index}; zoom: {self.zoom}; ' \
                f'view_point_x: {self.view_point_x}, view_point_y: {self.view_point_y}; ' \
                f'first_team: {self.first_team}; second_team: {self.second_team}; ' \
                f'first_team_position: {self.first_team_position}; note: {self.note}; ' \
-               f'\n\t\t\tfigures: {self.figures}\n\t\t\tlabels: {self.labels}\n\t\t\tpencil_lines: {self.pencil_lines}\n\t\t\tplayers: {self.players}>'
+               f'\n\t\t\tfigures: {self.figures}' \
+               f'\n\t\t\tlabels: {self.labels}' \
+               f'\n\t\t\tpencil_lines: {self.pencil_lines}' \
+               f'\n\t\t\tplayers: {self.players}>'

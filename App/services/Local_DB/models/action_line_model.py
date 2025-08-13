@@ -15,7 +15,7 @@ __all__ = ('ActionLineORM',)
 
 
 class ActionLineORM(Base):
-    __tablename__ = 'lines'
+    __tablename__ = 'action_lines'
 
     id: Mapped[pk]
     uuid: Mapped[uuid_binary]
@@ -29,13 +29,13 @@ class ActionLineORM(Base):
     color: Mapped[hex_color]
 
     action_id: Mapped[action_fk]
-    action: Mapped['ActionORM'] = relationship(back_populates='lines')
+    action: Mapped['ActionORM'] = relationship(back_populates='action_lines')
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.id == other.id if isinstance(other, ActionLineOutDTO) else super().__eq__(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'\n\t\t\t\t\t\t\t\t<{self.__class__.__name__} (id: {self.id}; ' \
-               f'x1: {self.x1}; y1: {self.y1}; x2: {self.x2}; y2: {self.y2}; action_type: {self.line_type}; ' \
+               f'x1: {self.x1}; y1: {self.y1}; x2: {self.x2}; y2: {self.y2}; line_type: {self.line_type}; ' \
                f'thickness: {self.thickness}; color: {self.color}) ' \
                f'at {hex(id(self))}>'

@@ -1,10 +1,9 @@
 from datetime import datetime
 from typing import Annotated
-from pydantic import Field, PositiveInt
+from pydantic import Field
 
-from Config.Enums import PlaybookType
-from services.common.base_DTOs import BaseDTO, PlaybookBaseDTO, SchemeBaseDTO, FigureBaseDTO,\
-    LabelBaseDTO, PencilLineBaseDTO, PlayerBaseDTO, ActionLineBaseDTO, FinalActionBaseDTO
+from services.common.base_DTOs import PlaybookBaseDTO, SchemeBaseDTO, FigureBaseDTO,\
+    LabelBaseDTO, PencilLineBaseDTO, PlayerBaseDTO, ActionBaseDTO, ActionLineBaseDTO, FinalActionBaseDTO
 
 
 class PencilLineInputDTO(PencilLineBaseDTO):
@@ -23,13 +22,17 @@ class FinalActionInputDTO(FinalActionBaseDTO):
     pass
 
 
-class ActionActionLineInputDTO(ActionLineBaseDTO):
+class ActionLineInputDTO(ActionLineBaseDTO):
     pass
 
 
-class PlayerInputDTO(PlayerBaseDTO):
-    action_lines: Annotated[list[ActionActionLineInputDTO], Field(default_factory=list)]
+class ActionInputDTO(ActionBaseDTO):
+    action_lines: Annotated[list[ActionLineInputDTO], Field(default_factory=list)]
     final_actions: Annotated[list[FinalActionInputDTO], Field(default_factory=list)]
+
+
+class PlayerInputDTO(PlayerBaseDTO):
+    actions: Annotated[list[ActionInputDTO], Field(default_factory=list)]
 
 
 class SchemeInputDTO(SchemeBaseDTO):
@@ -42,11 +45,6 @@ class SchemeInputDTO(SchemeBaseDTO):
 class PlaybookInputDTO(PlaybookBaseDTO):
     schemes: Annotated[list[SchemeInputDTO], Field(default_factory=list)]
 
-
-class SinglePlaybookInputDTO(BaseDTO):
-    id: PositiveInt | None = None
-    name: str
-    playbook_type: PlaybookType
-    created_at: datetime
-    updated_at: datetime
+    # created_at: datetime
+    # updated_at: datetime
 

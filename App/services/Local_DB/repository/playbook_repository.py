@@ -1,22 +1,18 @@
-from typing import TYPE_CHECKING, Optional
-from collections import namedtuple
+from typing import TYPE_CHECKING, Optional, Union
 
-from sqlalchemy import text, bindparam
+from sqlalchemy import text, bindparam, inspect
+from sqlalchemy.orm import selectinload
 from services.Local_DB.mappers import PlaybookMapperLocalDB
-from services.Local_DB.models import PlaybookORM, SchemeORM, FigureORM, LabelORM, PencilLineORM, PlayerORM,\
+from services.Local_DB.models import PlaybookORM, SchemeORM, FigureORM, LabelORM, PencilLineORM, PlayerORM, ActionORM, \
     ActionLineORM, FinalActionORM
 
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
     from Models import PlaybookModel
-    from ..DTO.output_DTO import SchemeOutDTO, FigureOutDTO, LabelOutDTO, PlayerOutDTO, ActionOutDTO
+    from ..DTO.output_DTO import PlaybookOutDTO, SchemeOutDTO, FigureOutDTO, LabelOutDTO, PlayerOutDTO, ActionOutDTO
 
 __all__ = ('PlaybookManager',)
-
-
-scheme_orm_items = namedtuple('SchemeORMItems', 'figures pencil_lines labels action_lines final_actions')
-action_orm_items = namedtuple('ActionORMItems', 'action_lines final_actions')
 
 
 class PlaybookManager:
@@ -36,65 +32,31 @@ class PlaybookManager:
                     self.db.add(single_playbook_orm)
                     self.db.flush()
                     playbook_id = single_playbook_orm.id
-                    action_lines_orm_lst = []
-                    final_actions_orm_lst = []
-                    figures_orm_lst = []
-                    labels_orm_lst = []
-                    pencil_lines_orm_lst = []
+                    bulk_action_lines_orm_lst: list['ActionLineORM'] = []
+                    bulk_final_actions_orm_lst: list['FinalActionORM'] = []
+                    bulk_figures_orm_lst: list['FigureORM'] = []
+                    bulk_labels_orm_lst: list['LabelORM'] = []
+                    bulk_pencil_lines_orm_lst: list['PencilLineORM'] = []
                     if set_progress_func: set_progress_func(10)
+
                     for scheme_dto in playbook_dto.schemes:
-                        items = self._process_new_scheme_orm(scheme_dto, single_playbook_orm)
-                        figures_orm_lst.extend(items.figures)
-                        labels_orm_lst.extend(items.labels)
-                        pencil_lines_orm_lst.extend(items.pencil_lines)
-                        action_lines_orm_lst.extend(items.action_lines)
-                        final_actions_orm_lst.extend(items.final_actions)
-                    #
-                    # for scheme_dto in playbook_dto.schemes:
-                    #     scheme_orm = self._playbook_mapper.create_scheme_orm(scheme_dto, single_playbook_orm)
-                    #     self.db.add(scheme_orm)
-                    #     self.db.flush()
-                    #     for player_dto in scheme_dto.players:
-                    #         player_orm = self._playbook_mapper.create_player_orm(player_dto, scheme_orm)
-                    #         self.db.add(player_orm)
-                    #         self.db.flush()
-                    #         for action_dto in player_dto.actions:
-                    #             action_orm = self._playbook_mapper.create_action_orm(action_dto, player_orm)
-                    #             self.db.add(action_orm)
-                    #             self.db.flush()
-                    #             action_lines_orm.extend(
-                    #                 [self._playbook_mapper.create_action_line_orm(action_line_dto, action_orm)
-                    #                  for action_line_dto in action_dto.lines]
-                    #             )
-                    #             final_actions_orm.extend(
-                    #                 [self._playbook_mapper.create_final_action_orm(final_action_dto, action_orm)
-                    #                  for final_action_dto in action_dto.final_actions]
-                    #             )
-                    #     figures_orm.extend(
-                    #         [self._playbook_mapper.create_figure_orm(figure_dto, scheme_orm)
-                    #          for figure_dto in scheme_dto.figures]
-                    #     )
-                    #     labels_orm.extend(
-                    #         [self._playbook_mapper.create_label_orm(label_dto, scheme_orm)
-                    #          for label_dto in scheme_dto.labels]
-                    #     )
-                    #     pencil_lines_orm.extend(
-                    #         [self._playbook_mapper.create_pencil_line_orm(pencil_line_dto, scheme_orm)
-                    #          for pencil_line_dto in scheme_dto.pencil_lines]
-                    #     )
+                        self._process_new_scheme_orm(
+                            scheme_dto, single_playbook_orm,
+                            bulk_action_lines_orm_lst, bulk_final_actions_orm_lst, bulk_figures_orm_lst,
+                            bulk_labels_orm_lst, bulk_pencil_lines_orm_lst
+                        )
                     if set_progress_func: set_progress_func(60)
 
-                    self.db.bulk_save_objects(action_lines_orm_lst)
-                    self.db.bulk_save_objects(final_actions_orm_lst)
-                    self.db.bulk_save_objects(figures_orm_lst)
-                    self.db.bulk_save_objects(labels_orm_lst)
-                    self.db.bulk_save_objects(pencil_lines_orm_lst)
+                    self.db.bulk_save_objects(bulk_action_lines_orm_lst)
+                    self.db.bulk_save_objects(bulk_final_actions_orm_lst)
+                    self.db.bulk_save_objects(bulk_figures_orm_lst)
+                    self.db.bulk_save_objects(bulk_labels_orm_lst)
+                    self.db.bulk_save_objects(bulk_pencil_lines_orm_lst)
                     if set_progress_func: set_progress_func(85)
 
                     playbook_orm = self.get_by_id(playbook_id)
                     if set_progress_func: set_progress_func(90)
-                    # playbook_orm = self._flush_playbook(playbook_model, is_new_playbook)
-                    # if set_progress_func: set_progress_func(80)
+
                     self._post_commit_actions(playbook_orm)
                     if set_progress_func: set_progress_func(95)
                     return playbook_orm
@@ -102,196 +64,223 @@ class PlaybookManager:
                 self.db.rollback()
                 raise e
 
-    # def _flush_playbook(self, playbook_model: 'PlaybookModel', is_new_playbook: bool) -> 'PlaybookORM':
-    #     playbook_orm = self._playbook_mapper.get_playbook_orm(playbook_model, is_new_playbook=is_new_playbook)
-    #     self.db.add(playbook_orm)
-    #     self.db.flush()
-    #     return playbook_orm
-
     def _post_commit_actions(self, playbook_orm: 'PlaybookORM') -> None:
         self._playbook_mapper.update_app_model_ids_from_db(playbook_orm)###################### Проверить обновление id объектов приложения
 
-    def _process_new_scheme_orm(self, scheme_dto: 'SchemeOutDTO', parent_playbook_orm: 'PlaybookORM') -> 'scheme_orm_items':
-        action_lines_orm_lst = []
-        final_actions_orm_lst = []
+    def _process_new_scheme_orm(self, scheme_dto: 'SchemeOutDTO', parent_playbook_orm: 'PlaybookORM',
+                                bulk_action_lines_orm_lst: list['ActionLineORM'],
+                                bulk_final_actions_orm_lst: list['FinalActionORM'],
+                                bulk_figures_orm_lst: list['FigureORM'],
+                                bulk_labels_orm_lst: list['LabelORM'],
+                                bulk_pencil_lines_orm_lst: list['PencilLineORM']) -> None:
         scheme_orm = self._playbook_mapper.create_scheme_orm(scheme_dto, parent_playbook_orm)
         self.db.add(scheme_orm)
         self.db.flush()
-        for player_dto in scheme_dto.players:
-            items = self._process_new_player_orm(player_dto, scheme_orm)
-            action_lines_orm_lst.extend(items.action_lines)
-            final_actions_orm_lst.extend(items.final_actions)
-        return scheme_orm_items(
-            [self._playbook_mapper.create_figure_orm(figure_dto, scheme_orm) for figure_dto in scheme_dto.figures],
-            [self._playbook_mapper.create_pencil_line_orm(pencil_line_dto, scheme_orm) for pencil_line_dto in scheme_dto.pencil_lines],
-            [self._playbook_mapper.create_label_orm(label_dto, scheme_orm) for label_dto in scheme_dto.labels],
-            action_lines_orm_lst,
-            final_actions_orm_lst
+        bulk_figures_orm_lst.extend(
+            [self._playbook_mapper.create_figure_orm(figure_dto, scheme_orm) for figure_dto in scheme_dto.figures]
         )
+        bulk_pencil_lines_orm_lst.extend(
+            [self._playbook_mapper.create_pencil_line_orm(pencil_line_dto, scheme_orm)
+             for pencil_line_dto in scheme_dto.pencil_lines]
+        )
+        bulk_labels_orm_lst.extend(
+            [self._playbook_mapper.create_label_orm(label_dto, scheme_orm) for label_dto in scheme_dto.labels]
+        )
+        for player_dto in scheme_dto.players:
+            self._process_new_player_orm(player_dto, scheme_orm, bulk_action_lines_orm_lst, bulk_final_actions_orm_lst)
 
-    def _process_new_player_orm(self, player_dto: 'PlayerOutDTO', parent_scheme_orm: 'SchemeORM') -> 'action_orm_items':
-        action_lines_orm_lst = []
-        final_actions_orm_lst = []
+    def _process_new_player_orm(self, player_dto: 'PlayerOutDTO', parent_scheme_orm: 'SchemeORM',
+                                bulk_action_lines_orm_lst: list['ActionLineORM'],
+                                bulk_final_actions_orm_lst: list['FinalActionORM']) -> None:
         player_orm = self._playbook_mapper.create_player_orm(player_dto, parent_scheme_orm)
         self.db.add(player_orm)
         self.db.flush()
         for action_dto in player_dto.actions:
-            items = self._process_new_action_orm(action_dto, player_orm)
-            action_lines_orm_lst.extend(items.action_lines)
-            final_actions_orm_lst.extend(items.final_actions)
-        return action_orm_items(action_lines_orm_lst, final_actions_orm_lst)
+            self._process_new_action_orm(action_dto, player_orm, bulk_action_lines_orm_lst, bulk_final_actions_orm_lst)
 
-    def _process_new_action_orm(self, action_dto: 'ActionOutDTO', parent_player_orm: 'PlayerORM') -> 'action_orm_items':
+    def _process_new_action_orm(self, action_dto: 'ActionOutDTO', parent_player_orm: 'PlayerORM',
+                                bulk_action_lines_orm_lst: list['ActionLineORM'],
+                                bulk_final_actions_orm_lst: list['FinalActionORM']) -> None:
         action_orm = self._playbook_mapper.create_action_orm(action_dto, parent_player_orm)
         self.db.add(action_orm)
         self.db.flush()
-        return action_orm_items(
-            [self._playbook_mapper.create_action_line_orm(action_line_dto, action_orm) for action_line_dto in action_dto.lines],
-            [self._playbook_mapper.create_final_action_orm(final_action_dto, action_orm) for final_action_dto in action_dto.final_actions]
+        bulk_action_lines_orm_lst.extend(
+            [self._playbook_mapper.create_action_line_orm(action_line_dto, action_orm)
+             for action_line_dto in action_dto.action_lines]
+        )
+        bulk_final_actions_orm_lst.extend(
+            [self._playbook_mapper.create_final_action_orm(final_action_dto, action_orm)
+             for final_action_dto in action_dto.final_actions]
         )
 
     def _update(self, playbook_model: 'PlaybookModel', set_progress_func: Optional[callable] = None) -> 'PlaybookORM':  # Тут ещё должна быть очистка списков удалённых схем (deleted_schemes) и тд
-        playbook_id = playbook_model.id_local_db
-        mapper = PlaybookMapperLocalDB()
-        playbook_dto = mapper.get_playbook_dto(playbook_model, is_new_playbook=False)
-        # print(f'{playbook_dto = }')
-        if set_progress_func: set_progress_func(10)
-        if playbook_dto.deleted_actions:
-            delete_action_lines_query = text('DELETE FROM actions WHERE id IN :ids').bindparams(bindparam('ids', expanding=True))
-            self.db.execute(delete_action_lines_query, {'ids': tuple(playbook_dto.deleted_actions)})
-        if playbook_dto.deleted_players:
-            delete_players_query = text('DELETE FROM players WHERE id IN :ids').bindparams(bindparam('ids', expanding=True))
-            self.db.execute(delete_players_query, {'ids': tuple(playbook_dto.deleted_players)})
-        if playbook_dto.deleted_figures:
-            delete_figures_query = text('DELETE FROM figures WHERE id IN :ids').bindparams(bindparam('ids', expanding=True))
-            self.db.execute(delete_figures_query, {'ids': tuple(playbook_dto.deleted_figures)})
-        if playbook_dto.deleted_labels:
-            delete_labels_query = text('DELETE FROM labels WHERE id IN :ids').bindparams(bindparam('ids', expanding=True))
-            self.db.execute(delete_labels_query, {'ids': tuple(playbook_dto.deleted_labels)})
-        if playbook_dto.deleted_pencil_lines:
-            delete_pencil_lines_query = text('DELETE FROM pencil_lines WHERE id IN :ids').bindparams(bindparam('ids', expanding=True))
-            self.db.execute(delete_pencil_lines_query, {'ids': tuple(playbook_dto.deleted_pencil_lines)})
-        if playbook_dto.deleted_schemes:
-            delete_schemes_query = text('DELETE FROM schemes WHERE id IN :ids').bindparams(bindparam('ids', expanding=True))
-            self.db.execute(delete_schemes_query, {'ids': tuple(playbook_dto.deleted_schemes)})
-        if set_progress_func: set_progress_func(20)
-        playbook_from_db = self.db.get(PlaybookORM, playbook_id)
-        # print(f'{playbook_from_db = }')
-        if set_progress_func: set_progress_func(30)
+        try:
+            with self.db.begin():
+                playbook_id = playbook_model.id_local_db
+                playbook_dto = self._playbook_mapper.get_playbook_dto(playbook_model, is_new_playbook=False)
+                if set_progress_func: set_progress_func(10)
 
-        playbook_from_db.name, playbook_from_db.playbook_type, playbook_from_db.info = \
-            playbook_dto.name, playbook_dto.playbook_type, playbook_dto.info
-        for scheme_dto in playbook_dto.schemes:
-            if scheme_dto.id:
-                scheme_orm = playbook_from_db.schemes[playbook_from_db.schemes.index(scheme_dto)]
-                # У модели ORM-схемы переопределён метод __eq__. Он сравнивает id DTO-модели и id ORM-модели.
-                # Это позволяет находить index ORM-модели соответствующей DTO-модели.
-                self._update_scheme_orm(scheme_dto, scheme_orm)
-            else:
-                new_scheme_orm = mapper.create_scheme_orm_with_nested_items(
-                    scheme_dto)  # создаётся схема и все вложенные объекты (фигуры, надписи и тд.)
-                playbook_from_db.schemes.append(new_scheme_orm)
-                continue
-            for figure_dto in scheme_dto.figures:
-                if figure_dto.id:
-                    figure_orm = scheme_orm.figures[scheme_orm.figures.index(figure_dto)]
-                    # У модели ORM-фигуры переопределён метод __eq__. Он сравнивает id DTO-модели и id ORM-модели.
-                    # Это позволяет находить index ORM-модели соответствующей DTO-модели.
-                    self._update_figure_orm(figure_dto, figure_orm)
-                else:
-                    new_figure_orm = FigureORM(**figure_dto.model_dump())
-                    scheme_orm.figures.append(new_figure_orm)
-            for label_dto in scheme_dto.labels:
-                if label_dto.id:
-                    label_orm = scheme_orm.labels[scheme_orm.labels.index(label_dto)]
-                    # У модели ORM-надписи переопределён метод __eq__. Он сравнивает id DTO-модели и id ORM-модели.
-                    # Это позволяет находить index ORM-модели соответствующей DTO-модели.
-                    self._update_label_orm(label_dto, label_orm)
-                else:
-                    new_label_orm = LabelORM(**label_dto.model_dump())
-                    scheme_orm.labels.append(new_label_orm)
-            for pencil_line_dto in scheme_dto.pencil_lines:
-                if pencil_line_dto.id:
-                    pass
-                    # Линии карандаша в приложении нельзя изменить.
-                    # Их можно только нарисовать или удалить, поэтому обновлять их не нужно.
-                else:
-                    new_pencil_line = PencilLineORM(**pencil_line_dto.model_dump())
-                    scheme_orm.pencil_lines.append(new_pencil_line)
-            for player_dto in scheme_dto.players:
-                if player_dto.id:
-                    player_orm = scheme_orm.players[scheme_orm.players.index(player_dto)]
-                    # У модели ORM-игрока переопределён метод __eq__. Он сравнивает id DTO-модели и id ORM-модели.
-                    # Это позволяет находить index ORM-модели соответствующей DTO-модели.
-                    self._update_player_orm(player_dto, player_orm)
-                else:
-                    new_player_orm = mapper.create_player_orm_with_nested_items(
-                        player_dto)  # создаётся игрок и все вложенные объекты (действия)
-                    scheme_orm.players.append(new_player_orm)
-                    continue
-                for action_dto in player_dto.actions:
-                    if action_dto.id:
-                        pass
-                        # Действия в приложении нельзя изменить.
-                        # Их можно только нарисовать или удалить, поэтому обновлять их не нужно
+                bulk_action_lines_orm_lst: list['ActionLineORM'] = []
+                bulk_final_actions_orm_lst: list['FinalActionORM'] = []
+                bulk_figures_orm_lst: list['FigureORM'] = []
+                bulk_labels_orm_lst: list['LabelORM'] = []
+                bulk_pencil_lines_orm_lst: list['PencilLineORM'] = []
+
+                self._delete_playbook_items_by_ids(
+                    playbook_dto.deleted_actions, playbook_dto.deleted_players, playbook_dto.deleted_figures,
+                    playbook_dto.deleted_labels, playbook_dto.deleted_pencil_lines, playbook_dto.deleted_schemes
+                )
+                if set_progress_func: set_progress_func(20)
+
+                playbook_from_db = self.db.get(PlaybookORM, playbook_id)
+                # print(f'{playbook_from_db = }')
+                if set_progress_func: set_progress_func(30)
+
+                self._update_orm_obj(playbook_dto, playbook_from_db)
+                for scheme_dto in playbook_dto.schemes:
+                    if scheme_dto.id:
+                        scheme_orm = playbook_from_db.schemes[playbook_from_db.schemes.index(scheme_dto)]
+                        # У модели ORM-схемы переопределён метод __eq__. Он сравнивает id DTO-модели и id ORM-модели.
+                        # Это позволяет находить index ORM-модели соответствующей DTO-модели.
+                        self._update_orm_obj(scheme_dto, scheme_orm)
                     else:
-                        new_action_orm = mapper.create_action_orm(action_dto)  # создаётся действие и все вложенные объекты(линии и финальные действия)
-                        player_orm.actions.append(new_action_orm)
-        self.db.add(playbook_from_db)
+                        self._process_new_scheme_orm(
+                            scheme_dto, playbook_from_db, bulk_action_lines_orm_lst,
+                            bulk_final_actions_orm_lst, bulk_figures_orm_lst, bulk_labels_orm_lst,
+                            bulk_pencil_lines_orm_lst
+                        )
+                        continue
+                    for figure_dto in scheme_dto.figures:
+                        if figure_dto.id:
+                            figure_orm = scheme_orm.figures[scheme_orm.figures.index(figure_dto)]
+                            # У модели ORM-фигуры переопределён метод __eq__. Он сравнивает id DTO-модели и id ORM-модели.
+                            # Это позволяет находить index ORM-модели соответствующей DTO-модели.
+                            self._update_orm_obj(figure_dto, figure_orm)
+                        else:
+                            new_figure_orm = self._playbook_mapper.create_figure_orm(figure_dto, scheme_orm)
+                            bulk_figures_orm_lst.append(new_figure_orm)
+                    for label_dto in scheme_dto.labels:
+                        if label_dto.id:
+                            label_orm = scheme_orm.labels[scheme_orm.labels.index(label_dto)]
+                            # У модели ORM-надписи переопределён метод __eq__. Он сравнивает id DTO-модели и id ORM-модели.
+                            # Это позволяет находить index ORM-модели соответствующей DTO-модели.
+                            self._update_orm_obj(label_dto, label_orm)
+                        else:
+                            new_label_orm = self._playbook_mapper.create_label_orm(label_dto, scheme_orm)
+                            bulk_labels_orm_lst.append(new_label_orm)
+                    for pencil_line_dto in scheme_dto.pencil_lines:
+                        if pencil_line_dto.id:
+                            pass
+                            # Линии карандаша в приложении нельзя изменить.
+                            # Их можно только нарисовать или удалить, поэтому обновлять их не нужно.
+                        else:
+                            new_pencil_line = self._playbook_mapper.create_pencil_line_orm(pencil_line_dto, scheme_orm)
+                            bulk_pencil_lines_orm_lst.append(new_pencil_line)
+                    for player_dto in scheme_dto.players:
+                        if player_dto.id:
+                            player_orm = scheme_orm.players[scheme_orm.players.index(player_dto)]
+                            # У модели ORM-игрока переопределён метод __eq__. Он сравнивает id DTO-модели и id ORM-модели.
+                            # Это позволяет находить index ORM-модели соответствующей DTO-модели.
+                            self._update_orm_obj(player_dto, player_orm)
+                        else:
+                            self._process_new_player_orm(player_dto, scheme_orm, bulk_action_lines_orm_lst, bulk_final_actions_orm_lst)
+                            continue
+                        for action_dto in player_dto.actions:
+                            if action_dto.id:
+                                pass
+                                # Действия в приложении нельзя изменить.
+                                # Их можно только нарисовать или удалить, поэтому обновлять их не нужно
+                            else:
+                                self._process_new_action_orm(action_dto, player_orm, bulk_action_lines_orm_lst, bulk_final_actions_orm_lst)
+                if set_progress_func: set_progress_func(60)
 
-        self.db.commit()
-        if set_progress_func: set_progress_func(80)
-        mapper.update_app_model_ids_from_db(playbook_from_db)
-        # print(f'{playbook_from_db = }')
-        if set_progress_func: set_progress_func(95)
+                self.db.bulk_save_objects(bulk_action_lines_orm_lst)
+                self.db.bulk_save_objects(bulk_final_actions_orm_lst)
+                self.db.bulk_save_objects(bulk_figures_orm_lst)
+                self.db.bulk_save_objects(bulk_labels_orm_lst)
+                self.db.bulk_save_objects(bulk_pencil_lines_orm_lst)
+                if set_progress_func: set_progress_func(70)
 
+                for scheme_orm in playbook_from_db.schemes:
+                    for player_orm in scheme_orm.players:
+                        for action_orm in player_orm.actions:
+                            self.db.expire(action_orm)
+                    self.db.expire(scheme_orm)
+                if set_progress_func: set_progress_func(85)
 
-        return playbook_from_db
+                # print(f'{playbook_from_db = }')
+                self._post_commit_actions(playbook_from_db)
+                if set_progress_func: set_progress_func(95)
+                return playbook_from_db
 
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
+    def _delete_playbook_items_by_ids(self, deleted_actions: list[int], deleted_players: list[int],
+                                      deleted_figures: list[int], deleted_labels: list[int],
+                                      deleted_pencil_lines: list[int], deleted_schemes: list[int]) -> None:
+        if deleted_actions:
+            delete_action_lines_query = text('DELETE FROM actions WHERE id IN :ids').bindparams(bindparam('ids', expanding=True))
+            self.db.execute(delete_action_lines_query, {'ids': tuple(deleted_actions)})
+        if deleted_players:
+            delete_players_query = text('DELETE FROM players WHERE id IN :ids').bindparams(
+                bindparam('ids', expanding=True))
+            self.db.execute(delete_players_query, {'ids': tuple(deleted_players)})
+        if deleted_figures:
+            delete_figures_query = text('DELETE FROM figures WHERE id IN :ids').bindparams(
+                bindparam('ids', expanding=True))
+            self.db.execute(delete_figures_query, {'ids': tuple(deleted_figures)})
+        if deleted_labels:
+            delete_labels_query = text('DELETE FROM labels WHERE id IN :ids').bindparams(
+                bindparam('ids', expanding=True))
+            self.db.execute(delete_labels_query, {'ids': tuple(deleted_labels)})
+        if deleted_pencil_lines:
+            delete_pencil_lines_query = text('DELETE FROM pencil_lines WHERE id IN :ids').bindparams(
+                bindparam('ids', expanding=True))
+            self.db.execute(delete_pencil_lines_query, {'ids': tuple(deleted_pencil_lines)})
+        if deleted_schemes:
+            delete_schemes_query = text('DELETE FROM schemes WHERE id IN :ids').bindparams(
+                bindparam('ids', expanding=True))
+            self.db.execute(delete_schemes_query, {'ids': tuple(deleted_schemes)})
 
+    def _update_orm_obj(self, dto_obj: Union['PlaybookOutDTO', 'SchemeOutDTO', 'FigureOutDTO', 'LabelOutDTO',
+                                             'PlayerOutDTO'],
+                        orm_obj: Union['PlaybookORM', 'SchemeORM', 'FigureORM', 'LabelORM', 'PlayerORM']) -> None:
+        dto_data = dto_obj.model_dump()
+        orm_mapper = inspect(orm_obj).mapper
+        for column in orm_mapper.columns:
+            attr_name = column.key
+            if attr_name in dto_data:
+                orm_value = getattr(orm_obj, attr_name)
+                dto_value = dto_data[attr_name]
+                if orm_value != dto_value:
+                    setattr(orm_obj, attr_name, dto_value)
 
-    def _update_scheme_orm(self, scheme_dto: 'SchemeOutDTO', scheme_orm: 'SchemeORM') -> None:
-        scheme_orm.name, scheme_orm.row_index, scheme_orm.zoom, scheme_orm.view_point_x, scheme_orm.view_point_y = \
-        scheme_dto.name, scheme_dto.row_index, scheme_dto.zoom, scheme_dto.view_point_x, scheme_dto.view_point_y
-        scheme_orm.first_team, scheme_orm.second_team, scheme_orm.first_team_position, scheme_orm.note = \
-        scheme_dto.first_team, scheme_dto.second_team, scheme_dto.first_team_position, scheme_dto.note
-
-    def _update_figure_orm(self, figure_dto: 'FigureOutDTO', figure_orm: 'FigureORM') -> None:
-        figure_orm.x, figure_orm.y, figure_orm.width, figure_orm.height, figure_orm.figure_type = \
-        figure_dto.x, figure_dto.y, figure_dto.width, figure_dto.height, figure_dto.figure_type
-        figure_orm.border, figure_orm.border_thickness, figure_orm.border_color = \
-        figure_dto.border, figure_dto.border_thickness, figure_dto.border_color
-        figure_orm.fill, figure_orm.fill_opacity, figure_orm.fill_color = \
-        figure_dto.fill, figure_dto.fill_opacity, figure_dto.fill_color
-
-    def _update_label_orm(self, label_dto: 'LabelOutDTO', label_orm: 'LabelORM') -> None:
-        label_orm.x, label_orm.y, label_orm.width, label_orm.height = \
-        label_dto.x, label_dto.y, label_dto.width, label_dto.height
-        label_orm.text, label_orm.font_type, label_orm.font_size =\
-        label_dto.text, label_dto.font_type, label_dto.font_size
-        label_orm.font_bold, label_orm.font_italic, label_orm.font_underline, label_orm.font_color = \
-        label_dto.font_bold, label_dto.font_italic, label_dto.font_underline, label_dto.font_color
-
-    def _update_player_orm(self, player_dto: 'PlayerOutDTO', player_orm: 'PlayerORM') -> None:
-        player_orm.x, player_orm.y, player_orm.team_type, player_orm.position, player_orm.text, player_orm.text_color = \
-        player_dto.x, player_dto.y, player_dto.team_type, player_dto.position, player_dto.text, player_dto.text_color
-        player_orm.player_color, player_orm.fill_type, player_orm.symbol_type = \
-        player_dto.player_color, player_dto.fill_type, player_dto.symbol_type
-
-    def get_by_id(self, obj_id: int) -> Optional['PlaybookORM']:
-        return self.db.get(PlaybookORM, obj_id)
+    def get_by_id(self, playbook_id: int) -> Optional['PlaybookORM']:
+        playbook_orm = self.db.query(PlaybookORM)\
+            .options(selectinload(PlaybookORM.schemes)
+                     .options(selectinload(SchemeORM.figures), selectinload(SchemeORM.labels),
+                              selectinload(SchemeORM.pencil_lines), selectinload(SchemeORM.players)
+                              .options(selectinload(PlayerORM.actions)
+                                       .options(selectinload(ActionORM.action_lines),
+                                                selectinload(ActionORM.final_actions)
+                                                )
+                                       )
+                              )
+                     ).get(playbook_id)
+        # print(f'{playbook_orm = }')
+        playbook_dto = self._playbook_mapper.orm_to_dto(playbook_orm)
+        # print(f'{playbook_dto = }')
+        return playbook_dto
+        # return self.db.get(PlaybookORM, obj_id)
 
     def delete_by_id(self, obj_id: int) -> None:  # Проверить каскадное удаление
-        # deleted_playbook = self.get_by_id(obj_id)
-        # self.db.delete(deleted_playbook)
-        # self.db.commit()
-        query = text('DELETE FROM playbooks WHERE id = :id')
-        query = query.bindparams(id=obj_id)
+        query = text('DELETE FROM playbooks WHERE id = :id').bindparams(id=obj_id)
         self.db.execute(query)
         self.db.commit()
 
-    def get_all_obj_info(self):
+    def get_all_obj_info(self) -> list[tuple]:
         query = text('SELECT id, name, playbook_type, updated_at, created_at FROM playbooks')
         res = self.db.execute(query)
         return res.all()

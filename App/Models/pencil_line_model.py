@@ -76,3 +76,8 @@ class PencilLineModel:
     def to_dict(self) -> dict:
         return {'uuid': self._uuid, 'x1': self._x1, 'y1': self._y1, 'x2': self._x2, 'y2': self._y2,
                 'thickness': self._thickness, 'color': self._color}
+
+    def __repr__(self) -> str:
+        return f'\n\t\t\t\t<{self.__class__.__name__} (id_local_db: {self._id_local_db}; id_api: {self._id_api}; ' \
+               f'uuid: {self.uuid}; x1: {self.x1}; y1: {self.y1}; x2: {self.x2}; y2: {self.y2}; ' \
+               f'thickness: {self.thickness}; color: {self.color}) at {hex(id(self))}>'

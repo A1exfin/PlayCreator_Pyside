@@ -10,6 +10,7 @@ from services.common.validators import validate_playbook_type
 from services.Local_DB.models import PlaybookORM, SchemeORM, FigureORM, LabelORM, PencilLineORM, PlayerORM, ActionORM, \
     ActionLineORM, FinalActionORM
 from services.common.base_mapper import BaseMapper, T, M, O
+from .DTO.input_DTO import PlaybookInputDTO
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -25,17 +26,6 @@ class ORMMapperMixin(Generic[O]):
     @abstractmethod
     def _orm_to_dto(self, item: O) -> M:
         pass
-
-
-@dataclass
-class IDMapping:
-    playbook: dict[int, 'PlaybookModel'] = field(default_factory=dict)
-    schemes: dict[int, 'SchemeModel'] = field(default_factory=dict)
-    figures: dict[int, 'FigureModel'] = field(default_factory=dict)
-    labels: dict[int, 'LabelModel'] = field(default_factory=dict)
-    pencil_lines: dict[int, 'PencilLineModel'] = field(default_factory=dict)
-    players: dict[int, 'PlayerModel'] = field(default_factory=dict)
-    action: dict[int, 'ActionModel'] = field(default_factory=dict)
 
 
 # class PlaybookMapperLocalDB(BaseMapper[PlaybookWidget, PlaybookOutDTO], ORMMapperMixin[PlaybookORM]):
@@ -146,13 +136,13 @@ class PlaybookMapperLocalDB():
                                fill_type=player_dto.fill_type, symbol_type=player_dto.symbol_type,
                                actions=list())
         for action_dto in player_dto.actions:
-            player_orm.actions.append(self.create_action_orm(action_dto))
+            player_orm.actions.append(self.create_action_orm_with_nested_items(action_dto))
         return player_orm
 
     def create_action_orm_with_nested_items(self, action_dto: 'ActionOutDTO') -> 'ActionORM':
         action_orm = ActionORM(id=action_dto.id, uuid=action_dto.uuid,
-                               lines=list(), final_actions=list())
-        action_orm.lines.extend(ActionLineORM(**line.model_dump()) for line in action_dto.lines)
+                               action_lines=list(), final_actions=list())
+        action_orm.action_lines.extend(ActionLineORM(**line.model_dump()) for line in action_dto.action_lines)
         action_orm.final_actions.extend(FinalActionORM(**final_action.model_dump()) for final_action in action_dto.final_actions)
         return action_orm
 
@@ -187,36 +177,31 @@ class PlaybookMapperLocalDB():
     def create_action_orm(self, action_dto: 'ActionOutDTO', player_orm: 'PlayerORM') -> 'ActionORM':
         action_orm = ActionORM(id=action_dto.id, uuid=action_dto.uuid,
                                player=player_orm, player_id=player_orm.id,
-                               lines=list(), final_actions=list())
+                               action_lines=list(), final_actions=list())
         return action_orm
 
     def create_action_line_orm(self, action_line_dto: 'ActionLineOutDTO', action_orm: 'ActionORM') -> 'ActionLineORM':
         action_line_orm = ActionLineORM(**action_line_dto.model_dump())
-        action_line_orm.action = action_orm
         action_line_orm.action_id = action_orm.id
         return action_line_orm
 
     def create_final_action_orm(self, final_action_dto: 'FinalActionOutDTO', action_orm: 'ActionORM') -> 'FinalActionORM':
         final_action_orm = FinalActionORM(**final_action_dto.model_dump())
-        final_action_orm.action = action_orm
         final_action_orm.action_id = action_orm.id
         return final_action_orm
 
     def create_figure_orm(self, figure_dto: 'FigureOutDTO', scheme_orm: 'SchemeORM') -> 'FigureORM':
         figure_orm = FigureORM(**figure_dto.model_dump())
-        figure_orm.scheme = scheme_orm
         figure_orm.scheme_id = scheme_orm.id
         return figure_orm
 
     def create_label_orm(self, label_dto: 'LabelOutDTO', scheme_orm: 'SchemeORM') -> 'LabelORM':
         label_orm = LabelORM(**label_dto.model_dump())
-        label_orm.scheme = scheme_orm
         label_orm.scheme_id = scheme_orm.id
         return label_orm
 
     def create_pencil_line_orm(self, pencil_line_dto: 'PencilLineOutDTO', scheme_orm: 'SchemeORM') -> 'PencilLineORM':
         pencil_line_orm = PencilLineORM(**pencil_line_dto.model_dump())
-        pencil_line_orm.scheme = scheme_orm
         pencil_line_orm.scheme_id = scheme_orm.id
         return pencil_line_orm
 
@@ -240,8 +225,7 @@ class PlaybookMapperLocalDB():
                 self._update_model_id(player_orm)
                 for action_orm in player_orm.actions:
                     self._update_model_id(action_orm)
-        print(f'{self._id_mapping = }')
-        # self._id_mapping.clear()
+        # print(f'{self._id_mapping = }')
 
     def _update_model_id(self, orm_obj: Union['SchemeORM', 'FigureORM', 'LabelORM', 'PencilLineORM',
                                               'PlayerORM', 'ActionORM']) -> None:
@@ -253,11 +237,10 @@ class PlaybookMapperLocalDB():
         playbook_model.id_local_db = orm_obj.id
         playbook_model.clear_deleted_item_ids(StorageType.LOCAL_DB)
 
+    def orm_to_dto(self, playbook_orm: 'PlaybookORM') -> 'PlaybookInputDTO':
+        playbook_dto = PlaybookInputDTO.model_validate(playbook_orm)
+        return playbook_dto
 
-
-    def _orm_to_dto(self, playbook: 'PlaybookORM') -> 'PlaybookOutDTO':
-        pass
-
-    def _dto_to_app_obj(self, playbook: 'PlaybookOutDTO') -> 'PlaybookWidget':
+    def _dto_to_app_obj(self, playbook: 'PlaybookOutDTO') -> 'PlaybookModel':
         pass
 

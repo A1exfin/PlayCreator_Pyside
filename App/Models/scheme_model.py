@@ -353,3 +353,16 @@ class SchemeModel(QObject):
                 'figures': list(),
                 'labels': list(),
                 'pencil_lines': list()}
+
+    def __repr__(self) -> str:
+        return f'\n\t\t<{self.__class__.__name__} (id_local_db: {self._id_local_db}; id_api: {self._id_api}; ' \
+               f'uuid: {self._uuid}; name: {self._name}; zoom: {self._zoom}; ' \
+               f'view_point_x: {self._view_point_x}, view_point_y: {self._view_point_y}; ' \
+               f'first_team: {self._first_team}; second_team: {self._second_team}; ' \
+               f'first_team_position: {self._first_team_position}; note: {self._note}; ' \
+               f'\n\t\t\tfigures: {self._figures}' \
+               f'\n\t\t\tlabels: {self._labels}' \
+               f'\n\t\t\tpencil_lines: {self._pencil_lines}' \
+               f'\n\t\t\tfirst_team_players: {self._first_team_players}>' \
+               f'\n\t\t\tsecond_team_players: {self._second_team_players}>' \
+               f'\n\t\t\tadditional_player: {self._additional_player}>'

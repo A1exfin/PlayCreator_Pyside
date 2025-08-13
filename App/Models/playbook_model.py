@@ -134,8 +134,11 @@ class PlaybookModel(QObject):
     def schemes(self) -> list['SchemeModel']:
         return self._schemes.copy()
 
-    def add_scheme(self, scheme_model: 'SchemeModel') -> None:
-        self._schemes.append(scheme_model)
+    def add_scheme(self, scheme_model: 'SchemeModel', row_index: Optional[int] = None) -> None:
+        if row_index:
+            self._schemes.insert(row_index, scheme_model)
+        else:
+            self._schemes.append(scheme_model)
         self.schemeAdded.emit(scheme_model)
 
     def remove_scheme(self, scheme_model: 'SchemeModel') -> None:#############################################
@@ -224,3 +227,8 @@ class PlaybookModel(QObject):
                 'deleted_players': list(),
                 'deleted_actions': list()}
 
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} (id_local_db: {self._id_local_db}; id_api: {self._id_api}; ' \
+               f'uuid: {self._uuid}; name: {self._name}; playbook_type: {self._playbook_type}; ' \
+               f'info: {self._info}) at {hex(id(self))}' \
+               f'\n\t schemes: {self._schemes}>'

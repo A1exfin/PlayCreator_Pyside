@@ -64,3 +64,9 @@ class ActionLineModel:
         return {'uuid': self._uuid, 'line_type': self._line_type,
                 'x1': self._x1, 'y1': self._y1, 'x2': self._x2, 'y2': self._y2,
                 'thickness': self._thickness, 'color': self._color}
+
+    def __repr__(self):
+        return f'\n\t\t\t\t\t\t\t\t<{self.__class__.__name__} (uuid: {self._uuid}; ' \
+               f'x1: {self._x1}; y1: {self._y1}; x2: {self._x2}; y2: {self._y2}; line_type: {self._line_type}; ' \
+               f'thickness: {self._thickness}; color: {self._color}) ' \
+               f'at {hex(id(self))}>'

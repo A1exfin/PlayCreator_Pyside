@@ -150,12 +150,6 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
     def _debug_method(self):
         ...
-        from Views.Dialog_windows import DialogOpenPlaybook
-        from Views.Dialog_windows import DialogInput
-        playbook_info = [('1', 'Warriors', PlaybookType.FOOTBALL, '08.80.2025', '16.05.1992'),
-                         ('2', 'Iron Wings', PlaybookType.FLAG, '07.80.2025', '15.06.2020')]
-        dialog = DialogOpenPlaybook(playbook_info, parent=self)
-        dialog.exec()
 
     def _check_max_yards_football(self, value: str) -> None:
         try:

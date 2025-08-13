@@ -8,14 +8,12 @@ from Models import PlaybookModel, SchemeModel
 from Views.Dialog_windows import DialogEditPlaybook, DialogProgressBar, DialogInfo, DialogInput
 from .scheme_presenter import SchemePresenter
 from .Mappers import SchemeMapper
-from services.Local_DB.mappers import PlaybookMapperLocalDB
-from services.Local_DB import get_session
-from services.Local_DB.repository.playbook_repository import PlaybookManager
 
 if TYPE_CHECKING:
     from uuid import UUID
     from Config.Enums import TeamType, SymbolType
     from PlayCreator_main import PlayCreatorApp
+    from services.Local_DB.repository.playbook_repository import PlaybookManager
 
 __all__ = ('PlaybookPresenter', )
 
@@ -113,12 +111,10 @@ class PlaybookPresenter:
             file_name = file_name.replace(char, '_')
         return file_name.strip()
 
-    def handle_save_playbook_local(self) -> None:
+    def handle_save_playbook_local(self, playbook_manager: 'PlaybookManager') -> None:
         dialog_progress = DialogProgressBar(parent=self._view, operation_name='Сохранение плейбука')
         dialog_progress.show()
         try:
-            session = get_session()
-            playbook_manager = PlaybookManager(next(session))
             playbook_manager.save(self._model, is_new_playbook=False, set_progress_func=dialog_progress.set_progress_value)
             for scheme_mapper in self._scheme_mappers.values():
                 scheme_mapper.presenter.clear_undo_stack()
@@ -131,10 +127,7 @@ class PlaybookPresenter:
         finally:
             dialog_progress.finish()
 
-    def handle_save_playbook_local_as(self) -> None:
-        ...
-        # mapper = PlaybookMapperLocalDB(False)
-        # print(f'{mapper._get_playbook_with_all_items_dict(self._model) = }')
+    def handle_save_playbook_local_as(self, playbook_manager: 'PlaybookManager') -> None:
         dialog_input = DialogInput('Сохранить как', 'Введите название плейбука:', parent=self._view)
         dialog_input.exec()
         if dialog_input.result():
@@ -143,17 +136,15 @@ class PlaybookPresenter:
             dialog_progress = DialogProgressBar(self._view, 'Сохранение плейбука')
             dialog_progress.show()
             try:
-                session = get_session()
-                playbook_manager = PlaybookManager(next(session))
                 playbook_manager.save(self._model, is_new_playbook=True, set_progress_func=dialog_progress.set_progress_value)
                 for scheme_mapper in self._scheme_mappers.values():
                     scheme_mapper.presenter.clear_undo_stack()
             except Exception as e:
-                print(f'{e = }')
                 dialog_progress.hide()
                 dialog_info = DialogInfo('Ошибка', 'Произошла ошибка. Плейбук не был сохранён.', check_box=False,
                                          decline_button=False, accept_button_text='Ок', parent=self._view)
                 dialog_info.exec()
+                raise e
             finally:
                 dialog_progress.finish()
 
