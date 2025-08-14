@@ -5,7 +5,7 @@ from PySide6.QtCore import Signal, QObject, QPointF
 
 
 if TYPE_CHECKING:
-    from Config.Enums import FigureType
+    from Config.Enums import StorageType, FigureType
 
 
 class FigureModel(QObject):
@@ -55,6 +55,10 @@ class FigureModel(QObject):
 
     def set_new_uuid(self) -> None:
         self._uuid = uuid4()
+
+    def reset_id(self, storage_type: 'StorageType') -> None:
+        if hasattr(self, f'_id_{storage_type.value}'):
+            setattr(self, f'_id_{storage_type.value}', None)
 
     @property
     def figure_type(self):

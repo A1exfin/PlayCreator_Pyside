@@ -410,7 +410,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
     def _set_gui_for_selected_scheme(self, scene: 'Field', first_team: Optional['TeamType'],
                                      second_team: Optional['TeamType'], additional_player_state: bool,
-                                     first_team_position: int, can_undo: bool, can_redo: bool) -> None:
+                                     first_team_position: Optional[int], can_undo: bool, can_redo: bool) -> None:
         getattr(self, f'pushButton_{scene.mode.name.lower()}').setChecked(True)
         first_team_state = bool(first_team)
         second_team_state = bool(second_team)
@@ -495,54 +495,33 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.placeFirstTeamClicked.emit(TeamType(self.comboBox_team_type.currentIndex()),
                                         int(self.lineEdit_yards.text()))
 
-    def set_gui_first_team_placed(self, team_type: 'TeamType', additional_player: bool) -> None:
-        self.comboBox_team_type.setEnabled(False)
-        self.lineEdit_yards.setEnabled(False)
-        self.pushButton_place_first_team.setEnabled(False)
-        self.pushButton_add_additional_off_player.setVisible(True)
+    def set_gui_for_first_team(self, first_team_type: Optional['TeamType'], first_team_position: Optional[int]) -> None:
+        first_team_state = bool(first_team_type)
+        self.comboBox_team_type.setEnabled(not first_team_state)
+        if first_team_type:
+            self.comboBox_team_type.setCurrentIndex(first_team_type.value)
+        self.lineEdit_yards.setEnabled(not first_team_state)
+        if first_team_position is not None:
+            self.lineEdit_yards.setText(str(first_team_position))
+        self.pushButton_place_first_team.setEnabled(not first_team_state)
+        self.pushButton_add_additional_off_player.setVisible(True if first_team_type is TeamType.OFFENCE else False)
+        self.pushButton_del_additional_off_player.setVisible(True if first_team_type is TeamType.OFFENCE else False)
         self.pushButton_add_additional_off_player.setEnabled(True)
-        self.pushButton_del_additional_off_player.setVisible(True)
         self.pushButton_del_additional_off_player.setEnabled(False)
-        self.pushButton_place_second_team.setEnabled(True)
+        self.pushButton_place_second_team.setEnabled(first_team_state)
         self.pushButton_remove_second_team.setEnabled(False)
-        self.pushButton_remove_all_players.setEnabled(True)
-        self.pushButton_add_additional_off_player.setVisible(True if team_type is TeamType.OFFENCE else False)
-        self.pushButton_del_additional_off_player.setVisible(True if team_type is TeamType.OFFENCE else False)
+        self.pushButton_remove_all_players.setEnabled(first_team_state)
+
+    def set_gui_for_second_team(self, second_team_type: 'TeamType') -> None:
+        second_team_state = bool(second_team_type)
+        self.pushButton_place_second_team.setEnabled(not second_team_state)
+        self.pushButton_remove_second_team.setEnabled(second_team_state)
+        self.comboBox_second_players_symbol.setVisible(second_team_state)
+        self.comboBox_second_players_symbol.setEnabled(second_team_state)
+
+    def set_gui_for_additional_player(self, additional_player: bool) -> None:
         self.pushButton_add_additional_off_player.setEnabled(not additional_player)
         self.pushButton_del_additional_off_player.setEnabled(additional_player)
-
-    def set_gui_second_team_placed(self) -> None:
-        self.pushButton_place_second_team.setEnabled(False)
-        self.pushButton_remove_second_team.setEnabled(True)
-        self.comboBox_second_players_symbol.setVisible(True)
-        self.comboBox_second_players_symbol.setEnabled(True)
-
-    def set_gui_additional_player_placed(self) -> None:
-        self.pushButton_add_additional_off_player.setEnabled(False)
-        self.pushButton_del_additional_off_player.setEnabled(True)
-
-    def set_gui_first_team_players_removed(self) -> None:
-        '''Метод вызывается только в рамках удаления всех игроков'''
-        self.comboBox_team_type.setEnabled(True)
-        self.lineEdit_yards.setEnabled(True)
-        self.pushButton_place_first_team.setEnabled(True)
-        self.pushButton_add_additional_off_player.setVisible(False)
-        self.pushButton_add_additional_off_player.setEnabled(True)
-        self.pushButton_del_additional_off_player.setVisible(False)
-        self.pushButton_del_additional_off_player.setEnabled(False)
-        self.pushButton_place_second_team.setEnabled(False)
-        self.pushButton_remove_second_team.setEnabled(False)
-        self.pushButton_remove_all_players.setEnabled(False)
-
-    def set_gui_second_team_players_removed(self) -> None:
-        self.pushButton_place_second_team.setEnabled(True)
-        self.pushButton_remove_second_team.setEnabled(False)
-        self.comboBox_second_players_symbol.setVisible(False)
-        self.comboBox_second_players_symbol.setEnabled(False)
-
-    def set_gui_additional_player_removed(self) -> None:
-        self.pushButton_add_additional_off_player.setEnabled(True)
-        self.pushButton_del_additional_off_player.setEnabled(False)
 
     def _set_color(self, color: str):
         self.pushButton_color_current.setStyleSheet(f'background-color: {color};')

@@ -4,10 +4,9 @@ from uuid import UUID, uuid4
 
 from PySide6.QtCore import QObject, Signal
 
-from Config.Enums import StorageType
+from Config.Enums import StorageType, PlaybookType, TeamType
 
 if TYPE_CHECKING:
-    from Config.Enums import TeamType
     from .figure_model import FigureModel
     from .label_model import LabelModel
     from .pencil_line_model import PencilLineModel
@@ -18,10 +17,14 @@ class SchemeModel(QObject):
     nameChanged = Signal(str)
     noteChanged = Signal(str)
     zoomChanged = Signal(int)
-    firstTeamAdded = Signal(object, object, bool)  # list[PlayerModel], _first_team, has_additional_player()
-    firstTeamRemoved = Signal()
-    secondTeamAdded = Signal(object)  # list[PlayerModel]
-    secondTeamRemoved = Signal()
+    firstTeamPlayerAdded = Signal(object)  # PlayerModel
+    firstTeamPlayersRemoved = Signal()
+    firstTeamStateChanged = Signal(object, object)  # TeamType, self._first_team_position
+    # object из-за того что None автоматически преобразуется в 0 при типе int
+    secondTeamPlayerAdded = Signal(object)  # PlayerModel
+    secondTeamPlayersRemoved = Signal()
+    secondTeamStateChanged = Signal(object)  # TeamType
+    # object из-за того что None автоматически преобразуется в 0 при типе int
     additionalPlayerAdded = Signal(object)  # PlayerModel
     additionalPlayerRemoved = Signal()
     figureAdded = Signal(object)  # FigureModel
@@ -34,21 +37,22 @@ class SchemeModel(QObject):
     pencilLinesRemoved = Signal(list)  # removed list[PencilLineModel]
     allPencilLinesRemoved = Signal()
 
-    def __init__(self, add_deleted_item_ids_func: callable, name: str, view_point_x: int, view_point_y: int,
-                 note: str = '', zoom: int = 60,
+    def __init__(self, add_deleted_item_ids_func: callable, playbook_type: 'PlaybookType',
+                 name: str, view_point_x: int, view_point_y: int, note: str = '', zoom: int = 60,
                  first_team: Optional['TeamType'] = None, second_team: Optional['TeamType'] = None,
                  first_team_position: Optional[int] = None, uuid: Optional['UUID'] = None,
                  id_local_db: Optional[int] = None, id_api: Optional[int] = None):
         super().__init__()
         self._add_deleted_item_ids_func = add_deleted_item_ids_func  # Метод из PlaybookModel
+        self._playbook_type = playbook_type
         self._name = name
         self._note = note
         self._view_point_x = view_point_x
         self._view_point_y = view_point_y
         self._zoom = zoom
-        self._first_team = first_team
-        self._second_team = second_team
-        self._first_team_position = first_team_position
+        self._first_team = None
+        self._second_team = None
+        self._first_team_position = None
         self._figures: list['FigureModel'] = list()
         self._labels: list['LabelModel'] = list()
         self._pencil_lines: list['PencilLineModel'] = list()
@@ -58,6 +62,8 @@ class SchemeModel(QObject):
         self._uuid = uuid if uuid else uuid4()
         self._id_local_db = id_local_db
         self._id_api = id_api
+        self.set_first_team_state(first_team, first_team_position)
+        self.set_second_team_state(second_team)
 
     @property
     def id_local_db(self) -> int:
@@ -90,6 +96,19 @@ class SchemeModel(QObject):
         ):
             if item_model:
                 item_model.set_new_uuid()
+
+    def reset_id(self, storage_type: 'StorageType') -> None:
+        if hasattr(self, f'_id_{storage_type.value}'):
+            setattr(self, f'_id_{storage_type.value}', None)
+        self._reset_scheme_items_id(storage_type)
+
+    def _reset_scheme_items_id(self, storage_type: 'StorageType') -> None:
+        for item_model in chain(
+                self._first_team_players, self._second_team_players, [self._additional_player],
+                self._figures, self._labels, self._pencil_lines
+        ):
+            if item_model:
+                item_model.reset_id(storage_type)
 
     @property
     def name(self) -> str:
@@ -139,44 +158,69 @@ class SchemeModel(QObject):
     def first_team(self) -> Optional['TeamType']:
         return self._first_team
 
-    @first_team.setter
-    def first_team(self, first_team: 'TeamType') -> None:
-        self._first_team = first_team
-
     @property
     def second_team(self) -> Optional['TeamType']:
         return self._second_team
-
-    @second_team.setter
-    def second_team(self, second_team: 'TeamType') -> None:
-        self._second_team = second_team
 
     @property
     def first_team_position(self) -> Optional[int]:
         return self._first_team_position
 
-    @first_team_position.setter
-    def first_team_position(self, position: int) -> None:
-        self._first_team_position = position
-
     @property
     def first_team_players(self) -> list['PlayerModel']:
         return self._first_team_players.copy()
 
-    def add_first_team_players(self, player_models_lst: list['PlayerModel'], team_type: 'TeamType', first_team_position: int) -> None:
-        self._first_team_players.extend(player_models_lst)
-        self.first_team = team_type
-        self.first_team_position = first_team_position
-        self.firstTeamAdded.emit(player_models_lst, self._first_team, self.has_additional_player())
+    def set_first_team_state(self, first_team_type: Optional['TeamType'], first_team_position: Optional[int]) -> None:
+        if first_team_type and self._playbook_type is PlaybookType.FOOTBALL and \
+                first_team_type not in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
+            raise ValueError(f'Неверный тип первой команды - {first_team_type.name.capitalize()}.')
+        if first_team_type and self._playbook_type is PlaybookType.FLAG and first_team_type is not TeamType.OFFENCE:
+            raise ValueError(f'Неверный тип первой команды - {first_team_type.name.capitalize()}.')
+        if first_team_position and self._playbook_type is PlaybookType.FOOTBALL and first_team_position > 100:
+            raise ValueError('Позиция первой команды не может превышать 100 ярдов.')
+        if first_team_position and self._playbook_type is PlaybookType.FLAG and first_team_position > 50:
+            raise ValueError('Позиция первой команды не может превышать 50 ярдов.')
+        self._first_team = first_team_type
+        self._first_team_position = first_team_position
+        self.firstTeamStateChanged.emit(self._first_team, self._first_team_position)
+
+    def add_first_team_player(self, player_model: 'PlayerModel') -> None:
+        if self._playbook_type is PlaybookType.FOOTBALL and \
+                player_model.team_type not in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
+            raise ValueError(f'Неверный тип игрока первой команды - {player_model.team_type.name.capitalize()}.')
+        if self._playbook_type is PlaybookType.FLAG and player_model.team_type is not TeamType.OFFENCE:
+            raise ValueError(f'Неверный тип игрока первой команды - {player_model.team_type.name.capitalize()}.')
+        if self._playbook_type is PlaybookType.FOOTBALL and len(self._first_team_players) >= 11:
+            raise ValueError('Количество игроков первой команды не должно превышать 11.')
+        if self._playbook_type is PlaybookType.FLAG and len(self._first_team_players) >= 5:
+            raise ValueError('Количество игроков первой команды не должно превышать 5.')
+        self._first_team_players.append(player_model)
+        self.firstTeamPlayerAdded.emit(player_model)
 
     @property
     def second_team_players(self) -> list['PlayerModel']:
         return self._second_team_players.copy()
 
-    def add_second_team_players(self, player_models_lst: list['PlayerModel'], team_type: 'TeamType') -> None:
-        self._second_team_players.extend(player_models_lst)
-        self.second_team = team_type
-        self.secondTeamAdded.emit(player_models_lst)
+    def set_second_team_state(self, second_team_type: Optional['TeamType']) -> None:
+        if second_team_type and self._playbook_type is PlaybookType.FOOTBALL and second_team_type not in (TeamType.DEFENCE, TeamType.KICK_RET, TeamType.PUNT_RET, TeamType.FIELD_GOAL_DEF):
+            raise ValueError(f'Неверный тип второй команды - {second_team_type.name.capitalize()}.')
+        if second_team_type and self._playbook_type is PlaybookType.FLAG and second_team_type is not TeamType.DEFENCE:
+            raise ValueError(f'Неверный тип второй команды - {second_team_type.name.capitalize()}.')
+        self._second_team = second_team_type
+        self.secondTeamStateChanged.emit(self._second_team)
+
+    def add_second_team_player(self, player_model: 'PlayerModel') -> None:
+        if self._playbook_type is PlaybookType.FOOTBALL and \
+                player_model.team_type not in (TeamType.DEFENCE, TeamType.KICK_RET, TeamType.PUNT_RET, TeamType.FIELD_GOAL_DEF):
+            raise ValueError(f'Неверный тип игрока второй команды - {player_model.team_type.name.capitalize()}.')
+        if self._playbook_type is PlaybookType.FLAG and player_model.team_type is not TeamType.DEFENCE:
+            raise ValueError(f'Неверный тип игрока второй команды - {player_model.team_type.name.capitalize()}.')
+        if self._playbook_type is PlaybookType.FOOTBALL and len(self._second_team_players) >= 11:
+            raise ValueError('Количество игроков второй команды не должно превышать 11.')
+        if self._playbook_type is PlaybookType.FLAG and len(self._second_team_players) >= 5:
+            raise ValueError('Количество игроков второй команды не должно превышать 11.')
+        self._second_team_players.append(player_model)
+        self.secondTeamPlayerAdded.emit(player_model)
 
     @property
     def additional_player(self) -> Optional['PlayerModel']:
@@ -184,13 +228,14 @@ class SchemeModel(QObject):
 
     @additional_player.setter
     def additional_player(self, player_model: 'PlayerModel') -> None:
+        if self._additional_player is not None:
+            raise ValueError('Дополнительный игрок нападения уже добавлен.')
+        if player_model.team_type is not TeamType.OFFENCE_ADD:
+            raise ValueError(f'Неверный тип дополнительного игрока - {player_model.team_type.name.capitalize()}.')
+        if self._first_team is not TeamType.OFFENCE:
+            raise ValueError('Для добавления дополнительного игрока тип первой команды должен быть - нападение.')
         self._additional_player = player_model
         self.additionalPlayerAdded.emit(self.additional_player)
-
-    def has_additional_player(self) -> bool:
-        if self._additional_player:
-            return True
-        return False
 
     def remove_first_team_players(self) -> dict['StorageType', list[int]]:
         deleted_item_ids = {StorageType.LOCAL_DB: [], StorageType.API: []}
@@ -202,9 +247,8 @@ class SchemeModel(QObject):
                 self._add_deleted_item_ids_func('players', StorageType.API, player.id_api)
                 deleted_item_ids[StorageType.API].append(player.id_api)
         self._first_team_players.clear()
-        self.first_team = None
-        self.first_team_position = None
-        self.firstTeamRemoved.emit()
+        self.set_first_team_state(None, None)
+        self.firstTeamPlayersRemoved.emit()
         return deleted_item_ids
 
     def remove_second_team_players(self) -> dict['StorageType', list[int]]:
@@ -217,8 +261,8 @@ class SchemeModel(QObject):
                 self._add_deleted_item_ids_func('players', StorageType.API, player.id_api)
                 deleted_item_ids[StorageType.API].append(player.id_api)
         self._second_team_players.clear()
-        self.second_team = None
-        self.secondTeamRemoved.emit()
+        self.set_second_team_state(None)
+        self.secondTeamPlayersRemoved.emit()
         return deleted_item_ids
 
     def remove_additional_player(self) -> dict['StorageType', list[int]]:
@@ -240,8 +284,10 @@ class SchemeModel(QObject):
             additional_player_deleted_item_ids = self.remove_additional_player()
         if self.second_team:
             second_team_deleted_item_ids = self.remove_second_team_players()
+            self.set_second_team_state(None)
         if self.first_team:
             first_team_deleted_item_ids = self.remove_first_team_players()
+            self.set_first_team_state(None, None)
         for storage_type in deleted_item_ids:
             try:
                 deleted_item_ids[storage_type].extend(first_team_deleted_item_ids[storage_type])

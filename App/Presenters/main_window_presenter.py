@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import Qt
 
-from Config.Enums import AppTheme, TeamType
-from Views.Dialog_windows import DialogInfo, DialogAbout, DialogNewPlaybook, DialogOpenPlaybook
+from Config.Enums import StorageType, AppTheme, TeamType
+from Views.Dialog_windows import DialogInfo, DialogAbout, DialogNewPlaybook, DialogOpenPlaybook, DialogProgressBar
 from Models import PlaybookModel, SchemeModel, FigureModel, LabelModel, PencilLineModel, PlayerModel, ActionModel,\
     ActionLineModel, FinalActionModel
 from .playbook_presenter import PlaybookPresenter
@@ -163,18 +163,40 @@ class MainWindowPresenter:
         local_playbooks_info = self._playbook_manager.get_all_obj_info()
         dialog_open_local_playbook = DialogOpenPlaybook(local_playbooks_info, self._playbook_manager.delete_by_id, parent=self._view)
         dialog_open_local_playbook.exec()
+        data = dialog_open_local_playbook.get_data()
+        if self._model.playbook and self._model.playbook.id_local_db in data.deleted_playbook_ids:
+            self._model.playbook.reset_id_for_all_items(StorageType.LOCAL_DB)
         if dialog_open_local_playbook.result():
-            data = dialog_open_local_playbook.get_data()
-            playbook_dto = self._playbook_manager.get_by_id(data.selected_playbook_id)
-            self._parse_playbook_dto_to_models(playbook_dto)
+            dialog_progress = DialogProgressBar(self._view, 'Загрузка плейбука')
+            dialog_progress.show()
+            try:
+                playbook_dto = self._playbook_manager.get_playbook_dto_by_id(data.selected_playbook_id)
+                if playbook_dto:
+                    first_scheme_uuid = self._parse_playbook_dto_to_models(playbook_dto)
+                    self._playbook_presenter.transfer_to_scheme_presenter_select_scheme(first_scheme_uuid)
+                else:
+                    dialog_info = DialogInfo('Плейбук не найден', 'Плейбук не найден', parent=self._view,
+                                             check_box=False, decline_button=False, accept_button_text='Ок')
+                    dialog_info.exec()
+            except Exception as e:
+                dialog_progress.hide()
+                dialog_info = DialogInfo('Ошибка', 'Произошла ошибка. Плейбук не был загружен.', check_box=False,
+                                         decline_button=False, accept_button_text='Ок', parent=self._view)
+                dialog_info.exec()
+                raise e
+            finally:
+                dialog_progress.finish()
 
-    def _parse_playbook_dto_to_models(self, playbook_dto: 'PlaybookInputDTO') -> None:
+    def _parse_playbook_dto_to_models(self, playbook_dto: 'PlaybookInputDTO') -> 'UUID':
         playbook_model = PlaybookModel(**playbook_dto.model_dump(exclude={'id', 'schemes'}), id_local_db=playbook_dto.id)
         self._model.playbook = playbook_model
         for scheme_dto in playbook_dto.schemes:
+            if scheme_dto.row_index == 0:
+                first_scheme_uuid = scheme_dto.uuid
             scheme_model = SchemeModel(
                 **scheme_dto.model_dump(exclude={'id', 'row_index', 'figures', 'labels', 'pencil_lines', 'players'}),
-                id_local_db=scheme_dto.id, add_deleted_item_ids_func=playbook_model.add_deleted_ids
+                id_local_db=scheme_dto.id, add_deleted_item_ids_func=playbook_model.add_deleted_ids,
+                playbook_type=playbook_model.playbook_type
             )
             playbook_model.add_scheme(scheme_model, scheme_dto.row_index)
             for figure_dto in scheme_dto.figures:
@@ -194,9 +216,9 @@ class MainWindowPresenter:
                     id_local_db=playbook_dto.id, add_deleted_item_ids_func=playbook_model.add_deleted_ids
                 )
                 if player_model.team_type in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
-                    scheme_model.add_first_team_players([player_model], scheme_dto.first_team, scheme_dto.first_team_position)
+                    scheme_model.add_first_team_player(player_model)
                 if player_model.team_type in (TeamType.DEFENCE, TeamType.KICK_RET, TeamType.PUNT_RET, TeamType.FIELD_GOAL_DEF):
-                    scheme_model.add_second_team_players([player_model], scheme_dto.second_team)
+                    scheme_model.add_second_team_player(player_model)
                 if player_model.team_type is TeamType.OFFENCE_ADD:
                     scheme_model.additional_player = player_model
                 for action_dto in player_dto.actions:
@@ -205,7 +227,6 @@ class MainWindowPresenter:
                     action_model = ActionModel(**action_dto.model_dump(exclude={'id', 'action_lines', 'final_actions'}),
                                                id_local_db=action_dto.id)
                     player_model.add_action(action_model)
-                    # print(f'{action_dto.action_lines = }')
                     for action_line_dto in action_dto.action_lines:
                         action_line_model = ActionLineModel(**action_line_dto.model_dump(exclude={'id'}))
                         action_lines_lst.append(action_line_model)
@@ -213,8 +234,8 @@ class MainWindowPresenter:
                         final_action_model = FinalActionModel(**final_action_dto.model_dump(exclude={'id'}))
                         final_actions_lst.append(final_action_model)
                     action_model.add_action_parts(action_lines_lst, final_actions_lst)
-
         # print(f'{playbook_model = }')
+        return first_scheme_uuid
 
 
     def _transfer_to_playbook_presenter_save_playbook_local(self) -> None:

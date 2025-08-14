@@ -31,8 +31,8 @@ class PlaceFirstTeamCommand(QUndoCommand):
     def __init__(self, add_deleted_item_ids_func: callable, scheme_model: 'SchemeModel', playbook_type: 'PlaybookType',
                  team_type: 'TeamType', players_data: tuple[tuple], first_team_position: int, yards_to_top_border: int):
         super().__init__('Размещение игроков первой команды.')
-        self._team_type = team_type
         self._scheme_model = scheme_model
+        self._team_type = team_type
         self._first_team_position = first_team_position
         self._players_lst = self._get_player_models(add_deleted_item_ids_func, playbook_type,
                                                     yards_to_top_border, players_data)
@@ -53,7 +53,9 @@ class PlaceFirstTeamCommand(QUndoCommand):
         return player_models_lst
 
     def redo(self) -> None:
-        self._scheme_model.add_first_team_players(self._players_lst, self._team_type, self._first_team_position)
+        for player_model in self._players_lst:
+            self._scheme_model.add_first_team_player(player_model)
+        self._scheme_model.set_first_team_state(self._team_type, self._first_team_position)
 
     def undo(self) -> None:
         self._scheme_model.remove_first_team_players()
@@ -107,7 +109,9 @@ class PlaceSecondTeamCommand(QUndoCommand):
         return player_models_lst
 
     def redo(self) -> None:
-        self._scheme_model.add_second_team_players(self._players_lst, self._team_type)
+        for player_model in self._players_lst:
+            self._scheme_model.add_second_team_player(player_model)
+        self._scheme_model.set_second_team_state(self._team_type)
 
     def undo(self) -> None:
         self._scheme_model.remove_second_team_players()
@@ -163,7 +167,9 @@ class RemoveSecondTeamCommand(QUndoCommand):
             self._remove_deleted_item_ids_func('players', storage_type, deleted_ids)
         for storage_type, deleted_ids in self._deleted_action_ids.items():
             self._remove_deleted_item_ids_func('actions', storage_type, deleted_ids)
-        self._scheme_model.add_second_team_players(self._players_lst, self._deleted_team_type)
+        for player_model in self._players_lst:
+            self._scheme_model.add_second_team_player(player_model)
+        self._scheme_model.set_second_team_state(self._deleted_team_type)
         for player_actions_mapper in self._player_actions_mappers:
             for i, action_model in player_actions_mapper.action_models_dict.items():
                 player_actions_mapper.player.add_action(action_model)
@@ -273,19 +279,25 @@ class RemoveAllPlayersCommand(QUndoCommand):
         for storage_type, deleted_ids in self._deleted_action_ids.items():
             self._remove_deleted_item_ids_func('actions', storage_type, deleted_ids)
         if self._first_team_players_lst:
-            self._scheme_model.add_first_team_players(self._first_team_players_lst, self._deleted_first_team_type, self._first_team_position)
+            for player_model in self._first_team_players_lst:
+                self._scheme_model.add_first_team_player(player_model)
             for player_actions_mapper in self._first_team_players_mappers:
                 for i, action_model in player_actions_mapper.action_models_dict.items():
                     player_actions_mapper.player.add_action(action_model)
                     action_model.add_action_parts(player_actions_mapper.lines_dict[i],
                                                   player_actions_mapper.final_actions_dict[i])
+            self._scheme_model.set_first_team_state(self._deleted_first_team_type, self._first_team_position)
+
         if self._second_team_players_lst:
-            self._scheme_model.add_second_team_players(self._second_team_players_lst, self._deleted_second_team_type)
+            for player_model in self._second_team_players_lst:
+                self._scheme_model.add_second_team_player(player_model)
             for player_actions_mapper in self._second_team_players_mappers:
                 for i, action_model in player_actions_mapper.action_models_dict.items():
                     player_actions_mapper.player.add_action(action_model)
                     action_model.add_action_parts(player_actions_mapper.lines_dict[i],
                                                   player_actions_mapper.final_actions_dict[i])
+            self._scheme_model.set_second_team_state(self._deleted_second_team_type)
+
         if self._additional_player:
             self._scheme_model.additional_player = self._additional_player
             for i, action_model in self._additional_player_mapper.action_models_dict.items():
@@ -506,7 +518,7 @@ class RemoveAllActionsCommand(QUndoCommand):
                 deleted_item_ids = player_model.remove_action(action_model)
                 self._deleted_item_ids[StorageType.LOCAL_DB].extend(deleted_item_ids[StorageType.LOCAL_DB])
                 self._deleted_item_ids[StorageType.API].extend(deleted_item_ids[StorageType.API])
-        if self._scheme_model.has_additional_player():
+        if self._scheme_model.additional_player:
             self._additional_player_mapper = PlayerActionsMapper(self._scheme_model.additional_player)
             for i, action_model in enumerate(self._scheme_model.additional_player.actions):
                 self._additional_player_mapper.action_models_dict[i] = action_model

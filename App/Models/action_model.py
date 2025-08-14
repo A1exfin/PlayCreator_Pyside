@@ -5,6 +5,7 @@ from itertools import chain
 from PySide6.QtCore import QObject, Signal
 
 if TYPE_CHECKING:
+    from Config.Enums import StorageType
     from .action_line_model import ActionLineModel
     from .final_action_model import FinalActionModel
 
@@ -51,6 +52,10 @@ class ActionModel(QObject):
         for action_part_model in chain(self._action_lines, self._final_actions):
             if action_part_model:
                 action_part_model.set_new_uuid()
+
+    def reset_id(self, storage_type: 'StorageType') -> None:
+        if hasattr(self, f'_id_{storage_type.value}'):
+            setattr(self, f'_id_{storage_type.value}', None)
 
     @property
     def lines(self) -> list['ActionLineModel']:

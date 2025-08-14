@@ -67,6 +67,16 @@ class PlayerModel(QObject):
             if action_model:
                 action_model.set_new_uuid()
 
+    def reset_id(self, storage_type: 'StorageType') -> None:
+        if hasattr(self, f'_id_{storage_type.value}'):
+            setattr(self, f'_id_{storage_type.value}', None)
+        self._reset_actions_id(storage_type)
+
+    def _reset_actions_id(self, storage_type: 'StorageType') -> None:
+        for action_model in self._actions:
+            if action_model:
+                action_model.reset_id(storage_type)
+
     @property
     def x(self) -> float:
         return self._x

@@ -47,7 +47,7 @@ class PlaybookPresenter:
             self._model.who_can_see = data.who_can_see
 
     def handle_add_scheme(self) -> None:
-        scheme = SchemeModel(self._model.add_deleted_ids, 'Новая схема',
+        scheme = SchemeModel(self._model.add_deleted_ids, self._model.playbook_type, 'Новая схема',
                              getattr(Config, f'{self._model.playbook_type.name}_field_data'.lower()).width / 2,
                              getattr(Config, f'{self._model.playbook_type.name}_field_data'.lower()).length / 2)
         self._model.add_scheme(scheme)

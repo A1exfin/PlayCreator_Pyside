@@ -57,10 +57,14 @@ class SchemePresenter:
         self._model.zoomChanged.connect(lambda zoom_value: self._view.set_current_zoom(zoom_value))
         self._model.nameChanged.connect(lambda name: self._scheme_widget.setText(name))
         self._model.noteChanged.connect(lambda note: self._scheme_widget.setToolTip(note))
-        self._model.firstTeamAdded.connect(self._place_first_team_players)
-        self._model.firstTeamRemoved.connect(self._remove_all_players)
-        self._model.secondTeamAdded.connect(self._place_second_team_players)
-        self._model.secondTeamRemoved.connect(self._remove_second_team_players)
+        self._model.firstTeamPlayerAdded.connect(self._place_first_team_player)
+        self._model.firstTeamPlayersRemoved.connect(self._remove_all_players)
+        self._model.firstTeamStateChanged.connect(lambda first_team_type, first_team_position:
+                                                  self._view.set_gui_for_first_team(first_team_type, first_team_position))
+        self._model.secondTeamPlayerAdded.connect(self._place_second_team_player)
+        self._model.secondTeamPlayersRemoved.connect(self._remove_second_team_players)
+        self._model.secondTeamStateChanged.connect(lambda second_team_type:
+                                                   self._view.set_gui_for_second_team(second_team_type))
         self._model.additionalPlayerAdded.connect(self._place_additional_player)
         self._model.additionalPlayerRemoved.connect(self._remove_additional_player)
         self._scene.figurePainted.connect(self._handle_place_figure)
@@ -95,7 +99,7 @@ class SchemePresenter:
         self._view.select_scheme(self._scheme_widget, self._scene,
                                  self._model.view_point_x, self._model.view_point_y, self._model.zoom,
                                  self._model.first_team, self._model.second_team,
-                                 self._model.has_additional_player(), self._model.first_team_position,
+                                 bool(self._model.additional_player), self._model.first_team_position,
                                  self._undo_stack.canUndo(), self._undo_stack.canRedo())
 
     def handle_undo(self) -> None:
@@ -128,14 +132,11 @@ class SchemePresenter:
                                                              first_team_position, yards_to_top_border)
             self._execute_command(place_first_team_command)
 
-    def _place_first_team_players(self, player_models_lst: list['PlayerModel'], team_type: 'TeamType',
-                                  has_additional_player: bool) -> None:
-        for player_model in player_models_lst:
-            player_view = self._scene.place_first_team_player_item(player_model.get_data_for_view())
-            player_presenter = PlayerPresenter(self._add_deleted_item_ids_func, self._remove_deleted_item_ids_func,
-                                               self._execute_command, player_model, self._view, player_view)
-            self._first_team_player_mappers[player_model.uuid] = PlayerMapper(player_presenter, player_model, player_view)
-        self._view.set_gui_first_team_placed(team_type, has_additional_player)
+    def _place_first_team_player(self, player_model: 'PlayerModel') -> None:
+        player_view = self._scene.place_first_team_player_item(player_model.get_data_for_view())
+        player_presenter = PlayerPresenter(self._add_deleted_item_ids_func, self._remove_deleted_item_ids_func,
+                                           self._execute_command, player_model, self._view, player_view)
+        self._first_team_player_mappers[player_model.uuid] = PlayerMapper(player_presenter, player_model, player_view)
 
     def handle_remove_all_players(self) -> None:
         if self._model.first_team:
@@ -145,7 +146,6 @@ class SchemePresenter:
     def _remove_all_players(self) -> None:
         self._scene.remove_first_team_player_items()
         self._first_team_player_mappers.clear()
-        self._view.set_gui_first_team_players_removed()
 
     def handle_place_second_team_players(self, playbook_type: 'PlaybookType', team_type: 'TeamType') -> None:
         if not self._model.second_team:
@@ -156,13 +156,11 @@ class SchemePresenter:
                                                                yards_to_top_border)
             self._execute_command(place_second_team_command)
 
-    def _place_second_team_players(self, player_models_lst: list['PlayerModel']) -> None:
-        for player_model in player_models_lst:
-            player_view = self._scene.place_second_team_player_item(player_model.get_data_for_view())
-            player_presenter = PlayerPresenter(self._add_deleted_item_ids_func, self._remove_deleted_item_ids_func,
-                                               self._execute_command, player_model, self._view, player_view)
-            self._second_team_player_mappers[player_model.uuid] = PlayerMapper(player_presenter, player_model, player_view)
-        self._view.set_gui_second_team_placed()
+    def _place_second_team_player(self, player_model: 'PlayerModel') -> None:
+        player_view = self._scene.place_second_team_player_item(player_model.get_data_for_view())
+        player_presenter = PlayerPresenter(self._add_deleted_item_ids_func, self._remove_deleted_item_ids_func,
+                                           self._execute_command, player_model, self._view, player_view)
+        self._second_team_player_mappers[player_model.uuid] = PlayerMapper(player_presenter, player_model, player_view)
 
     def handle_remove_second_team_players(self) -> None:
         if self._model.second_team:
@@ -172,10 +170,9 @@ class SchemePresenter:
     def _remove_second_team_players(self) -> None:
         self._scene.remove_second_team_player_items()
         self._second_team_player_mappers.clear()
-        self._view.set_gui_second_team_players_removed()
 
     def handle_place_additional_player(self, playbook_type: 'PlaybookType') -> None:
-        if not self._model.has_additional_player():
+        if not self._model.additional_player:
             player_data = getattr(Config, f'{playbook_type.name.lower()}_players_data').additional_player
             yards_to_top_border = self._get_yards_to_top_field_border(playbook_type, self._model.first_team_position)
             place_additional_player_command = PlaceAdditionalPlayerCommand(self._add_deleted_item_ids_func, self._model,
@@ -187,10 +184,10 @@ class SchemePresenter:
         player_presenter = PlayerPresenter(self._add_deleted_item_ids_func, self._remove_deleted_item_ids_func,
                                            self._execute_command, player_model, self._view, player_view)
         self._additional_player_mapper = PlayerMapper(player_presenter, player_model, player_view)
-        self._view.set_gui_additional_player_placed()
+        self._view.set_gui_for_additional_player(bool(self._model.additional_player))
 
     def handle_remove_additional_player(self) -> None:
-        if self._model.has_additional_player():
+        if self._model.additional_player:
             remove_additional_player_command = RemoveAdditionalOffencePlayerCommand(self._remove_deleted_item_ids_func,
                                                                                     self._model)
             self._execute_command(remove_additional_player_command)
@@ -198,7 +195,7 @@ class SchemePresenter:
     def _remove_additional_player(self) -> None:
         self._scene.remove_additional_player_item()
         self._additional_player_mapper = None
-        self._view.set_gui_additional_player_removed()
+        self._view.set_gui_for_additional_player(bool(self._model.additional_player))
 
     def handle_second_players_symbol_changed(self, new_symbol_type: 'SymbolType') -> None:
         change_second_team_symbols_command = ChangeSecondTeamSymbolsCommand(self._model, new_symbol_type)

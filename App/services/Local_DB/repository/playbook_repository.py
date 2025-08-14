@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
     from Models import PlaybookModel
     from ..DTO.output_DTO import PlaybookOutDTO, SchemeOutDTO, FigureOutDTO, LabelOutDTO, PlayerOutDTO, ActionOutDTO
+    from ..DTO.input_DTO import PlaybookInputDTO
 
 __all__ = ('PlaybookManager',)
 
@@ -54,7 +55,7 @@ class PlaybookManager:
                     self.db.bulk_save_objects(bulk_pencil_lines_orm_lst)
                     if set_progress_func: set_progress_func(85)
 
-                    playbook_orm = self.get_by_id(playbook_id)
+                    playbook_orm = self._get_by_id(playbook_id)
                     if set_progress_func: set_progress_func(90)
 
                     self._post_commit_actions(playbook_orm)
@@ -257,7 +258,7 @@ class PlaybookManager:
                 if orm_value != dto_value:
                     setattr(orm_obj, attr_name, dto_value)
 
-    def get_by_id(self, playbook_id: int) -> Optional['PlaybookORM']:
+    def _get_by_id(self, playbook_id: int) -> Optional['PlaybookORM']:
         playbook_orm = self.db.query(PlaybookORM)\
             .options(selectinload(PlaybookORM.schemes)
                      .options(selectinload(SchemeORM.figures), selectinload(SchemeORM.labels),
@@ -270,10 +271,14 @@ class PlaybookManager:
                               )
                      ).get(playbook_id)
         # print(f'{playbook_orm = }')
-        playbook_dto = self._playbook_mapper.orm_to_dto(playbook_orm)
-        # print(f'{playbook_dto = }')
-        return playbook_dto
+        return playbook_orm
         # return self.db.get(PlaybookORM, obj_id)
+
+    def get_playbook_dto_by_id(self, playbook_id: int) -> Optional['PlaybookInputDTO']:
+        playbook_orm = self._get_by_id(playbook_id)
+        if playbook_orm:
+            return self._playbook_mapper.orm_to_dto(self._get_by_id(playbook_id))
+        return None
 
     def delete_by_id(self, obj_id: int) -> None:  # Проверить каскадное удаление
         query = text('DELETE FROM playbooks WHERE id = :id').bindparams(id=obj_id)

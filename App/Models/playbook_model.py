@@ -88,6 +88,15 @@ class PlaybookModel(QObject):
         for scheme_model in self._schemes:
             scheme_model.set_new_uuid()
 
+    def reset_id_for_all_items(self, storage_type: 'StorageType') -> None:
+        if hasattr(self, f'_id_{storage_type.value}'):
+            setattr(self, f'_id_{storage_type.value}', None)
+        self._reset_schemes_id(storage_type)
+
+    def _reset_schemes_id(self, storage_type: 'StorageType') -> None:
+        for scheme_model in self._schemes:
+            scheme_model.reset_id(storage_type)
+
     @property
     def name(self) -> str:
         return self._name

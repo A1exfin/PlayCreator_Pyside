@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 
 
 if TYPE_CHECKING:
-    pass
+    from Config.Enums import StorageType
 
 
 class PencilLineModel:
@@ -41,6 +41,10 @@ class PencilLineModel:
 
     def set_new_uuid(self) -> None:
         self._uuid = uuid4()
+
+    def reset_id(self, storage_type: 'StorageType') -> None:
+        if hasattr(self, f'_id_{storage_type.value}'):
+            setattr(self, f'_id_{storage_type.value}', None)
 
     @property
     def x1(self) -> float:
