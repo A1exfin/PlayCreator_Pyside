@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from Config.Enums import PlaybookType, SymbolType
     from PlayCreator_main import PlayCreatorApp
     from Models import SchemeModel, PlayerModel, FigureModel, LabelModel, PencilLineModel
+    from Models.Other import PlaybookModelsFabric, DeletionObserver
 
 
 class SceneYPoints(NamedTuple):
@@ -34,13 +35,14 @@ class SceneYPoints(NamedTuple):
 
 
 class SchemePresenter:
-    def __init__(self, add_deleted_item_ids_func: callable, remove_deleted_ids_func: callable,
-                 scheme_model: 'SchemeModel', view: 'PlayCreatorApp', scheme_widget: 'SchemeWidget', playbook_type: 'PlaybookType'):
-        self._add_deleted_item_ids_func = add_deleted_item_ids_func
-        self._remove_deleted_item_ids_func = remove_deleted_ids_func
-        self._view = view
-        self._scheme_widget = scheme_widget
+    def __init__(self, scheme_model: 'SchemeModel', view: 'PlayCreatorApp', scheme_view: 'SchemeWidget',
+                 playbook_type: 'PlaybookType', playbook_items_fabric: 'PlaybookModelsFabric',
+                 deletion_observer: 'DeletionObserver'):
         self._model = scheme_model
+        self._view = view
+        self._scheme_view = scheme_view
+        self._playbook_items_fabric = playbook_items_fabric
+        self._deletion_observer = deletion_observer
         self._scene = Field(playbook_type)
         self._undo_stack = QUndoStack(active=True, undoLimit=10)
         self._first_team_player_mappers: dict['UUID', 'PlayerMapper'] = {}
@@ -55,8 +57,8 @@ class SchemePresenter:
         self._undo_stack.canUndoChanged.connect(lambda is_enabled: self._view.set_undo_action_enabled(is_enabled))
         self._undo_stack.canRedoChanged.connect(lambda is_enabled: self._view.set_redo_action_enabled(is_enabled))
         self._model.zoomChanged.connect(lambda zoom_value: self._view.set_current_zoom(zoom_value))
-        self._model.nameChanged.connect(lambda name: self._scheme_widget.setText(name))
-        self._model.noteChanged.connect(lambda note: self._scheme_widget.setToolTip(note))
+        self._model.nameChanged.connect(lambda name: self._scheme_view.setText(name))
+        self._model.noteChanged.connect(lambda note: self._scheme_view.setToolTip(note))
         self._model.firstTeamPlayerAdded.connect(self._place_first_team_player)
         self._model.firstTeamPlayersRemoved.connect(self._remove_all_players)
         self._model.firstTeamStateChanged.connect(lambda first_team_type, first_team_position:
@@ -96,7 +98,7 @@ class SchemePresenter:
         self._model.zoom = zoom_value
 
     def handle_scheme_selected(self) -> None:
-        self._view.select_scheme(self._scheme_widget, self._scene,
+        self._view.select_scheme(self._scheme_view, self._scene,
                                  self._model.view_point_x, self._model.view_point_y, self._model.zoom,
                                  self._model.first_team, self._model.second_team,
                                  bool(self._model.additional_player), self._model.first_team_position,
@@ -116,79 +118,71 @@ class SchemePresenter:
             self._model.name = data.name
             self._model.note = data.note
 
-    def _get_yards_to_top_field_border(self, playbook_type: 'PlaybookType', first_team_position: int) -> int:
-        field_data = getattr(Config, f'{playbook_type.name.lower()}_field_data')
-        vertical_ten_yards = field_data.vertical_ten_yards
-        vertical_one_yard = field_data.vertical_one_yard
-        return vertical_ten_yards + vertical_one_yard * first_team_position
-
-    def handle_place_first_team_players(self, playbook_type: 'PlaybookType', team_type: 'TeamType',
-                                        first_team_position: int) -> None:
+    def handle_place_first_team_players(self, team_type: 'TeamType', first_team_position: int) -> None:
         if not self._model.first_team:
-            players_data = getattr(getattr(Config, f'{playbook_type.name.lower()}_players_data'), f'{team_type.name.lower()}')
-            yards_to_top_border = self._get_yards_to_top_field_border(playbook_type, first_team_position)
-            place_first_team_command = PlaceFirstTeamCommand(self._add_deleted_item_ids_func, self._model,
-                                                             playbook_type, team_type, players_data,
-                                                             first_team_position, yards_to_top_border)
+            player_models_lst = self._playbook_items_fabric.create_new_first_team_player_models(
+                self._model, team_type, first_team_position
+            )
+            place_first_team_command = PlaceFirstTeamCommand(self._model, player_models_lst, team_type,
+                                                             first_team_position)
             self._execute_command(place_first_team_command)
 
     def _place_first_team_player(self, player_model: 'PlayerModel') -> None:
         player_view = self._scene.place_first_team_player_item(player_model.get_data_for_view())
-        player_presenter = PlayerPresenter(self._add_deleted_item_ids_func, self._remove_deleted_item_ids_func,
-                                           self._execute_command, player_model, self._view, player_view)
+        player_presenter = PlayerPresenter(self._playbook_items_fabric, self._deletion_observer, self._execute_command,
+                                           player_model, self._view, player_view)
         self._first_team_player_mappers[player_model.uuid] = PlayerMapper(player_presenter, player_model, player_view)
 
     def handle_remove_all_players(self) -> None:
         if self._model.first_team:
-            remove_all_players_command = RemoveAllPlayersCommand(self._remove_deleted_item_ids_func, self._model)
+            remove_all_players_command = RemoveAllPlayersCommand(self._deletion_observer, self._model)
             self._execute_command(remove_all_players_command)
 
     def _remove_all_players(self) -> None:
         self._scene.remove_first_team_player_items()
         self._first_team_player_mappers.clear()
 
-    def handle_place_second_team_players(self, playbook_type: 'PlaybookType', team_type: 'TeamType') -> None:
+    def handle_place_second_team_players(self, team_type: 'TeamType') -> None:
         if not self._model.second_team:
-            players_data = getattr(getattr(Config, f'{playbook_type.name.lower()}_players_data'), f'{team_type.name.lower()}')
-            yards_to_top_border = self._get_yards_to_top_field_border(playbook_type, self._model.first_team_position)
-            place_second_team_command = PlaceSecondTeamCommand(self._add_deleted_item_ids_func, self._model,
-                                                               playbook_type, team_type, players_data,
-                                                               yards_to_top_border)
+            player_models_lst = self._playbook_items_fabric.create_new_second_team_player_models(
+                self._model, team_type, self._model.first_team_position
+            )
+            place_second_team_command = PlaceSecondTeamCommand(self._model, player_models_lst, team_type)
             self._execute_command(place_second_team_command)
 
     def _place_second_team_player(self, player_model: 'PlayerModel') -> None:
         player_view = self._scene.place_second_team_player_item(player_model.get_data_for_view())
-        player_presenter = PlayerPresenter(self._add_deleted_item_ids_func, self._remove_deleted_item_ids_func,
-                                           self._execute_command, player_model, self._view, player_view)
+        player_presenter = PlayerPresenter(self._playbook_items_fabric, self._deletion_observer, self._execute_command,
+                                           player_model, self._view, player_view)
         self._second_team_player_mappers[player_model.uuid] = PlayerMapper(player_presenter, player_model, player_view)
 
     def handle_remove_second_team_players(self) -> None:
         if self._model.second_team:
-            remove_second_team_command = RemoveSecondTeamCommand(self._remove_deleted_item_ids_func, self._model)
+            remove_second_team_command = RemoveSecondTeamCommand(self._deletion_observer, self._model)
             self._execute_command(remove_second_team_command)
 
     def _remove_second_team_players(self) -> None:
         self._scene.remove_second_team_player_items()
         self._second_team_player_mappers.clear()
 
-    def handle_place_additional_player(self, playbook_type: 'PlaybookType') -> None:
+    def handle_place_additional_player(self) -> None:
         if not self._model.additional_player:
-            player_data = getattr(Config, f'{playbook_type.name.lower()}_players_data').additional_player
-            yards_to_top_border = self._get_yards_to_top_field_border(playbook_type, self._model.first_team_position)
-            place_additional_player_command = PlaceAdditionalPlayerCommand(self._add_deleted_item_ids_func, self._model,
-                                                                           player_data, yards_to_top_border)
+            player_model = self._playbook_items_fabric.create_new_additional_player_model(
+                self._model, self._model.first_team_position
+            )
+            place_additional_player_command = PlaceAdditionalPlayerCommand(self._model, player_model)
             self._execute_command(place_additional_player_command)
 
     def _place_additional_player(self, player_model: 'PlayerModel') -> None:
         player_view = self._scene.place_additional_player_item(player_model.get_data_for_view())
-        player_presenter = PlayerPresenter(self._add_deleted_item_ids_func, self._remove_deleted_item_ids_func,
-                                           self._execute_command, player_model, self._view, player_view)
+        player_presenter = PlayerPresenter(self._playbook_items_fabric, self._deletion_observer, self._execute_command,
+                                           player_model, self._view, player_view)
         self._additional_player_mapper = PlayerMapper(player_presenter, player_model, player_view)
         self._view.set_gui_for_additional_player(bool(self._model.additional_player))
 
     def handle_remove_additional_player(self) -> None:
         if self._model.additional_player:
-            remove_additional_player_command = RemoveAdditionalOffencePlayerCommand(self._remove_deleted_item_ids_func,
+            remove_additional_player_command = RemoveAdditionalOffencePlayerCommand(self._deletion_observer,
                                                                                     self._model)
             self._execute_command(remove_additional_player_command)
 
@@ -203,7 +197,8 @@ class SchemePresenter:
 
     def _handle_place_figure(self, figure_data: dict) -> None:
         if figure_data['width'] != 0 and figure_data['height'] != 0:
-            place_figure_command = PlaceFigureCommand(self._model, figure_data)
+            figure_model = self._playbook_items_fabric.create_figure_model(self._model, **figure_data)
+            place_figure_command = PlaceFigureCommand(self._model, figure_model)
             self._execute_command(place_figure_command)
 
     def _place_figure_item(self, figure_model: 'FigureModel') -> None:
@@ -213,29 +208,27 @@ class SchemePresenter:
 
     def _handle_remove_figure(self, figure_model_uuid: 'UUID') -> None:
         figure_model = self._figure_mappers[figure_model_uuid].model
-        remove_figure_command = RemoveFigureCommand(self._remove_deleted_item_ids_func, self._model, figure_model)
+        remove_figure_command = RemoveFigureCommand(self._deletion_observer, self._model, figure_model)
         self._execute_command(remove_figure_command)
 
     def _remove_figure_item(self, figure_model: 'FigureModel') -> None:
         figure_item = self._figure_mappers[figure_model.uuid].view
         self._scene.remove_figure_item(figure_item)
         mapper = self._figure_mappers.pop(figure_model.uuid)
-        del mapper.model
-        del mapper.presenter
-        del mapper.view
-        del mapper
 
     def handle_remove_all_figures(self) -> None:
         if self._model.figures:
-            remove_figures_command = RemoveAllFiguresCommand(self._remove_deleted_item_ids_func, self._model)
-            self._execute_command(remove_figures_command)
+            remove_all_figures_command = RemoveAllFiguresCommand(self._deletion_observer, self._model)
+            self._execute_command(remove_all_figures_command)
 
     def _remove_all_figure_items(self) -> None:
         self._scene.remove_all_figure_items()
         self._figure_mappers.clear()
 
     def _handle_place_pencil_lines(self, pencil_lines_data: list[dict]) -> None:
-        place_pencil_lines_command = PlacePencilLinesCommand(self._model, pencil_lines_data)
+        pencil_line_models_list = [self._playbook_items_fabric.create_pencil_line_model(self._model, **pencil_line_data)
+                                   for pencil_line_data in pencil_lines_data]
+        place_pencil_lines_command = PlacePencilLinesCommand(self._model, pencil_line_models_list)
         self._execute_command(place_pencil_lines_command)
 
     def _place_pencil_line_items(self, pencil_line_models: list['PencilLineModel']) -> None:
@@ -248,13 +241,10 @@ class SchemePresenter:
             pencil_line_view = self._pencil_line_mappers[pencil_line_model.uuid].view
             self._scene.remove_pencil_line_item(pencil_line_view)
             mapper = self._pencil_line_mappers.pop(pencil_line_model.uuid)
-            del mapper.model
-            del mapper.view
-            del mapper
 
     def handle_remove_all_pencil_lines(self) -> None:
         if self._model.pencil_lines:
-            remove_pencil_lines_command = RemovePencilLinesCommand(self._remove_deleted_item_ids_func, self._model)
+            remove_pencil_lines_command = RemovePencilLinesCommand(self._deletion_observer, self._model)
             self._execute_command(remove_pencil_lines_command)
 
     def _remove_all_pencil_line_items(self) -> None:
@@ -262,7 +252,8 @@ class SchemePresenter:
         self._pencil_line_mappers.clear()
 
     def _handle_place_label(self, label_data: dict) -> None:
-        place_label_command = PlaceLabelCommand(self._model, label_data)
+        label_model = self._playbook_items_fabric.create_label_model(self._model, **label_data)
+        place_label_command = PlaceLabelCommand(self._model, label_model)
         self._execute_command(place_label_command)
 
     def _place_label_item(self, label_model: 'LabelModel') -> None:
@@ -272,21 +263,17 @@ class SchemePresenter:
 
     def _handle_remove_label(self, label_model_uuid: 'UUID') -> None:
         label_model = self._label_mappers[label_model_uuid].model
-        remove_label_command = RemoveLabelCommand(self._remove_deleted_item_ids_func, self._model, label_model)
+        remove_label_command = RemoveLabelCommand(self._deletion_observer, self._model, label_model)
         self._execute_command(remove_label_command)
 
     def _remove_label_item(self, label_model: 'LabelModel') -> None:
         label_item = self._label_mappers[label_model.uuid].view
         self._scene.remove_label_item(label_item)
         mapper = self._label_mappers.pop(label_model.uuid)
-        del mapper.model
-        del mapper.presenter
-        del mapper.view
-        del mapper
 
     def handle_remove_all_labels(self) -> None:
         if self._model.labels:
-            remove_labels_command = RemoveAllLabelsCommand(self._remove_deleted_item_ids_func, self._model)
+            remove_labels_command = RemoveAllLabelsCommand(self._deletion_observer, self._model)
             self._execute_command(remove_labels_command)
 
     def _remove_all_label_items(self) -> None:
@@ -294,7 +281,7 @@ class SchemePresenter:
         self._label_mappers.clear()
 
     def handle_remove_all_actions(self) -> None:
-        remove_all_actions_command = RemoveAllActionsCommand(self._remove_deleted_item_ids_func, self._model)
+        remove_all_actions_command = RemoveAllActionsCommand(self._deletion_observer, self._model)
         self._execute_command(remove_all_actions_command)
 
     def handle_save_scheme_like_picture(self) -> None:

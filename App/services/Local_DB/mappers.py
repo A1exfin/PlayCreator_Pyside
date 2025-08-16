@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Optional, Union, Any, Generic
+from itertools import chain
 from dataclasses import dataclass, field
+
 
 from abc import abstractmethod
 
@@ -14,7 +16,7 @@ from .DTO.input_DTO import PlaybookInputDTO
 
 if TYPE_CHECKING:
     from uuid import UUID
-    from Models import SchemeModel, FigureModel, LabelModel, PencilLineModel, PlayerModel, ActionModel
+    from Models import SchemeModel, FigureModel, LabelModel, PencilLineModel, PlayerModel, ActionModel, ActionLineModel, FinalActionModel
     from .DTO.output_DTO import SchemeOutDTO, PlayerOutDTO, ActionOutDTO, FigureOutDTO, LabelOutDTO, PencilLineOutDTO, ActionLineOutDTO, FinalActionOutDTO
 
 
@@ -41,7 +43,8 @@ class PlaybookMapperLocalDB():
 
     def _get_model_dict_for_saving(self, is_new_playbook: bool,
                                    model: Union['PlaybookModel', 'SchemeModel', 'FigureModel', 'LabelModel',
-                                                'PencilLineModel', 'PlayerModel', 'ActionModel']) -> dict:
+                                                'PencilLineModel', 'PlayerModel', 'ActionModel',
+                                                'ActionLineModel', 'FinalActionModel']) -> dict:
         model_dict = model.to_dict()
         model_dict['id'] = None if is_new_playbook else model.id_local_db
         if isinstance(model, PlaybookModel):
@@ -55,7 +58,8 @@ class PlaybookMapperLocalDB():
         return model_dict
 
     def _add_to_id_mapping(self, model: Union['PlaybookModel', 'SchemeModel', 'FigureModel', 'LabelModel',
-                                              'PencilLineModel', 'PlayerModel', 'ActionModel']) -> None:
+                                              'PencilLineModel', 'PlayerModel', 'ActionModel',
+                                              'ActionLineModel', 'FinalActionModel']) -> None:
         self._id_mapping[model.uuid] = model
 
     def _process_scheme(self, is_new_playbook: bool, scheme_model: 'SchemeModel', index: int) -> dict[str, Any]:
@@ -82,11 +86,21 @@ class PlaybookMapperLocalDB():
     def _process_single_player(self, is_new_playbook: bool,  player_model: 'PlayerModel') -> dict[str, Any]:
         player_dict = self._get_model_dict_for_saving(is_new_playbook, player_model)
         player_dict.update({
-            'actions': [self._get_model_dict_for_saving(is_new_playbook, action_model) for action_model in player_model.actions],
+            'actions': [self._process_action(is_new_playbook, action_model) for action_model in player_model.actions],
         })
         return player_dict
 
-    def _playbook__model_to_dict(self, is_new_playbook: bool,  playbook_model: 'PlaybookModel') -> dict[str, Any]:
+    def _process_action(self, is_new_playbook: bool,  action_model: 'ActionModel') -> dict[str, Any]:
+        action_dict = self._get_model_dict_for_saving(is_new_playbook, action_model)
+        action_dict.update({
+            'action_lines': [self._get_model_dict_for_saving(is_new_playbook, action_line_model)
+                             for action_line_model in action_model.action_lines],
+            'final_actions': [self._get_model_dict_for_saving(is_new_playbook, final_action_model)
+                              for final_action_model in action_model.final_actions]
+        })
+        return action_dict
+
+    def _playbook_model_to_dict(self, is_new_playbook: bool,  playbook_model: 'PlaybookModel') -> dict[str, Any]:
         return self._get_playbook_dict(is_new_playbook, playbook_model)
 
     def _playbook_model_to_dto(self, is_new_playbook: bool,  playbook_model: 'PlaybookModel') -> 'PlaybookOutDTO':
@@ -225,10 +239,13 @@ class PlaybookMapperLocalDB():
                 self._update_model_id(player_orm)
                 for action_orm in player_orm.actions:
                     self._update_model_id(action_orm)
+                    # for action_part_orm in chain(action_orm.action_lines, action_orm.final_actions):
+                    #     self._update_model_id(action_part_orm)
+
         # print(f'{self._id_mapping = }')
 
     def _update_model_id(self, orm_obj: Union['SchemeORM', 'FigureORM', 'LabelORM', 'PencilLineORM',
-                                              'PlayerORM', 'ActionORM']) -> None:
+                                              'PlayerORM', 'ActionORM', 'ActionLineORM', 'FinalActionORM']) -> None:
         model = self._id_mapping.pop(orm_obj.uuid)
         model.id_local_db = orm_obj.id
 

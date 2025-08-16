@@ -3,21 +3,26 @@ from uuid import UUID, uuid4
 
 from PySide6.QtCore import Signal, QObject, QPointF
 
+from .base_model import BaseModel
 
 if TYPE_CHECKING:
+    from PySide6.QtCore import QObject
     from Config.Enums import StorageType, FigureType
+    from .playbook_model import PlaybookModel
 
 
-class FigureModel(QObject):
+class FigureModel(BaseModel):
     coordsChanged = Signal(object)  # QPointF
     sizeChanged = Signal(float, float, float, float)
     styleChanged = Signal(bool, int, str, bool, str, str)
 
-    def __init__(self, figure_type: 'FigureType', x: float, y: float, width: float, height: float,
+    def __init__(self, playbook_model: 'PlaybookModel', figure_type: 'FigureType', x: float, y: float, width: float, height: float,
                  border: bool, border_thickness: int, border_color: str,
                  fill: bool, fill_opacity: str, fill_color: str,
-                 uuid: Optional['UUID'] = None, id_local_db: Optional[int] = None, id_api: Optional[int] = None):
-        super().__init__()
+                 uuid: Optional['UUID'] = None, id_local_db: Optional[int] = None, id_api: Optional[int] = None,
+                 parent: Optional['QObject'] = None):
+        super().__init__(parent, uuid, id_local_db, id_api)
+        self._playbook_model = playbook_model
         self._figure_type = figure_type
         self._x = x
         self._y = y
@@ -29,36 +34,13 @@ class FigureModel(QObject):
         self._fill = fill
         self._fill_color = fill_color
         self._fill_opacity = fill_opacity
-        self._uuid = uuid if uuid else uuid4()
-        self._id_local_db = id_local_db
-        self._id_api = id_api
-
-    @property
-    def id_local_db(self) -> int:
-        return self._id_local_db
-
-    @id_local_db.setter
-    def id_local_db(self, value: int) -> None:
-        self._id_local_db = value
-
-    @property
-    def id_api(self) -> int:
-        return self._id_api
-
-    @id_api.setter
-    def id_api(self, value: int) -> None:
-        self._id_api = value
-
-    @property
-    def uuid(self) -> 'UUID':
-        return self._uuid
-
-    def set_new_uuid(self) -> None:
-        self._uuid = uuid4()
 
     def reset_id(self, storage_type: 'StorageType') -> None:
         if hasattr(self, f'_id_{storage_type.value}'):
             setattr(self, f'_id_{storage_type.value}', None)
+
+    def set_new_uuid(self) -> None:
+        self._uuid = uuid4()
 
     @property
     def figure_type(self):

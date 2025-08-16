@@ -2,9 +2,12 @@ from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 from itertools import chain
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import Signal
+
+from .base_model import BaseModel
 
 if TYPE_CHECKING:
+    from PySide6.QtCore import QObject
     from Config.Enums import StorageType
     from .action_line_model import ActionLineModel
     from .final_action_model import FinalActionModel
@@ -12,37 +15,15 @@ if TYPE_CHECKING:
 __all__ = ('ActionModel', )
 
 
-class ActionModel(QObject):
+class ActionModel(BaseModel):
     actionPartsAdded = Signal(list, list)  # list[ActionLineModel], list[FinalActionModel]
     actionPartsRemoved = Signal(list, list)  # list[ActionLineModel], list[FinalActionModel]
 
-    def __init__(self, uuid: Optional['UUID'] = None, id_local_db: Optional[int] = None, id_api: Optional[int] = None):
-        super().__init__()
+    def __init__(self, uuid: Optional['UUID'] = None, id_local_db: Optional[int] = None, id_api: Optional[int] = None,
+                 parent: Optional['QObject'] = None):
+        super().__init__(parent, uuid, id_local_db, id_api)
         self._action_lines = []
         self._final_actions = []
-        self._uuid = uuid if uuid else uuid4()
-        self._id_local_db = id_local_db
-        self._id_api = id_api
-
-    @property
-    def id_local_db(self) -> int:
-        return self._id_local_db
-
-    @id_local_db.setter
-    def id_local_db(self, value: int) -> None:
-        self._id_local_db = value
-
-    @property
-    def id_api(self) -> int:
-        return self._id_api
-
-    @id_api.setter
-    def id_api(self, value: int) -> None:
-        self._id_api = value
-
-    @property
-    def uuid(self) -> 'UUID':
-        return self._uuid
 
     def set_new_uuid(self) -> None:
         self._uuid = uuid4()
@@ -58,22 +39,22 @@ class ActionModel(QObject):
             setattr(self, f'_id_{storage_type.value}', None)
 
     @property
-    def lines(self) -> list['ActionLineModel']:
+    def action_lines(self) -> list['ActionLineModel']:
         return self._action_lines.copy()
 
     @property
     def final_actions(self) -> list['FinalActionModel']:
         return self._final_actions.copy()
 
-    def add_action_parts(self, lines: list['ActionLineModel'], final_actions: list['FinalActionModel']) -> None:
-        self._action_lines.extend(lines)
+    def add_action_parts(self, action_lines: list['ActionLineModel'], final_actions: list['FinalActionModel']) -> None:
+        self._action_lines.extend(action_lines)
         self._final_actions.extend(final_actions)
-        self.actionPartsAdded.emit(lines, final_actions)
+        self.actionPartsAdded.emit(action_lines, final_actions)
 
-    def remove_action_parts(self, lines: list['ActionLineModel'], final_actions: list['FinalActionModel']) -> None:
-        self._action_lines = list(set(self._action_lines) - set(lines))
+    def remove_action_parts(self, action_lines: list['ActionLineModel'], final_actions: list['FinalActionModel']) -> None:
+        self._action_lines = list(set(self._action_lines) - set(action_lines))
         self._final_actions = list(set(self._final_actions) - set(final_actions))
-        self.actionPartsRemoved.emit(lines, final_actions)
+        self.actionPartsRemoved.emit(action_lines, final_actions)
 
     def get_data_for_view(self) -> dict:
         return {'model_uuid': self._uuid,
@@ -82,8 +63,8 @@ class ActionModel(QObject):
 
     def to_dict(self) -> dict:
         return {'uuid': self._uuid,
-                'action_lines': [line.to_dict() for line in self._action_lines],
-                'final_actions': [final_action.to_dict() for final_action in self._final_actions]}
+                'action_lines': list(),
+                'final_actions': list()}
 
     def __repr__(self) -> str:
         return f'\n\t\t\t\t\t\t<{self.__class__.__name__} (id_local_db: {self._id_local_db}; id_api: {self._id_api}; ' \

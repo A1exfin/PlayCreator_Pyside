@@ -117,17 +117,11 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.comboBox_second_players_symbol.currentIndexChanged.connect(lambda: self.secondTeamSymbolChanged.emit(SymbolType(self.comboBox_second_players_symbol.currentIndex())))
 
         self.comboBox_line_thickness.currentTextChanged.connect(lambda thickness: self.selected_scene.set_config('line_thickness', int(thickness)) if self.selected_scene else ...)
-        self.comboBox_font_type.currentFontChanged.connect(lambda font: self._combobox_font_changed(self.selected_scene,
-                                                                                                    font.family()) if self.selected_scene else ...)
-        self.comboBox_font_size.currentTextChanged.connect(lambda font_size: self._font_size_changed(
-            self.selected_scene, font_size) if self.selected_scene else ...)
-        self.pushButton_font_bold.toggled.connect(lambda bold_condition: self._bold_changed(self.selected_scene,
-                                                                                            bold_condition) if self.selected_scene else ...)
-        self.pushButton_font_italic.toggled.connect(lambda italic_condition: self._italic_changed(self.selected_scene,
-                                                                                                  italic_condition) if self.selected_scene else ...)
-        self.pushButton_font_underline.toggled.connect(lambda underline_condition: self._underline_changed(
-            self.selected_scene, underline_condition) if self.selected_scene else ...)
-
+        self.comboBox_font_type.currentFontChanged.connect(lambda font: self._combobox_font_changed(self.selected_scene, font.family()) if self.selected_scene else ...)
+        self.comboBox_font_size.currentTextChanged.connect(lambda font_size: self._font_size_changed(self.selected_scene, font_size) if self.selected_scene else ...)
+        self.pushButton_font_bold.toggled.connect(lambda bold_condition: self._bold_changed(self.selected_scene, bold_condition) if self.selected_scene else ...)
+        self.pushButton_font_italic.toggled.connect(lambda italic_condition: self._italic_changed(self.selected_scene, italic_condition) if self.selected_scene else ...)
+        self.pushButton_font_underline.toggled.connect(lambda underline_condition: self._underline_changed(self.selected_scene, underline_condition) if self.selected_scene else ...)
 
         self.set_initial_gui_state()
 
@@ -143,7 +137,6 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         if not Config.DEBUG:
             self.debug_btn.setEnabled(False)
             self.debug_btn.setVisible(False)
-
 
         # self.user_log_in()    ##########################  Установить неактивным создание нового плейбука
         # self.sign_up()
@@ -671,8 +664,8 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     main_window_presenter = MainWindowPresenter()
     if not Config.DEBUG:
-        if os.path.exists(f'SplashScreen.jpg'):
-            splash = QSplashScreen(QPixmap('SplashScreen.jpg').scaled(1000, 700, Qt.AspectRatioMode.KeepAspectRatio), f=Qt.WindowStaysOnTopHint)
+        if os.path.exists(f'splash_screen.jpg'):
+            splash = QSplashScreen(QPixmap('splash_screen.jpg').scaled(1000, 700, Qt.AspectRatioMode.KeepAspectRatio), f=Qt.WindowStaysOnTopHint)
         else:
             splash = QSplashScreen(QPixmap(':/splash/splash_screen.jpg').scaled(1000, 700, Qt.AspectRatioMode.KeepAspectRatio), f=Qt.WindowStaysOnTopHint)
         frame = QFrame(parent=splash)

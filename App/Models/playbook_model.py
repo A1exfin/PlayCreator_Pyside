@@ -2,11 +2,13 @@ from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass, field
 from uuid import uuid4, UUID
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import Signal
 from Config.Enums import StorageType
 from .playbook_access_settings_model import PlaybookAccessSettingsModel
+from .base_model import BaseModel
 
 if TYPE_CHECKING:
+    from PySide6.QtCore import QObject
     from Config.Enums import PlaybookType, PlaybookAccessOptions
     from scheme_model import SchemeModel
 
@@ -31,7 +33,7 @@ class DeletedPlaybookItems:
                f'\npencil_lines: \n\tlocal_db: {self.pencil_lines[StorageType.LOCAL_DB]}\n\tapi: {self.pencil_lines[StorageType.API]}'
 
 
-class PlaybookModel(QObject):
+class PlaybookModel(BaseModel):
     nameChanged = Signal(str)
     infoChanged = Signal(str)
     schemeAdded = Signal(object)  # SchemeModel
@@ -39,8 +41,9 @@ class PlaybookModel(QObject):
     schemeMoved = Signal(int, int)
 
     def __init__(self, name: str, playbook_type: 'PlaybookType', info: str = '', uuid: Optional['UUID'] = None,
-                 id_local_db: Optional[int] = None, id_api: Optional[int] = None, team_fk: Optional[int] = None):
-        super().__init__()
+                 id_local_db: Optional[int] = None, id_api: Optional[int] = None, team_fk: Optional[int] = None,
+                 parent: Optional['QObject'] = None):
+        super().__init__(parent, uuid, id_local_db, id_api)
         self._name = name
         self._playbook_type = playbook_type
         self._info = info
@@ -48,9 +51,6 @@ class PlaybookModel(QObject):
         self._settings = PlaybookAccessSettingsModel()
         self._schemes: list['SchemeModel'] = list()
         self._deleted_items: 'DeletedPlaybookItems' = DeletedPlaybookItems()
-        self._uuid = uuid if uuid else uuid4()
-        self._id_local_db = id_local_db
-        self._id_api = id_api
 
     @property
     def team_fk(self) -> int:
@@ -59,26 +59,6 @@ class PlaybookModel(QObject):
     @team_fk.setter
     def team_fk(self, team_fk: int) -> None:
         self._team_fk = team_fk
-
-    @property
-    def id_local_db(self) -> int:
-        return self._id_local_db
-
-    @id_local_db.setter
-    def id_local_db(self, value: int) -> None:
-        self._id_local_db = value
-
-    @property
-    def id_api(self) -> int:
-        return self._id_api
-
-    @id_api.setter
-    def id_api(self, value: int) -> None:
-        self._id_api = value
-
-    @property
-    def uuid(self) -> 'UUID':
-        return self._uuid
 
     def set_new_uuid_for_all_items(self) -> None:
         self._uuid = uuid4()
@@ -152,9 +132,9 @@ class PlaybookModel(QObject):
 
     def remove_scheme(self, scheme_model: 'SchemeModel') -> None:#############################################
         if scheme_model.id_local_db:
-            self.add_deleted_ids('schemes', StorageType.LOCAL_DB, [scheme_model.id_local_db])
+            self.add_deleted_item_ids('schemes', StorageType.LOCAL_DB, [scheme_model.id_local_db])
         if scheme_model.id_api:
-            self.add_deleted_ids('schemes', StorageType.API, [scheme_model.id_api])
+            self.add_deleted_item_ids('schemes', StorageType.API, [scheme_model.id_api])
         self._schemes.remove(scheme_model)
         self.schemeRemoved.emit(scheme_model)
 
@@ -186,7 +166,7 @@ class PlaybookModel(QObject):
             new_index = self._schemes.index(scheme_model)
         self.schemeMoved.emit(last_index, new_index)
 
-    def add_deleted_ids(self, item_type: str, storage: 'StorageType', ids: list[int] | int) -> None:
+    def add_deleted_item_ids(self, item_type: str, storage: 'StorageType', ids: list[int] | int) -> None:
         """
         Добавляет id удалённых итемов в хранилище для удаления этих итемов из БД при сохранении плейбука.
         Аргументы:
@@ -201,12 +181,15 @@ class PlaybookModel(QObject):
         if isinstance(ids, int):
             getattr(self._deleted_items, item_type)[storage].append(ids)
 
-    def remove_deleted_ids(self, item_type: str, storage: 'StorageType', ids_lst: list[int]) -> None:
+    def remove_deleted_item_ids(self, item_type: str, storage_type: 'StorageType', ids: list[int] | int) -> None:
         if not hasattr(self._deleted_items, item_type):
             raise ValueError(f'Unknown item type: {item_type}')
-        deleted_items_ids = getattr(self._deleted_items, item_type)[storage]
-        for id in ids_lst:
-            deleted_items_ids.remove(id)
+        deleted_items_ids = getattr(self._deleted_items, item_type)[storage_type]
+        if isinstance(ids, int):
+            deleted_items_ids.remove(ids)
+        if isinstance(ids, list):
+            for id in ids:
+                deleted_items_ids.remove(id)
 
     @property
     def deleted_items(self) -> 'DeletedPlaybookItems':

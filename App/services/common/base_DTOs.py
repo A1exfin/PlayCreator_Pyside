@@ -27,6 +27,11 @@ class PencilLineBaseDTO(BaseDTO, ValidateLineCoordinatesMixin):
     thickness: Annotated[PositiveInt, Field(ge=2, le=6)]
     color: Annotated[str, Field(pattern=r'^#[a-f\d]{6}$')]
 
+    def __repr__(self) -> str:
+        return f'\n\t\t\t\t<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \
+               f'x1: {self.x1}; y1: {self.y1}; x2: {self.x2}; y2: {self.y2}; ' \
+               f'thickness: {self.thickness}; color: {self.color}) at {hex(id(self))}>'
+
 
 class LabelBaseDTO(BaseDTO, ValidatePointCoordinatesMixin, ValidateWidthAndHeightMixin):
     id: PositiveInt | None = None
@@ -42,6 +47,13 @@ class LabelBaseDTO(BaseDTO, ValidatePointCoordinatesMixin, ValidateWidthAndHeigh
     font_italic: bool
     font_underline: bool
     font_color: Annotated[str, Field(pattern=r'^#[a-f\d]{6}$')]
+
+    def __repr__(self) -> str:
+        return f'\n\t\t\t\t<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \
+               f'x: {self.x}; y: {self.y}; width: {self.width}; height: {self.height}; ' \
+               f'text: {self.text}; font_type: {self.font_type}; font_size: {self.font_size}; ' \
+               f'font_bold: {self.font_bold}; font_italic: {self.font_italic}; font_underline: {self.font_underline}; ' \
+               f'font_color: {self.font_color}) at {hex(id(self))}>'
 
 
 class FigureBaseDTO(BaseDTO, ValidatePointCoordinatesMixin, ValidateWidthAndHeightMixin):
@@ -71,8 +83,15 @@ class FigureBaseDTO(BaseDTO, ValidatePointCoordinatesMixin, ValidateWidthAndHeig
             raise ValueError('У фигуры не могут одновременно отсутствовать граница и заливка.')
         return self
 
+    def __repr__(self) -> str:
+        return f'\n\t\t\t\t<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \
+               f'x: {self.x}; y: {self.y}; width: {self.width}; height: {self.height}; figure_type: {self.figure_type}; ' \
+               f'border: {self.border}; border_thickness: {self.border_thickness}; border_color: {self.border_color}; ' \
+               f'fill: {self.fill}; fill_opacity: {self.fill_opacity}; fill_color: {self.fill_color}) at {hex(id(self))}>'
+
 
 class FinalActionBaseDTO(BaseDTO, ValidatePointCoordinatesMixin):
+    id: PositiveInt | None = None
     uuid: UUID
     x: NonNegativeFloat
     y: NonNegativeFloat
@@ -87,8 +106,15 @@ class FinalActionBaseDTO(BaseDTO, ValidatePointCoordinatesMixin):
             raise ValueError('Тип финального действия должен быть стрелка или линия. Сейчас "{value}".'.format(value=value))
         return value
 
+    def __repr__(self):
+        return f'\n\t\t\t\t\t\t\t\t<{self.__class__.__name__} (id: {self.id}; ' \
+               f'x: {self.x}; y: {self.y}; action_type: {self.action_type}; angle: {self.angle}; ' \
+               f'line_thickness: {self.line_thickness}; color: {self.color}; ' \
+               f'at {hex(id(self))}>'
+
 
 class ActionLineBaseDTO(BaseDTO, ValidateLineCoordinatesMixin):
+    id: PositiveInt | None = None
     uuid: UUID
     x1: NonNegativeFloat
     y1: NonNegativeFloat
@@ -104,10 +130,20 @@ class ActionLineBaseDTO(BaseDTO, ValidateLineCoordinatesMixin):
             raise ValueError('У линии должен быть тип: маршрут, блок, моушен. Сейчас "{value}".'.format(value=value))
         return value
 
+    def __repr__(self) -> str:
+        return f'\n\t\t\t\t\t\t\t\t<{self.__class__.__name__} (id: {self.id}; ' \
+               f'x1: {self.x1}; y1: {self.y1}; x2: {self.x2}; y2: {self.y2}; line_type: {self.line_type}; ' \
+               f'thickness: {self.thickness}; color: {self.color}) ' \
+               f'at {hex(id(self))}>'
+
 
 class ActionBaseDTO(BaseDTO):
     id: PositiveInt | None = None
     uuid: UUID
+
+    def __repr__(self) -> str:
+        return f'\n\t\t\t\t\t\t<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}) at {hex(id(self))}> ' \
+               f'\n\t\t\t\t\t\t\taction_lines: {self.action_lines}\n\t\t\t\t\t\t\tfinal_actions: {self.final_actions}>'
 
 
 class PlayerBaseDTO(BaseDTO, ValidatePointCoordinatesMixin):
@@ -148,6 +184,13 @@ class PlayerBaseDTO(BaseDTO, ValidatePointCoordinatesMixin):
                 and self.fill_type is not None:
             raise ValueError('Для игроков команд защиты, возврата кикофа, возврата панта и защиты от филд-гола заливка должна быть None. Сейчас "{fill_type}".'.format(fill_type=self.fill_type))
         return self
+
+    def __repr__(self) -> str:
+        return f'\n\t\t\t\t<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \
+               f'x: {self.x}; y: {self.y}; team_type: {self.team_type}; player_position: {self.position}; ' \
+               f'text: {self.text}; text_color: {self.text_color}; player_color: {self.player_color}; ' \
+               f'fill_type: {self.fill_type}; symbol_type: {self.symbol_type}; at {hex(id(self))}' \
+               f'\n\t\t\t\t\tactions: {self.actions}>'
 
 
 class SchemeBaseDTO(BaseDTO):
@@ -221,6 +264,17 @@ class SchemeBaseDTO(BaseDTO):
                 raise ValueError('Против команды пробития филд-гола должна быть команда защиты от филд-гола. Сейчас "{second_team}".'.format(second_team=self.second_team))
         return self
 
+    def __repr__(self) -> str:
+        return f'\n\t\t<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \
+               f'name: {self.name}; row_index: {self.row_index}; zoom: {self.zoom}; ' \
+               f'view_point_x: {self.view_point_x}, view_point_y: {self.view_point_y}; ' \
+               f'first_team: {self.first_team}; second_team: {self.second_team}; ' \
+               f'first_team_position: {self.first_team_position}; note: {self.note}; ' \
+               f'\n\t\t\tfigures: {self.figures}' \
+               f'\n\t\t\tlabels: {self.labels}' \
+               f'\n\t\t\tpencil_lines: {self.pencil_lines}' \
+               f'\n\t\t\tplayers: {self.players}>'
+
 
 class PlaybookBaseDTO(BaseDTO):
     id: PositiveInt | None = None
@@ -228,3 +282,11 @@ class PlaybookBaseDTO(BaseDTO):
     name: str
     playbook_type: PlaybookType
     info: str
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \
+               f'name: {self.name}; playbook_type: {self.playbook_type}; info: {self.info}; ' \
+               f'deleted_schemes: {self.deleted_schemes}; deleted_figures: {self.deleted_figures}; ' \
+               f'deleted_labels: {self.deleted_labels}; deleted_pencil_lines: {self.deleted_pencil_lines}; ' \
+               f'deleted_players: {self.deleted_players}; deleted_actions: {self.deleted_actions}) at {hex(id(self))}' \
+               f'\n\t schemes: {self.schemes}>'

@@ -71,10 +71,10 @@ class ChangeFigureStyleCommand(QUndoCommand):
             return False
         if other._figure_model is not self._figure_model:
             return False
-        self._new_border, self._new_border_color, self._new_border_thickness, self._new_fill,\
-            self._new_fill_color, self._new_fill_opacity = \
-            other._new_border, other._new_border_color, other._new_border_thickness, other._new_fill, \
-            other._new_fill_color, other._new_fill_opacity
+        self._new_border, self._new_border_color, self._new_border_thickness = \
+            other._new_border, other._new_border_color, other._new_border_thickness
+        self._new_fill, self._new_fill_color, self._new_fill_opacity = \
+            other._new_fill, other._new_fill_color, other._new_fill_opacity
         return True
 
 

@@ -7,6 +7,7 @@ from Views.Dialog_windows import DialogInfo, DialogAbout, DialogNewPlaybook, Dia
 from Models import PlaybookModel, SchemeModel, FigureModel, LabelModel, PencilLineModel, PlayerModel, ActionModel,\
     ActionLineModel, FinalActionModel
 from .playbook_presenter import PlaybookPresenter
+from Models.Other import PlaybookModelsFabric, DeletionObserver
 from services.Local_DB.repository.playbook_repository import PlaybookManager
 from services.Local_DB import get_session
 
@@ -26,6 +27,8 @@ class MainWindowPresenter:
         self._model: Optional['MainWindowModel'] = None
         self._view: Optional['PlayCreatorApp'] = None
         self._playbook_presenter: Optional['PlaybookPresenter'] = None
+        self._playbook_items_fabric: Optional['PlaybookModelsFabric'] = None
+        self._deletion_observer: Optional['DeletionObserver'] = None
         self._playbook_manager = PlaybookManager(next(get_session()))
 
     def set_model_and_view(self, model: 'MainWindowModel', view: 'PlayCreatorApp') -> None:
@@ -148,6 +151,7 @@ class MainWindowPresenter:
             data = dialog_new_playbook.get_data()
             if data.name != '':
                 playbook_model = PlaybookModel(data.name, data.playbook_type)
+                self._playbook_items_fabric = PlaybookModelsFabric(playbook_model)
                 self._model.playbook = playbook_model
             else:
                 dialog_info = DialogInfo('Некорректное название плейбука', 'Введите корректное название плейбука.',
@@ -155,7 +159,9 @@ class MainWindowPresenter:
                 dialog_info.exec()
 
     def _install_playbook(self, playbook_model: 'PlaybookModel') -> None:
-        playbook_presenter = PlaybookPresenter(playbook_model, self._view)
+        self._deletion_observer = DeletionObserver(playbook_model)
+        playbook_presenter = PlaybookPresenter(playbook_model, self._view, self._playbook_items_fabric,
+                                               self._deletion_observer)
         self._playbook_presenter = playbook_presenter
         self._view.set_playbook(playbook_model.name, playbook_model.playbook_type, playbook_model.info)
 
@@ -195,7 +201,7 @@ class MainWindowPresenter:
                 first_scheme_uuid = scheme_dto.uuid
             scheme_model = SchemeModel(
                 **scheme_dto.model_dump(exclude={'id', 'row_index', 'figures', 'labels', 'pencil_lines', 'players'}),
-                id_local_db=scheme_dto.id, add_deleted_item_ids_func=playbook_model.add_deleted_ids,
+                id_local_db=scheme_dto.id, add_deleted_item_ids_func=playbook_model.add_deleted_item_ids,
                 playbook_type=playbook_model.playbook_type
             )
             playbook_model.add_scheme(scheme_model, scheme_dto.row_index)
@@ -213,7 +219,7 @@ class MainWindowPresenter:
             for player_dto in scheme_dto.players:
                 player_model = PlayerModel(
                     **player_dto.model_dump(exclude={'id', 'actions'}),
-                    id_local_db=playbook_dto.id, add_deleted_item_ids_func=playbook_model.add_deleted_ids
+                    id_local_db=playbook_dto.id, add_deleted_item_ids_func=playbook_model.add_deleted_item_ids
                 )
                 if player_model.team_type in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
                     scheme_model.add_first_team_player(player_model)

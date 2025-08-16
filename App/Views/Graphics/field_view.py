@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Union, Optional, Any
 from datetime import datetime
 from math import radians, cos, sin
 from dataclasses import dataclass
+from collections import namedtuple
 
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsItemGroup
 from PySide6.QtCore import Qt, Signal, QPointF, QLineF
@@ -19,6 +20,8 @@ if TYPE_CHECKING:
     from PySide6.QtGui import QFocusEvent
 
 __all__ = ('Field', )
+
+tmp_painted_action_data = namedtuple('TmpActionData', 'action_lines final_actions')
 
 
 def timeit(func):
@@ -80,7 +83,7 @@ class Field(QGraphicsScene):
         self._last_start_pos: Optional['QPointF'] = None  # Координаты предыдущей стартовой точки. Используется при завершении рисования действия, для вычисления угла поворота стрелки маршрута или линии блока.
         self._current_action_line: Optional['Graphics.ActionLineView'] = None  # Текущая линия действия.
         self._tmp_painted_action_group: Optional['QGraphicsItemGroup'] = None
-        self._tmp_painted_action_data: dict[str, list] = {'lines': [], 'final_actions': []}
+        self._tmp_painted_action_data = tmp_painted_action_data(list(), list())
 
     @property
     def mode(self) -> 'Mode':
@@ -253,8 +256,8 @@ class Field(QGraphicsScene):
         if self._tmp_painted_action_group:
             self.removeItem(self._tmp_painted_action_group)
             self._tmp_painted_action_group = None
-        self._tmp_painted_action_data['lines'].clear()
-        self._tmp_painted_action_data['final_actions'].clear()
+        self._tmp_painted_action_data.action_lines.clear()
+        self._tmp_painted_action_data.final_actions.clear()
         if self._tmp_figure:
             self.removeItem(self._tmp_figure)
             self._tmp_figure = None
@@ -354,15 +357,15 @@ class Field(QGraphicsScene):
             final_action_item = self._get_final_action(self.mode, self._last_start_pos, self._start_pos)
             if final_action_item:
                 self._tmp_painted_action_group.addToGroup(final_action_item)
-                self._tmp_painted_action_data['final_actions'].append(final_action_item.get_data())
+                self._tmp_painted_action_data.final_actions.append(final_action_item.get_data())
             if self._current_action_action_painting:
                 self._current_action_action_painting.optionalActionPainted.emit(self._tmp_painted_action_data)
             else:
                 self._current_player_action_painting.signals.actionPainted.emit(self._tmp_painted_action_data)
             self.removeItem(self._tmp_painted_action_group)
             self._tmp_painted_action_group = None
-            self._tmp_painted_action_data['lines'].clear()
-            self._tmp_painted_action_data['final_actions'].clear()
+            self._tmp_painted_action_data.action_lines.clear()
+            self._tmp_painted_action_data.final_actions.clear()
             self._current_player_action_painting.setSelected(False)
             self._current_player_action_painting.hover_state = False
             self._current_player_action_painting.ungrabMouse()
@@ -391,7 +394,7 @@ class Field(QGraphicsScene):
             if self.check_field_borders(event.scenePos()):
                 self._current_action_line.setLine(self._start_pos.x(), self._start_pos.y(),
                                                   event.scenePos().x(), event.scenePos().y())
-                self._tmp_painted_action_data['lines'].append(self._current_action_line.get_data())
+                self._tmp_painted_action_data.action_lines.append(self._current_action_line.get_data())
                 self._tmp_painted_action_group.addToGroup(self._current_action_line)
                 self._last_start_pos = self._start_pos
                 self._start_pos = event.scenePos()

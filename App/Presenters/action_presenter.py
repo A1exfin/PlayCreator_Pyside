@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Callable, Union
 
 from Commands import AddOptionalActionCommand
 from .Mappers import ActionPartsMapper
@@ -7,16 +7,20 @@ if TYPE_CHECKING:
     from uuid import UUID
     from Models import ActionModel, ActionLineModel, FinalActionModel
     from Views import Graphics
+    from Models.Other import PlaybookModelsFabric, DeletionObserver
 
 
 __all__ = ('ActionPresenter', )
 
 
 class ActionPresenter:
-    def __init__(self, execute_command_func: callable, action_model: 'ActionModel', action_view: 'Graphics.ActionView'):
-        self._execute_command_func = execute_command_func
-        self._action_view = action_view
+    def __init__(self, playbook_items_fabric: 'PlaybookModelsFabric', deletion_observer: 'DeletionObserver',
+                 execute_command_func: Callable, action_model: 'ActionModel', action_view: 'Graphics.ActionView'):
         self._model = action_model
+        self._action_view = action_view
+        self._playbook_items_fabric = playbook_items_fabric
+        self._deletion_observer = deletion_observer
+        self._execute_command_func = execute_command_func
         self._action_parts_mappers: dict['UUID', 'ActionPartsMapper'] = {}
         self._connect_signals()
 
@@ -25,8 +29,16 @@ class ActionPresenter:
         self._model.actionPartsAdded.connect(self._place_optional_action_items)
         self._model.actionPartsRemoved.connect(self._remove_optional_action_items)
 
-    def _handle_place_optional_action(self, action_data: dict[str, list[dict]]) -> None:
-        add_action_command = AddOptionalActionCommand(self._model, action_data)
+    def _handle_place_optional_action(self, action_data) -> None:
+        action_line_models_lst = [
+            self._playbook_items_fabric.create_action_line_model(parent=self._model, **action_line_data)
+            for action_line_data in action_data.action_lines
+        ]
+        final_action_models_lst = [
+            self._playbook_items_fabric.create_final_action_model(parent=self._model, **final_action_data)
+            for final_action_data in action_data.final_actions
+        ]
+        add_action_command = AddOptionalActionCommand(self._model, action_line_models_lst, final_action_models_lst)
         self._execute_command_func(add_action_command)
 
     def _place_optional_action_items(self, line_models: list['ActionLineModel'],
@@ -44,13 +56,7 @@ class ActionPresenter:
             line_view = self._action_parts_mappers[line_model.uuid].view
             self._action_view.remove_action_line(line_view)
             mapper = self._action_parts_mappers.pop(line_model.uuid)
-            del mapper.model
-            del mapper.view
-            del mapper
         for final_action_model in final_action_models:
             final_action_view = self._action_parts_mappers[final_action_model.uuid].view
             self._action_view.remove_final_action(final_action_view)
             mapper = self._action_parts_mappers.pop(final_action_model.uuid)
-            del mapper.model
-            del mapper.view
-            del mapper

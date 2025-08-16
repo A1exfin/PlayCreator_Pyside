@@ -71,12 +71,13 @@ class ProxyTextEdit(QTextEdit):
             self._proxy.scene().labelDeselected.emit()
 
     def focusOutEvent(self, event: 'QFocusEvent') -> None:
-        object_name = QApplication.focusWidget().objectName()
-        if '_color_' in object_name or '_font_' in object_name:
-            self.setFocus()
-            self.grabKeyboard()
-            return
-        self._clear_focus()
+        if QApplication.focusWidget():
+            object_name = QApplication.focusWidget().objectName()
+            if '_color_' in object_name or '_font_' in object_name:
+                self.setFocus()
+                self.grabKeyboard()
+                return
+            self._clear_focus()
         super().focusOutEvent(event)
 
     def keyPressEvent(self, event: 'QKeyEvent') -> None:

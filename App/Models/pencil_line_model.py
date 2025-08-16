@@ -1,43 +1,27 @@
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
+from .base_model import BaseModel
 
 if TYPE_CHECKING:
     from Config.Enums import StorageType
+    from .player_model import PlaybookModel
+    from .scheme_model import SchemeModel
 
 
-class PencilLineModel:
-    def __init__(self, x1: float, y1: float, x2: float, y2: float, thickness: int, color: str,
-                 uuid: Optional['UUID'] = None, id_local_db: Optional[int] = None, id_api: Optional[int] = None):
+class PencilLineModel(BaseModel):
+    def __init__(self, playbook_model: 'PlaybookModel',  x1: float, y1: float, x2: float, y2: float,
+                 thickness: int, color: str, uuid: Optional['UUID'] = None,
+                 id_local_db: Optional[int] = None, id_api: Optional[int] = None,
+                 parent: Optional['SchemeModel'] = None):
+        super().__init__(parent, uuid, id_local_db, id_api)
+        self._playbook_model = playbook_model
         self._x1 = x1
         self._y1 = y1
         self._x2 = x2
         self._y2 = y2
         self._thickness = thickness
         self._color = color
-        self._uuid = uuid if uuid else uuid4()
-        self._id_local_db = id_local_db
-        self._id_api = id_api
-
-    @property
-    def id_local_db(self) -> int:
-        return self._id_local_db
-
-    @id_local_db.setter
-    def id_local_db(self, value: int) -> None:
-        self._id_local_db = value
-
-    @property
-    def id_api(self) -> int:
-        return self._id_api
-
-    @id_api.setter
-    def id_api(self, value: int) -> None:
-        self._id_api = value
-
-    @property
-    def uuid(self) -> 'UUID':
-        return self._uuid
 
     def set_new_uuid(self) -> None:
         self._uuid = uuid4()

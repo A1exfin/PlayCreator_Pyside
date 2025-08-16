@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, Callable
 
 from Config.Enums import TeamType
 from Commands import MovePlayerCommand, ChangePlayerStyleCommand, AddActionCommand, RemoveActionCommand
@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from Config.Enums import FillType, SymbolType
     from PlayCreator_main import PlayCreatorApp
     from Models import PlayerModel, ActionModel
+    from Models.Other import PlaybookModelsFabric, DeletionObserver
     from Views import Graphics
 
 
@@ -19,15 +20,16 @@ __all__ = ('PlayerPresenter', )
 
 
 class PlayerPresenter:
-    def __init__(self, add_deleted_item_ids_func: callable, remove_deleted_ids_func: callable,
-                 execute_command_func: callable, player_model: 'PlayerModel', view: 'PlayCreatorApp',
+    def __init__(self, playbook_items_fabric: 'PlaybookModelsFabric', deletion_observer: 'DeletionObserver',
+                 execute_command_func: Callable,
+                 player_model: 'PlayerModel', view: 'PlayCreatorApp',
                  player_view: Union['Graphics.FirstTeamPlayerView', 'Graphics.SecondTeamPlayerView']):
-        self._add_deleted_item_ids_func = add_deleted_item_ids_func
-        self._remove_deleted_ids_func = remove_deleted_ids_func
-        self._execute_command_func = execute_command_func
+        self._model = player_model
         self._view = view
         self._player_view = player_view
-        self._model = player_model
+        self._playbook_items_fabric = playbook_items_fabric
+        self._deletion_observer = deletion_observer
+        self._execute_command_func = execute_command_func
         self._action_mappers: dict['UUID', 'ActionMapper'] = {}
         self._connect_signals()
 
@@ -44,7 +46,7 @@ class PlayerPresenter:
 
     def _handle_move_player(self, new_pos: 'QPointF') -> None:
         if self._model.x != new_pos.x() or self._model.y != new_pos.y():
-            move_player_command = MovePlayerCommand(self._remove_deleted_ids_func, self._model, new_pos.x(), new_pos.y())
+            move_player_command = MovePlayerCommand(self._deletion_observer, self._model, new_pos.x(), new_pos.y())
             self._execute_command_func(move_player_command)
 
     def _move_player_item(self, new_pos: 'QPointF') -> None:
@@ -89,28 +91,34 @@ class PlayerPresenter:
                                   new_text_color: str, new_player_color: str) -> None:
         self._player_view.set_player_style(new_fill_symbol, new_text, new_text_color, new_player_color)
 
-    def _handle_place_action(self, action_data: dict[str, list[dict]]) -> None:
-        add_action_command = AddActionCommand(self._model, action_data)
+    def _handle_place_action(self, action_data) -> None:
+        action_model = self._playbook_items_fabric.create_action_model(self._model)
+        action_line_models_lst = [
+            self._playbook_items_fabric.create_action_line_model(parent=action_model, **action_line_data)
+            for action_line_data in action_data.action_lines
+        ]
+        final_action_models_lst = [
+            self._playbook_items_fabric.create_final_action_model(parent=action_model, **final_action_data)
+            for final_action_data in action_data.final_actions
+        ]
+        add_action_command = AddActionCommand(self._model, action_model, action_line_models_lst, final_action_models_lst)
         self._execute_command_func(add_action_command)
 
     def _place_action_item(self, action_model: 'ActionModel') -> None:
         action_view = self._player_view.add_action_item(action_model.get_data_for_view())
-        action_presenter = ActionPresenter(self._execute_command_func, action_model, action_view)
+        action_presenter = ActionPresenter(self._playbook_items_fabric, self._deletion_observer,
+                                           self._execute_command_func, action_model, action_view)
         self._action_mappers[action_model.uuid] = ActionMapper(action_presenter, action_model, action_view)
 
     def _hande_remove_action(self, action_model_uuid: 'UUID') -> None:
         action_model = self._action_mappers[action_model_uuid].model
-        remove_action_command = RemoveActionCommand(self._remove_deleted_ids_func, self._model, action_model)
+        remove_action_command = RemoveActionCommand(self._deletion_observer, self._model, action_model)
         self._execute_command_func(remove_action_command)
 
     def _remove_action_item(self, action_model: 'ActionModel') -> None:
         action_item = self._action_mappers[action_model.uuid].view
         self._player_view.remove_action_item(action_item)
         mapper = self._action_mappers.pop(action_model.uuid)
-        del mapper.model
-        del mapper.presenter
-        del mapper.view
-        del mapper
 
     def handle_remove_all_actions(self) -> None:
         pass

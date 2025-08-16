@@ -8,10 +8,12 @@ from Models import PlaybookModel, SchemeModel
 from Views.Dialog_windows import DialogEditPlaybook, DialogProgressBar, DialogInfo, DialogInput
 from .scheme_presenter import SchemePresenter
 from .Mappers import SchemeMapper
+from services.Local_DB.mappers import PlaybookMapperLocalDB
 
 if TYPE_CHECKING:
     from uuid import UUID
     from Config.Enums import TeamType, SymbolType
+    from Models.Other import PlaybookModelsFabric, DeletionObserver
     from PlayCreator_main import PlayCreatorApp
     from services.Local_DB.repository.playbook_repository import PlaybookManager
 
@@ -19,9 +21,12 @@ __all__ = ('PlaybookPresenter', )
 
 
 class PlaybookPresenter:
-    def __init__(self, model: 'PlaybookModel', view: 'PlayCreatorApp'):
+    def __init__(self, model: 'PlaybookModel', view: 'PlayCreatorApp', playbook_items_fabric: 'PlaybookModelsFabric',
+                 deletion_observer: 'DeletionObserver'):
         self._view = view
         self._model = model
+        self._playbook_items_fabric = playbook_items_fabric
+        self._deletion_observer = deletion_observer
         self._scheme_mappers: dict['UUID', 'SchemeMapper'] = {}
         self._selected_scheme_presenter: Optional['SchemePresenter'] = None
         self._connect_signals()
@@ -47,16 +52,18 @@ class PlaybookPresenter:
             self._model.who_can_see = data.who_can_see
 
     def handle_add_scheme(self) -> None:
-        scheme = SchemeModel(self._model.add_deleted_ids, self._model.playbook_type, 'Новая схема',
-                             getattr(Config, f'{self._model.playbook_type.name}_field_data'.lower()).width / 2,
-                             getattr(Config, f'{self._model.playbook_type.name}_field_data'.lower()).length / 2)
-        self._model.add_scheme(scheme)
+        scheme_model = self._playbook_items_fabric.create_scheme_model(
+            self._model, 'Новая схема',
+            getattr(Config, f'{self._model.playbook_type.name}_field_data'.lower()).width / 2,
+            getattr(Config, f'{self._model.playbook_type.name}_field_data'.lower()).length / 2,
+        )
+        self._model.add_scheme(scheme_model)
 
     def _add_scheme_item(self, scheme_model: 'SchemeModel') -> None:
-        scheme_widget = self._view.add_scheme_widget(scheme_model.uuid, scheme_model.name, scheme_model.note)
-        scheme_presenter = SchemePresenter(self._model.add_deleted_ids, self._model.remove_deleted_ids, scheme_model,
-                                           self._view, scheme_widget, self._model.playbook_type)
-        self._scheme_mappers[scheme_model.uuid] = SchemeMapper(scheme_presenter, scheme_model, scheme_widget)
+        scheme_view = self._view.add_scheme_widget(scheme_model.uuid, scheme_model.name, scheme_model.note)
+        scheme_presenter = SchemePresenter(scheme_model, self._view, scheme_view, self._model.playbook_type,
+                                           self._playbook_items_fabric, self._deletion_observer)
+        self._scheme_mappers[scheme_model.uuid] = SchemeMapper(scheme_presenter, scheme_model, scheme_view)
         self.transfer_to_scheme_presenter_select_scheme(scheme_model.uuid)
 
     def transfer_to_scheme_presenter_select_scheme(self, model_uuid: 'UUID') -> None:
@@ -112,20 +119,23 @@ class PlaybookPresenter:
         return file_name.strip()
 
     def handle_save_playbook_local(self, playbook_manager: 'PlaybookManager') -> None:
-        dialog_progress = DialogProgressBar(parent=self._view, operation_name='Сохранение плейбука')
-        dialog_progress.show()
-        try:
-            playbook_manager.save(self._model, is_new_playbook=False, set_progress_func=dialog_progress.set_progress_value)
-            for scheme_mapper in self._scheme_mappers.values():
-                scheme_mapper.presenter.clear_undo_stack()
-        except Exception as e:
-            dialog_progress.hide()
-            dialog_info = DialogInfo('Ошибка', 'Произошла ошибка. Плейбук не был сохранён.', check_box=False,
-                                     decline_button=False, accept_button_text='Ок', parent=self._view)
-            dialog_info.exec()
-            raise e
-        finally:
-            dialog_progress.finish()
+        mapper = PlaybookMapperLocalDB()
+        dto = mapper.get_playbook_dto(self._model, is_new_playbook=False)
+        print(f'{dto = }')
+        # dialog_progress = DialogProgressBar(parent=self._view, operation_name='Сохранение плейбука')
+        # dialog_progress.show()
+        # try:
+        #     playbook_manager.save(self._model, is_new_playbook=False, set_progress_func=dialog_progress.set_progress_value)
+        #     for scheme_mapper in self._scheme_mappers.values():
+        #         scheme_mapper.presenter.clear_undo_stack()
+        # except Exception as e:
+        #     dialog_progress.hide()
+        #     dialog_info = DialogInfo('Ошибка', 'Произошла ошибка. Плейбук не был сохранён.', check_box=False,
+        #                              decline_button=False, accept_button_text='Ок', parent=self._view)
+        #     dialog_info.exec()
+        #     raise e
+        # finally:
+        #     dialog_progress.finish()
 
     def handle_save_playbook_local_as(self, playbook_manager: 'PlaybookManager') -> None:
         dialog_input = DialogInput('Сохранить как', 'Введите название плейбука:', parent=self._view)
@@ -164,13 +174,13 @@ class PlaybookPresenter:
         self._scheme_mappers[model_uuid].presenter.handle_edit_scheme()
 
     def transfer_to_scheme_presenter_handle_place_first_team_clicked(self, team_type: 'TeamType', first_team_position: int) -> None:
-        self._selected_scheme_presenter.handle_place_first_team_players(self._model.playbook_type, team_type, first_team_position)
+        self._selected_scheme_presenter.handle_place_first_team_players(team_type, first_team_position)
 
     def transfer_to_scheme_presenter_handle_place_second_team_clicked(self, team_type: 'TeamType') -> None:
-        self._selected_scheme_presenter.handle_place_second_team_players(self._model.playbook_type, team_type)
+        self._selected_scheme_presenter.handle_place_second_team_players(team_type)
 
     def transfer_to_scheme_presenter_handle_place_additional_player_clicked(self) -> None:
-        self._selected_scheme_presenter.handle_place_additional_player(self._model.playbook_type)
+        self._selected_scheme_presenter.handle_place_additional_player()
 
     def transfer_to_scheme_presenter_handle_remove_all_players_clicked(self) -> None:
         self._selected_scheme_presenter.handle_remove_all_players()

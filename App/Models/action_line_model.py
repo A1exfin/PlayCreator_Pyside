@@ -1,13 +1,19 @@
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
+from .base_model import BaseModel
+
 if TYPE_CHECKING:
+    from PySide6.QtCore import QObject
     from Config.Enums import ActionLineType
 
 
-class ActionLineModel:
+class ActionLineModel(BaseModel):
     def __init__(self, line_type: 'ActionLineType', x1: float, y1: float, x2: float, y2: float,
-                 thickness: int, color: str, uuid: Optional['UUID'] = None):
+                 thickness: int, color: str, uuid: Optional['UUID'] = None,
+                 id_local_db: Optional[int] = None, id_api: Optional[int] = None,
+                 parent: Optional['QObject'] = None):
+        super().__init__(parent, uuid, id_local_db, id_api)
         self._line_type = line_type
         self._x1 = x1
         self._y1 = y1
@@ -15,11 +21,6 @@ class ActionLineModel:
         self._y2 = y2
         self._thickness = thickness
         self._color = color
-        self._uuid = uuid if uuid else uuid4()
-
-    @property
-    def uuid(self) -> 'UUID':
-        return self._uuid
 
     def set_new_uuid(self) -> None:
         self._uuid = uuid4()

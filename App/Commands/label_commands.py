@@ -79,10 +79,12 @@ class ChangeLabelTextAttributesCommand(QUndoCommand):
             return False
         if other._label_model is not self._label_model:
             return False
-        self._new_text, self._new_font_type, self._new_font_size, self._new_font_bold, self._new_font_italic,\
-            self._new_font_underline, self._new_font_color, self._new_y, self._new_height = \
-            other._new_text, other._new_font_type, other._new_font_size, other._new_font_bold, other._new_font_italic,\
-            other._new_font_underline, other._new_font_color, other._new_y, other._new_height
+        self._new_text, self._new_font_type, self._new_font_size, self._new_font_color = \
+            other._new_text, other._new_font_type, other._new_font_size, other._new_font_color
+        self._new_font_bold, self._new_font_italic, self._new_font_underline = \
+            other._new_font_bold, other._new_font_italic, other._new_font_underline
+        self._new_y, self._new_height = \
+            other._new_y, other._new_height
         return True
 
 

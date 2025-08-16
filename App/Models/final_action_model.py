@@ -1,30 +1,31 @@
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
+from .base_model import BaseModel
+
 if TYPE_CHECKING:
-    from Config.Enums import ActionLineType
+    from PySide6.QtCore import QObject
+    from Config.Enums import FinalActionType
 
 
-class FinalActionModel:
-    def __init__(self, action_type: 'ActionLineType', x: float, y: float, angle: float,
-                 line_thickness: int, color: str, uuid: Optional['UUID'] = None):
+class FinalActionModel(BaseModel):
+    def __init__(self, action_type: 'FinalActionType', x: float, y: float, angle: float,
+                 line_thickness: int, color: str, uuid: Optional['UUID'] = None,
+                 id_local_db: Optional[int] = None, id_api: Optional[int] = None,
+                 parent: Optional['QObject'] = None):
+        super().__init__(parent, uuid, id_local_db, id_api)
         self._action_type = action_type
         self._x = x
         self._y = y
         self._angle = angle
         self._line_thickness = line_thickness
         self._color = color
-        self._uuid = uuid if uuid else uuid4()
-
-    @property
-    def uuid(self) -> 'UUID':
-        return self._uuid
 
     def set_new_uuid(self) -> None:
         self._uuid = uuid4()
 
     @property
-    def action_type(self) -> 'ActionLineType':
+    def action_type(self) -> 'FinalActionType':
         return self._action_type
 
     @property
