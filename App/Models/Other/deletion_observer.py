@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING, Optional
 
+from Config.Enums import StorageType
+
 if TYPE_CHECKING:
-    from Config.Enums import StorageType
     from ..playbook_model import PlaybookModel
     from ..scheme_model import SchemeModel
     from ..figure_model import FigureModel

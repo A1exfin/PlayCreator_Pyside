@@ -72,11 +72,11 @@ class PlaybookModelsFabric:
         for i, player_data in enumerate(players_data):
             team_type, position, text, fill_type, x, y = player_data
             if team_type is TeamType.PUNT and i == 10 and yards_to_top_border >= 105 * vertical_one_yard:
-                player_model = PlayerModel(self._playbook_model, team_type, position, text, x,
-                                           118 * vertical_one_yard, fill_type=fill_type, parent=parent)
+                player_model = self.create_player_model(parent, team_type, position, text, x,
+                                                        118 * vertical_one_yard, fill_type=fill_type)
             else:
-                player_model = PlayerModel(self._playbook_model, team_type, position, text, x,
-                                           y + yards_to_top_border, fill_type=fill_type, parent=parent)
+                player_model = self.create_player_model(parent, team_type, position, text, x,
+                                                        y + yards_to_top_border, fill_type=fill_type)
             player_models_lst.append(player_model)
         return player_models_lst
 
@@ -90,33 +90,33 @@ class PlaybookModelsFabric:
             team_type, position, text, symbol_type, x, y = player_data
             if playbook_type is PlaybookType.FOOTBALL:
                 if team_type in (TeamType.PUNT_RET, TeamType.KICK_RET) and i == 10:
-                    player_model = PlayerModel(self._playbook_model, team_type, position, text, x, y,
-                                               symbol_type=symbol_type, parent=parent)
+                    player_model = self.create_player_model(parent, team_type, position, text, x, y,
+                                                            symbol_type=symbol_type)
                 elif team_type is TeamType.FIELD_GOAL_DEF and i == 10 and \
                         yards_to_top_border > vertical_one_yard * 11:
-                    player_model = PlayerModel(self._playbook_model, team_type, position, text, x,
-                                               vertical_one_yard * 4, symbol_type=symbol_type, parent=parent)
+                    player_model = self.create_player_model(parent, team_type, position, text, x,
+                                                            vertical_one_yard * 4, symbol_type=symbol_type)
                 elif team_type is TeamType.DEFENCE and i == 10 and \
                         yards_to_top_border < vertical_one_yard * 13:
-                    player_model = PlayerModel(self._playbook_model, team_type, position, text, x,
-                                               y + yards_to_top_border + 3 * vertical_one_yard,
-                                               symbol_type=symbol_type, parent=parent)
+                    player_model = self.create_player_model(parent, team_type, position, text, x,
+                                                            y + yards_to_top_border + 3 * vertical_one_yard,
+                                                            symbol_type=symbol_type)
                 elif team_type is TeamType.KICK_RET and 4 < i <= 7 and \
                         yards_to_top_border == vertical_one_yard * 85:
-                    player_model = PlayerModel(self._playbook_model, team_type, position, text, x,
-                                               y + yards_to_top_border - vertical_one_yard * 5,
-                                               symbol_type=symbol_type, parent=parent)
+                    player_model = self.create_player_model(parent, team_type, position, text, x,
+                                                            y + yards_to_top_border - vertical_one_yard * 5,
+                                                            symbol_type=symbol_type, )
                 elif team_type is TeamType.KICK_RET and 7 < i <= 9 and \
                         yards_to_top_border == vertical_one_yard * 85:
-                    player_model = PlayerModel(self._playbook_model, team_type, position, text, x,
-                                               y + yards_to_top_border - vertical_one_yard * 10,
-                                               symbol_type=symbol_type, parent=parent)
+                    player_model = self.create_player_model(parent, team_type, position, text, x,
+                                                            y + yards_to_top_border - vertical_one_yard * 10,
+                                                            symbol_type=symbol_type)
                 else:
-                    player_model = PlayerModel(self._playbook_model, team_type, position, text, x,
-                                               y + yards_to_top_border, symbol_type=symbol_type, parent=parent)
+                    player_model = self.create_player_model(parent, team_type, position, text, x,
+                                                            y + yards_to_top_border, symbol_type=symbol_type)
             else:
-                player_model = PlayerModel(self._playbook_model, team_type, position, text, x,
-                                           y + yards_to_top_border, symbol_type=symbol_type, parent=parent)
+                player_model = self.create_player_model(parent, team_type, position, text, x,
+                                                        y + yards_to_top_border, symbol_type=symbol_type)
             player_models_lst.append(player_model)
         return player_models_lst
 
@@ -125,8 +125,8 @@ class PlaybookModelsFabric:
         yards_to_top_border = self._get_yards_to_top_field_border(playbook_type, first_team_position)
         player_data = getattr(Config, f'{playbook_type.name.lower()}_players_data').additional_player
         team_type, position, text, fill_type, x, y = player_data
-        return PlayerModel(self._playbook_model, team_type, position, text, x, y + yards_to_top_border,
-                           fill_type=fill_type, parent=parent)
+        return self.create_player_model(parent, team_type, position, text, x, y + yards_to_top_border,
+                                        fill_type=fill_type)
 
     def _get_yards_to_top_field_border(self, playbook_type: 'PlaybookType', first_team_position: int) -> int:
         field_data = getattr(Config, f'{playbook_type.name.lower()}_field_data')

@@ -151,7 +151,6 @@ class MainWindowPresenter:
             data = dialog_new_playbook.get_data()
             if data.name != '':
                 playbook_model = PlaybookModel(data.name, data.playbook_type)
-                self._playbook_items_fabric = PlaybookModelsFabric(playbook_model)
                 self._model.playbook = playbook_model
             else:
                 dialog_info = DialogInfo('Некорректное название плейбука', 'Введите корректное название плейбука.',
@@ -160,6 +159,7 @@ class MainWindowPresenter:
 
     def _install_playbook(self, playbook_model: 'PlaybookModel') -> None:
         self._deletion_observer = DeletionObserver(playbook_model)
+        self._playbook_items_fabric = PlaybookModelsFabric(playbook_model)
         playbook_presenter = PlaybookPresenter(playbook_model, self._view, self._playbook_items_fabric,
                                                self._deletion_observer)
         self._playbook_presenter = playbook_presenter
@@ -199,27 +199,32 @@ class MainWindowPresenter:
         for scheme_dto in playbook_dto.schemes:
             if scheme_dto.row_index == 0:
                 first_scheme_uuid = scheme_dto.uuid
-            scheme_model = SchemeModel(
+            scheme_model = self._playbook_items_fabric.create_scheme_model(
                 **scheme_dto.model_dump(exclude={'id', 'row_index', 'figures', 'labels', 'pencil_lines', 'players'}),
-                id_local_db=scheme_dto.id, add_deleted_item_ids_func=playbook_model.add_deleted_item_ids,
-                playbook_type=playbook_model.playbook_type
+                id_local_db=scheme_dto.id, parent=playbook_model
             )
-            playbook_model.add_scheme(scheme_model, scheme_dto.row_index)
+            playbook_model.add_scheme(scheme_model)
             for figure_dto in scheme_dto.figures:
-                figure_model = FigureModel(**figure_dto.model_dump(exclude={'id'}), id_local_db=figure_dto.id)
+                figure_model = self._playbook_items_fabric.create_figure_model(
+                    **figure_dto.model_dump(exclude={'id'}), id_local_db=figure_dto.id, parent=scheme_model
+                )
                 scheme_model.add_figure(figure_model)
             for label_dto in scheme_dto.labels:
-                label_model = LabelModel(**label_dto.model_dump(exclude={'id'}), id_local_db=label_dto.id)
+                label_model = self._playbook_items_fabric.create_label_model(
+                    **label_dto.model_dump(exclude={'id'}), id_local_db=label_dto.id, parent=scheme_model
+                )
                 scheme_model.add_label(label_model)
             for pencil_line_dto in scheme_dto.pencil_lines:
                 pencil_lines_lst = []
-                pencil_line_model = PencilLineModel(**pencil_line_dto.model_dump(exclude={'id'}), id_local_db=pencil_line_dto.id)
+                pencil_line_model = self._playbook_items_fabric.create_pencil_line_model(
+                    **pencil_line_dto.model_dump(exclude={'id'}), id_local_db=pencil_line_dto.id, parent=scheme_model
+                )
                 pencil_lines_lst.append(pencil_line_model)
                 scheme_model.add_pencil_lines(pencil_lines_lst)
             for player_dto in scheme_dto.players:
-                player_model = PlayerModel(
+                player_model = self._playbook_items_fabric.create_player_model(
                     **player_dto.model_dump(exclude={'id', 'actions'}),
-                    id_local_db=playbook_dto.id, add_deleted_item_ids_func=playbook_model.add_deleted_item_ids
+                    id_local_db=playbook_dto.id, parent=scheme_model
                 )
                 if player_model.team_type in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
                     scheme_model.add_first_team_player(player_model)
@@ -228,19 +233,21 @@ class MainWindowPresenter:
                 if player_model.team_type is TeamType.OFFENCE_ADD:
                     scheme_model.additional_player = player_model
                 for action_dto in player_dto.actions:
-                    action_lines_lst = []
-                    final_actions_lst = []
-                    action_model = ActionModel(**action_dto.model_dump(exclude={'id', 'action_lines', 'final_actions'}),
-                                               id_local_db=action_dto.id)
+                    action_model = self._playbook_items_fabric.create_action_model(
+                        **action_dto.model_dump(exclude={'id', 'action_lines', 'final_actions'}),
+                        id_local_db=action_dto.id, parent=player_model
+                    )
                     player_model.add_action(action_model)
-                    for action_line_dto in action_dto.action_lines:
-                        action_line_model = ActionLineModel(**action_line_dto.model_dump(exclude={'id'}))
-                        action_lines_lst.append(action_line_model)
-                    for final_action_dto in action_dto.final_actions:
-                        final_action_model = FinalActionModel(**final_action_dto.model_dump(exclude={'id'}))
-                        final_actions_lst.append(final_action_model)
-                    action_model.add_action_parts(action_lines_lst, final_actions_lst)
-        # print(f'{playbook_model = }')
+                    action_model.add_action_parts(
+                        [self._playbook_items_fabric.create_action_line_model(**action_line_dto.model_dump(exclude={'id'}),
+                                                                              id_local_db=action_line_dto.id,
+                                                                              parent=action_model)
+                         for action_line_dto in action_dto.action_lines],
+                        [self._playbook_items_fabric.create_final_action_model(**final_action_dto.model_dump(exclude={'id'}),
+                                                                               id_local_db=final_action_dto.id,
+                                                                               parent=action_model)
+                         for final_action_dto in action_dto.final_actions]
+                    )
         return first_scheme_uuid
 
 

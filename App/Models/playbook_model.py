@@ -174,6 +174,8 @@ class PlaybookModel(BaseModel):
             storage: Тип хранилища (StorageType.LOCAL_DB or StorageType.API)
             ids_lst: Список целых чисел, для добавления в список id удаляемых итемов
         """
+        # print('add_deleted_item_ids')
+        # print(f'{ids = }')
         if not hasattr(self._deleted_items, item_type):
             raise ValueError(f'Unknown item type: {item_type}')
         if isinstance(ids, list):
@@ -182,6 +184,8 @@ class PlaybookModel(BaseModel):
             getattr(self._deleted_items, item_type)[storage].append(ids)
 
     def remove_deleted_item_ids(self, item_type: str, storage_type: 'StorageType', ids: list[int] | int) -> None:
+        # print('remove_deleted_item_ids')
+        # print(f'{ids = }')
         if not hasattr(self._deleted_items, item_type):
             raise ValueError(f'Unknown item type: {item_type}')
         deleted_items_ids = getattr(self._deleted_items, item_type)[storage_type]
