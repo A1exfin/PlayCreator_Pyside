@@ -5,7 +5,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .common import pk, scheme_fk, hex_color
 from .common import uuid_binary, EnumInt
 from services.Local_DB import Base
-from services.Local_DB.DTO.output_DTO import PlayerOutDTO
 from Config.Enums import TeamType, FillType, SymbolType, PlayerPositionType
 
 if TYPE_CHECKING:
@@ -39,9 +38,6 @@ class PlayerORM(Base):
 
     actions: Mapped[list['ActionORM']] = relationship(back_populates='player', cascade='all, delete-orphan',
                                                       lazy='selectin')
-
-    def __eq__(self, other) -> bool:
-        return self.id == other.id if isinstance(other, PlayerOutDTO) else super().__eq__(other)
 
     def __repr__(self) -> str:
         return f'\n\t\t\t\t<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \

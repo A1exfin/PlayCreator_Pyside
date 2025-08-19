@@ -65,9 +65,12 @@ class SchemeModel(BaseModel):
         self.set_first_team_state(first_team, first_team_position)
         self.set_second_team_state(second_team)
 
+    def _set_changed(self) -> None:
+        super().set_changed()
+        self._playbook_model.changed = True
+
     def reset_id(self, storage_type: 'StorageType') -> None:
-        if hasattr(self, f'_id_{storage_type.value}'):
-            setattr(self, f'_id_{storage_type.value}', None)
+        super().reset_id(storage_type)
         self._reset_scheme_items_id(storage_type)
 
     def _reset_scheme_items_id(self, storage_type: 'StorageType') -> None:
@@ -79,7 +82,7 @@ class SchemeModel(BaseModel):
                 item_model.reset_id(storage_type)
 
     def set_new_uuid(self) -> None:
-        self._uuid = uuid4()
+        super().set_new_uuid()
         self._set_scheme_items_new_uuid()
 
     def _set_scheme_items_new_uuid(self) -> None:
@@ -90,6 +93,18 @@ class SchemeModel(BaseModel):
             if item_model:
                 item_model.set_new_uuid()
 
+    def reset_changed_flag(self) -> None:
+        super().reset_changed_flag()
+        self._reset_scheme_items_changed_flag()
+
+    def _reset_scheme_items_changed_flag(self) -> None:
+        for item_model in chain(
+                self._first_team_players, self._second_team_players, [self._additional_player],
+                self._figures, self._labels, self._pencil_lines
+        ):
+            if item_model:
+                item_model.reset_changed_flag()
+
     @property
     def name(self) -> str:
         return self._name
@@ -97,6 +112,7 @@ class SchemeModel(BaseModel):
     @name.setter
     def name(self, name: str) -> None:
         self._name = name
+        self._set_changed()
         self.nameChanged.emit(name)
 
     @property
@@ -106,6 +122,7 @@ class SchemeModel(BaseModel):
     @note.setter
     def note(self, note: str) -> None:
         self._note = note
+        self._set_changed()
         self.noteChanged.emit(note)
 
     @property
@@ -113,16 +130,18 @@ class SchemeModel(BaseModel):
         return self._view_point_x
 
     @view_point_x.setter
-    def view_point_x(self, x: int) -> None:
-        self._view_point_x = x
+    def view_point_x(self, value: int) -> None:
+        # self._set_changed()
+        self._view_point_x = value
 
     @property
     def view_point_y(self) -> int:
         return self._view_point_y
 
     @view_point_y.setter
-    def view_point_y(self, y: int) -> None:
-        self._view_point_y = y
+    def view_point_y(self, value: int) -> None:
+        # self._set_changed()
+        self._view_point_y = value
 
     @property
     def zoom(self) -> int:
@@ -132,6 +151,7 @@ class SchemeModel(BaseModel):
     def zoom(self, value: int) -> None:
         if 0 <= value <= 200:
             self._zoom = value
+            # self._set_changed()
             self.zoomChanged.emit(self.zoom)
 
     @property
@@ -151,31 +171,39 @@ class SchemeModel(BaseModel):
         return self._first_team_players.copy()
 
     def set_first_team_state(self, first_team_type: Optional['TeamType'], first_team_position: Optional[int]) -> None:
-        if first_team_type and self._playbook_type is PlaybookType.FOOTBALL and \
-                first_team_type not in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
-            raise ValueError(f'Неверный тип первой команды - {first_team_type.name.capitalize()}.')
-        if first_team_type and self._playbook_type is PlaybookType.FLAG and first_team_type is not TeamType.OFFENCE:
-            raise ValueError(f'Неверный тип первой команды - {first_team_type.name.capitalize()}.')
-        if first_team_position and self._playbook_type is PlaybookType.FOOTBALL and first_team_position > 100:
-            raise ValueError('Позиция первой команды не может превышать 100 ярдов.')
-        if first_team_position and self._playbook_type is PlaybookType.FLAG and first_team_position > 50:
-            raise ValueError('Позиция первой команды не может превышать 50 ярдов.')
+        if first_team_type and first_team_position:
+            if self._playbook_type is PlaybookType.FOOTBALL:
+                if first_team_type not in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
+                    raise ValueError(f'Неверный тип первой команды - {first_team_type.name.capitalize()}.')
+                if first_team_position > 100:
+                    raise ValueError('Позиция первой команды не может превышать 100 ярдов.')
+                # if len(self._first_team_players) != 11:
+                #     raise ValueError('Игроков первой команды должно быть 11.')
+            if self._playbook_type is PlaybookType.FLAG:
+                if first_team_type is not TeamType.OFFENCE:
+                    raise ValueError(f'Неверный тип первой команды - {first_team_type.name.capitalize()}.')
+                if first_team_position > 50:
+                    raise ValueError('Позиция первой команды не может превышать 50 ярдов.')
+                # if len(self._first_team_players) != 5:
+                #     raise ValueError('Игроков первой команды должно быть 5.')
         self._first_team = first_team_type
         self._first_team_position = first_team_position
+        self._set_changed()
         self.firstTeamStateChanged.emit(self._first_team, self._first_team_position)
 
     def add_first_team_player(self, player_model: 'PlayerModel') -> None:
-        if self._playbook_type is PlaybookType.FOOTBALL and \
-                player_model.team_type not in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
-            raise ValueError(f'Неверный тип игрока первой команды - {player_model.team_type.name.capitalize()}.')
-        if self._playbook_type is PlaybookType.FLAG and player_model.team_type is not TeamType.OFFENCE:
-            raise ValueError(f'Неверный тип игрока первой команды - {player_model.team_type.name.capitalize()}.')
-        if self._playbook_type is PlaybookType.FOOTBALL and len(self._first_team_players) >= 11:
-            raise ValueError('Количество игроков первой команды не должно превышать 11.')
-        if self._playbook_type is PlaybookType.FLAG and len(self._first_team_players) >= 5:
-            raise ValueError('Количество игроков первой команды не должно превышать 5.')
+        if self._playbook_type is PlaybookType.FOOTBALL:
+            if player_model.team_type not in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
+                raise ValueError(f'Неверный тип игрока первой команды - {player_model.team_type.name.capitalize()}.')
+            if len(self._first_team_players) >= 11:
+                raise ValueError('Количество игроков первой команды не должно превышать 11.')
+        if self._playbook_type is PlaybookType.FLAG:
+            if player_model.team_type is not TeamType.OFFENCE:
+                raise ValueError(f'Неверный тип игрока первой команды - {player_model.team_type.name.capitalize()}.')
+            if len(self._first_team_players) >= 5:
+                raise ValueError('Количество игроков первой команды не должно превышать 5.')
         if self._first_team_players and player_model.team_type is not self._first_team_players[-1].team_type:
-            raise ValueError('Игроки находящиеся в одной команде должны быть одного типа')
+            raise ValueError('Игроки находящиеся в одной команде должны быть одного типа.')
         self._first_team_players.append(player_model)
         self.firstTeamPlayerAdded.emit(player_model)
 
@@ -184,12 +212,19 @@ class SchemeModel(BaseModel):
         return self._second_team_players.copy()
 
     def set_second_team_state(self, second_team_type: Optional['TeamType']) -> None:
-        if second_team_type and self._playbook_type is PlaybookType.FOOTBALL \
-                and second_team_type not in (TeamType.DEFENCE, TeamType.KICK_RET, TeamType.PUNT_RET, TeamType.FIELD_GOAL_DEF):
-            raise ValueError(f'Неверный тип второй команды - {second_team_type.name.capitalize()}.')
-        if second_team_type and self._playbook_type is PlaybookType.FLAG and second_team_type is not TeamType.DEFENCE:
-            raise ValueError(f'Неверный тип второй команды - {second_team_type.name.capitalize()}.')
+        if second_team_type:
+            if self._playbook_type is PlaybookType.FOOTBALL:
+                if second_team_type not in (TeamType.DEFENCE, TeamType.KICK_RET, TeamType.PUNT_RET, TeamType.FIELD_GOAL_DEF):
+                    raise ValueError(f'Неверный тип второй команды - {second_team_type.name.capitalize()}.')
+                # if len(self._second_team_players) != 11:
+                #     raise ValueError('Игроков вотрой команды должно быть 11.')
+            if self._playbook_type is PlaybookType.FLAG:
+                if second_team_type is not TeamType.DEFENCE:
+                    raise ValueError(f'Неверный тип второй команды - {second_team_type.name.capitalize()}.')
+                # if len(self._second_team_players) != 5:
+                #     raise ValueError('Игроков второй команды должно быть 5.')
         self._second_team = second_team_type
+        self._set_changed()
         self.secondTeamStateChanged.emit(self._second_team)
 
     def add_second_team_player(self, player_model: 'PlayerModel') -> None:
@@ -220,6 +255,7 @@ class SchemeModel(BaseModel):
         if self._first_team is not TeamType.OFFENCE:
             raise ValueError('Для добавления дополнительного игрока тип первой команды должен быть - нападение.')
         self._additional_player = player_model
+        self._set_changed()
         self.additionalPlayerAdded.emit(self.additional_player)
 
     def remove_first_team_players(self) -> None:
@@ -234,6 +270,7 @@ class SchemeModel(BaseModel):
 
     def remove_additional_player(self) -> None:
         self._additional_player = None
+        self._set_changed()
         self.additionalPlayerRemoved.emit()
 
     def remove_all_players(self) -> None:
@@ -253,14 +290,17 @@ class SchemeModel(BaseModel):
 
     def add_figure(self, figure: 'FigureModel') -> None:
         self._figures.append(figure)
+        self._set_changed()
         self.figureAdded.emit(figure)
 
     def remove_figure(self, figure: 'FigureModel') -> None:
         self._figures.remove(figure)
+        self._set_changed()
         self.figureRemoved.emit(figure)
 
     def remove_all_figures(self) -> None:
         self._figures.clear()
+        self._set_changed()
         self.allFiguresRemoved.emit()
 
     @property
@@ -269,14 +309,17 @@ class SchemeModel(BaseModel):
 
     def add_label(self, label: 'LabelModel') -> None:
         self._labels.append(label)
+        self._set_changed()
         self.labelAdded.emit(label)
 
     def remove_label(self, label: 'LabelModel') -> None:
         self._labels.remove(label)
+        self._set_changed()
         self.labelRemoved.emit(label)
 
     def remove_all_labels(self) -> None:
         self._labels.clear()
+        self._set_changed()
         self.allLabelsRemoved.emit()
 
     @property
@@ -285,16 +328,17 @@ class SchemeModel(BaseModel):
 
     def add_pencil_lines(self, pencil_lines: list['PencilLineModel']) -> None:
         self._pencil_lines.extend(pencil_lines)
+        self._set_changed()
         self.pencilLinesAdded.emit(pencil_lines)
 
     def remove_pencil_lines(self, pencil_line_models: list['PencilLineModel']) -> None:
-        '''Не добавляются id удалённых итемов потому что этот метод применяется только для undo-метода в
-         классе команды размещения линий карандаша.'''
         self._pencil_lines = list(set(self._pencil_lines) - set(pencil_line_models))
+        # self._set_changed()
         self.pencilLinesRemoved.emit(pencil_line_models)
 
     def remove_all_pencil_lines(self) -> None:
         self._pencil_lines.clear()
+        self._set_changed()
         self.allPencilLinesRemoved.emit()
 
     def to_dict(self) -> dict:

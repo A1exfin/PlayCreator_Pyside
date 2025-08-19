@@ -6,7 +6,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .common import pk, hex_color, scheme_fk
 from .common import uuid_binary, EnumInt
 from services.Local_DB import Base
-from services.Local_DB.DTO.output_DTO import FigureOutDTO
 from Config.Enums import FigureType
 
 if TYPE_CHECKING:
@@ -36,9 +35,6 @@ class FigureORM(Base):
 
     scheme_id: Mapped[scheme_fk]
     scheme: Mapped['SchemeORM'] = relationship(back_populates='figures')
-
-    def __eq__(self, other) -> bool:
-        return self.id == other.id if isinstance(other, FigureOutDTO) else super().__eq__(other)
 
     def __repr__(self) -> str:
         return f'\n\t\t\t\t<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \

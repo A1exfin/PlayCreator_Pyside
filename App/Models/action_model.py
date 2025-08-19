@@ -9,6 +9,7 @@ from .base_model import BaseModel
 if TYPE_CHECKING:
     from PySide6.QtCore import QObject
     from Config.Enums import StorageType
+    from .playbook_model import PlaybookModel
     from .action_line_model import ActionLineModel
     from .final_action_model import FinalActionModel
 
@@ -19,24 +20,43 @@ class ActionModel(BaseModel):
     actionPartsAdded = Signal(list, list)  # list[ActionLineModel], list[FinalActionModel]
     actionPartsRemoved = Signal(list, list)  # list[ActionLineModel], list[FinalActionModel]
 
-    def __init__(self, uuid: Optional['UUID'] = None, id_local_db: Optional[int] = None, id_api: Optional[int] = None,
+    def __init__(self, playbook_model: 'PlaybookModel', uuid: Optional['UUID'] = None, id_local_db: Optional[int] = None, id_api: Optional[int] = None,
                  parent: Optional['QObject'] = None):
         super().__init__(parent, uuid, id_local_db, id_api)
+        self._playbook_model = playbook_model
         self._action_lines = []
         self._final_actions = []
 
-    def set_new_uuid(self) -> None:
-        self._uuid = uuid4()
-        self._set_lines_and_final_actions_new_uuid()
+    def _set_changed(self) -> None:
+        super().set_changed()
+        self._playbook_model.changed = True
 
-    def _set_lines_and_final_actions_new_uuid(self) -> None:
+    def set_new_uuid(self) -> None:
+        super().set_new_uuid()
+        self._set_action_parts_new_uuid()
+
+    def _set_action_parts_new_uuid(self) -> None:
         for action_part_model in chain(self._action_lines, self._final_actions):
             if action_part_model:
                 action_part_model.set_new_uuid()
 
     def reset_id(self, storage_type: 'StorageType') -> None:
-        if hasattr(self, f'_id_{storage_type.value}'):
-            setattr(self, f'_id_{storage_type.value}', None)
+        super().reset_id(storage_type)
+        self._reset_id_for_action_parts(storage_type)
+
+    def _reset_id_for_action_parts(self, storage_type: 'StorageType') -> None:
+        for action_part_model in chain(self._action_lines, self._final_actions):
+            if action_part_model:
+                action_part_model.reset_id(storage_type)
+
+    def reset_changed_flag(self) -> None:
+        super().reset_changed_flag()
+        self._reset_action_parts_changed_flag()
+
+    def _reset_action_parts_changed_flag(self) -> None:
+        for action_part_model in chain(self._action_lines, self._final_actions):
+            if action_part_model:
+                action_part_model.reset_changed_flag()
 
     @property
     def action_lines(self) -> list['ActionLineModel']:
@@ -49,11 +69,13 @@ class ActionModel(BaseModel):
     def add_action_parts(self, action_lines: list['ActionLineModel'], final_actions: list['FinalActionModel']) -> None:
         self._action_lines.extend(action_lines)
         self._final_actions.extend(final_actions)
+        self._set_changed()
         self.actionPartsAdded.emit(action_lines, final_actions)
 
     def remove_action_parts(self, action_lines: list['ActionLineModel'], final_actions: list['FinalActionModel']) -> None:
         self._action_lines = list(set(self._action_lines) - set(action_lines))
         self._final_actions = list(set(self._final_actions) - set(final_actions))
+        self._set_changed()
         self.actionPartsRemoved.emit(action_lines, final_actions)
 
     def get_data_for_view(self) -> dict:

@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING, Optional
 from PySide6.QtCore import Qt
 
 from Config.Enums import StorageType, AppTheme, TeamType
-from Views.Dialog_windows import DialogInfo, DialogAbout, DialogNewPlaybook, DialogOpenPlaybook, DialogProgressBar
-from Models import PlaybookModel, SchemeModel, FigureModel, LabelModel, PencilLineModel, PlayerModel, ActionModel,\
-    ActionLineModel, FinalActionModel
+from Views.Dialog_windows import DialogInfo, DialogAbout, DialogNewPlaybook, DialogOpenPlaybook, DialogProgressBar,\
+    DialogSaveChangedPlaybook
+from Models import PlaybookModel
 from .playbook_presenter import PlaybookPresenter
 from Models.Other import PlaybookModelsFabric, DeletionObserver
 from services.Local_DB.repository.playbook_repository import PlaybookManager
@@ -54,6 +54,7 @@ class MainWindowPresenter:
         view.action_toolbar_visible.triggered.connect(self._handle_tool_bar_visible)
         view.action_show_remove_scheme_dialog.triggered.connect(self._handle_show_remove_scheme_dialog)
         view.action_show_close_app_dialog.triggered.connect(self._handle_show_close_app_dialog)
+        view.action_show_save_changed_playbook_dialog.triggered.connect(self._handle_show_save_changed_playbook_dialog)
         view.action_about.triggered.connect(self._handle_about)
         view.action_new_playbook.triggered.connect(self._handle_create_new_playbook)
         view.action_undo.triggered.connect(self._transfer_to_playbook_presenter_action_undo_clicked)
@@ -89,7 +90,8 @@ class MainWindowPresenter:
         self._view.set_initial_window_state(self._model.x, self._model.y, self._model.width, self._model.height,
                                             self._model.theme, self._model.is_maximized, self._model.tool_bar_visible,
                                             self._model.tool_bar_area, self._model.presentation_mode,
-                                            self._model.show_remove_scheme_dialog, self._model.show_close_app_dialog)
+                                            self._model.show_remove_scheme_dialog, self._model.show_close_app_dialog,
+                                            self._model.show_save_changed_playbook_dialog)
 
     def handle_move(self, x: int, y: int) -> None:
         self._model.x, self._model.y = x, y
@@ -120,24 +122,42 @@ class MainWindowPresenter:
     def _handle_show_close_app_dialog(self, checked: bool) -> None:
         self._model.show_close_app_dialog = checked
 
+    def _handle_show_save_changed_playbook_dialog(self, checked: bool) -> None:
+        self._model.show_save_changed_playbook_dialog = checked
+
     def _handle_presentation_mode(self, checked: bool) -> None:
         self._model.presentation_mode = checked
 
     def _update_window(self, model: 'MainWindowModel') -> None:
         self._view.update_window(model.theme, model.tool_bar_visible, model.presentation_mode,
-                                 model.show_remove_scheme_dialog, model.show_close_app_dialog)
+                                 model.show_remove_scheme_dialog, model.show_close_app_dialog,
+                                 model.show_save_changed_playbook_dialog)
 
     def _handle_about(self) -> None:
         dialog = DialogAbout(self._model.version, self._model.about_ico_path, parent=self._view)
         dialog.exec()
 
+    def _ask_save_changed_playbook(self) -> None:
+        if self._model.show_save_changed_playbook_dialog:
+            if self._model.playbook and self._model.playbook.changed:
+                dialog_save_playbook = DialogSaveChangedPlaybook(self._view, True)
+                dialog_save_playbook.exec()
+                if dialog_save_playbook.check_box_dont_ask_again.checkState() == Qt.CheckState.Checked:
+                    self._model.show_save_changed_playbook_dialog = False
+                if dialog_save_playbook.result():
+                    if dialog_save_playbook.check_box_save_local.checkState() == Qt.CheckState.Checked:
+                        self._playbook_presenter.handle_save_playbook_local(self._playbook_manager)
+                    if dialog_save_playbook.check_box_save_remote.checkState() == Qt.CheckState.Checked:
+                        print('Сохранить на сервере')
+
     def handle_close_app(self) -> bool:
+        self._ask_save_changed_playbook()
         if self._model.show_close_app_dialog:
             dialog_close_app = DialogInfo('Выход', 'Вы уверены что хотите закрыть приложение?', parent=self._view)
             dialog_close_app.exec()
+            if dialog_close_app.check_box_dont_ask_again.checkState() == Qt.CheckState.Checked:
+                self._model.show_close_app_dialog = False
             if dialog_close_app.result():
-                if dialog_close_app.check_box_dont_ask_again.checkState() == Qt.CheckState.Checked:
-                    self._model.show_close_app_dialog = False
                 self._model.save_window_state()
                 return True
             return False
@@ -145,6 +165,7 @@ class MainWindowPresenter:
         return True
 
     def _handle_create_new_playbook(self) -> None:
+        self._ask_save_changed_playbook()
         dialog_new_playbook = DialogNewPlaybook(self._view)
         dialog_new_playbook.exec()
         if dialog_new_playbook.result():
@@ -166,12 +187,13 @@ class MainWindowPresenter:
         self._view.set_playbook(playbook_model.name, playbook_model.playbook_type, playbook_model.info)
 
     def _handle_open_playbook_local(self) -> None:
+        self._ask_save_changed_playbook()
         local_playbooks_info = self._playbook_manager.get_all_obj_info()
         dialog_open_local_playbook = DialogOpenPlaybook(local_playbooks_info, self._playbook_manager.delete_by_id, parent=self._view)
         dialog_open_local_playbook.exec()
         data = dialog_open_local_playbook.get_data()
         if self._model.playbook and self._model.playbook.id_local_db in data.deleted_playbook_ids:
-            self._model.playbook.reset_id_for_all_items(StorageType.LOCAL_DB)
+            self._model.playbook.reset_id(StorageType.LOCAL_DB)
         if dialog_open_local_playbook.result():
             dialog_progress = DialogProgressBar(self._view, 'Загрузка плейбука')
             dialog_progress.show()
@@ -180,6 +202,7 @@ class MainWindowPresenter:
                 if playbook_dto:
                     first_scheme_uuid = self._parse_playbook_dto_to_models(playbook_dto)
                     self._playbook_presenter.transfer_to_scheme_presenter_select_scheme(first_scheme_uuid)
+                    self._model.playbook.reset_changed_flag()
                 else:
                     dialog_info = DialogInfo('Плейбук не найден', 'Плейбук не найден', parent=self._view,
                                              check_box=False, decline_button=False, accept_button_text='Ок')
@@ -224,7 +247,7 @@ class MainWindowPresenter:
             for player_dto in scheme_dto.players:
                 player_model = self._playbook_items_fabric.create_player_model(
                     **player_dto.model_dump(exclude={'id', 'actions'}),
-                    id_local_db=playbook_dto.id, parent=scheme_model
+                    id_local_db=player_dto.id, parent=scheme_model
                 )
                 if player_model.team_type in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
                     scheme_model.add_first_team_player(player_model)
@@ -250,14 +273,11 @@ class MainWindowPresenter:
                     )
         return first_scheme_uuid
 
-
     def _transfer_to_playbook_presenter_save_playbook_local(self) -> None:
         self._playbook_presenter.handle_save_playbook_local(self._playbook_manager)
 
     def _transfer_to_playbook_presenter_save_playbook_local_as(self) -> None:
         self._playbook_presenter.handle_save_playbook_local_as(self._playbook_manager)
-
-
 
     def _transfer_to_playbook_presenter_add_scheme_clicked(self) -> None:
         self._playbook_presenter.handle_add_scheme()
@@ -280,9 +300,9 @@ class MainWindowPresenter:
                                               f'Вы уверены что хотите удалить схему "{scheme_name}"?',
                                               parent=self._view)
             dialog_remove_scheme.exec()
+            if dialog_remove_scheme.check_box_dont_ask_again.checkState() == Qt.CheckState.Checked:
+                self._model.show_remove_scheme_dialog = False
             if dialog_remove_scheme.result():
-                if dialog_remove_scheme.check_box_dont_ask_again.checkState() == Qt.CheckState.Checked:
-                    self._model.show_remove_scheme_dialog = False
                 self._playbook_presenter.handle_remove_scheme(model_uuid)
                 return
             return

@@ -119,23 +119,21 @@ class PlaybookPresenter:
         return file_name.strip()
 
     def handle_save_playbook_local(self, playbook_manager: 'PlaybookManager') -> None:
-        mapper = PlaybookMapperLocalDB()
-        dto = mapper.get_playbook_dto(self._model, is_new_playbook=False)
-        print(f'{dto = }')
-        # dialog_progress = DialogProgressBar(parent=self._view, operation_name='Сохранение плейбука')
-        # dialog_progress.show()
-        # try:
-        #     playbook_manager.save(self._model, is_new_playbook=False, set_progress_func=dialog_progress.set_progress_value)
-        #     for scheme_mapper in self._scheme_mappers.values():
-        #         scheme_mapper.presenter.clear_undo_stack()
-        # except Exception as e:
-        #     dialog_progress.hide()
-        #     dialog_info = DialogInfo('Ошибка', 'Произошла ошибка. Плейбук не был сохранён.', check_box=False,
-        #                              decline_button=False, accept_button_text='Ок', parent=self._view)
-        #     dialog_info.exec()
-        #     raise e
-        # finally:
-        #     dialog_progress.finish()
+        dialog_progress = DialogProgressBar(parent=self._view, operation_name='Сохранение плейбука')
+        dialog_progress.show()
+        try:
+            playbook_manager.save(self._model, is_new_playbook=False, set_progress_func=dialog_progress.set_progress_value)
+            self._model.reset_changed_flag()
+            for scheme_mapper in self._scheme_mappers.values():
+                scheme_mapper.presenter.clear_undo_stack()
+        except Exception as e:
+            dialog_progress.hide()
+            dialog_info = DialogInfo('Ошибка', 'Произошла ошибка. Плейбук не был сохранён.', check_box=False,
+                                     decline_button=False, accept_button_text='Ок', parent=self._view)
+            dialog_info.exec()
+            raise e
+        finally:
+            dialog_progress.finish()
 
     def handle_save_playbook_local_as(self, playbook_manager: 'PlaybookManager') -> None:
         dialog_input = DialogInput('Сохранить как', 'Введите название плейбука:', parent=self._view)
@@ -147,6 +145,7 @@ class PlaybookPresenter:
             dialog_progress.show()
             try:
                 playbook_manager.save(self._model, is_new_playbook=True, set_progress_func=dialog_progress.set_progress_value)
+                self._model.reset_changed_flag()
                 for scheme_mapper in self._scheme_mappers.values():
                     scheme_mapper.presenter.clear_undo_stack()
             except Exception as e:

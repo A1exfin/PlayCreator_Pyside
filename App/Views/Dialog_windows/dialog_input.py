@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 from collections import namedtuple
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialog, QLineEdit, QVBoxLayout, QLabel, QSizePolicy
+from PySide6.QtWidgets import QDialog, QLineEdit, QVBoxLayout, QLabel
 from PySide6.QtGui import QFont
 
 
@@ -20,8 +20,7 @@ class DialogInput(QDialog):
     def __init__(self, title: str, label_text: str, parent: 'QWidget' = None):
         super().__init__(parent=parent)
         self.setWindowTitle(title)
-        self.setMinimumSize(200, 50)
-        self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        self.setFixedSize(226, 113)
 
         font = QFont()
         font.setPointSize(10)

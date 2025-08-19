@@ -10,8 +10,8 @@ __all__ = ('DialogAbout', )
 class DialogAbout(QDialog):
     def __init__(self, version: str, ico: str, parent=None, flags=Qt.WindowFlags()):
         super().__init__(parent, flags)
-        self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.setWindowTitle('PlayCreator')
+        self.setFixedSize(639, 191)
 
         label_ico = QLabel(parent=self)
         label_ico.setPixmap(QPixmap(ico))

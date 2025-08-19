@@ -6,14 +6,16 @@ from .base_model import BaseModel
 if TYPE_CHECKING:
     from PySide6.QtCore import QObject
     from Config.Enums import ActionLineType
+    from .playbook_model import PlaybookModel
 
 
 class ActionLineModel(BaseModel):
-    def __init__(self, line_type: 'ActionLineType', x1: float, y1: float, x2: float, y2: float,
+    def __init__(self, playbook_model: 'PlaybookModel', line_type: 'ActionLineType', x1: float, y1: float, x2: float, y2: float,
                  thickness: int, color: str, uuid: Optional['UUID'] = None,
                  id_local_db: Optional[int] = None, id_api: Optional[int] = None,
                  parent: Optional['QObject'] = None):
         super().__init__(parent, uuid, id_local_db, id_api)
+        self._playbook_model = playbook_model
         self._line_type = line_type
         self._x1 = x1
         self._y1 = y1
@@ -22,8 +24,9 @@ class ActionLineModel(BaseModel):
         self._thickness = thickness
         self._color = color
 
-    def set_new_uuid(self) -> None:
-        self._uuid = uuid4()
+    def _set_changed(self) -> None:
+        super().set_changed()
+        self._playbook_model.changed = True
 
     @property
     def action_type(self) -> 'ActionLineType':

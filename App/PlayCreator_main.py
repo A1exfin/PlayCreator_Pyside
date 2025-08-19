@@ -143,6 +143,19 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
     def _debug_method(self):
         ...
+        from Views.Dialog_windows.dialog_save_changed_playbook import DialogSaveChangedPlaybook
+        from Views.Dialog_windows.dialog_select_team import DialogSelectTeam
+        # d = DialogSaveChangedPlaybook(self, True)
+        # d.exec()
+        # if d.result():
+        #     print('')
+
+        d = DialogSelectTeam(self, [(1, 'Warriors'), (2, 'Iron Wings'), (3, 'Спартанцы')])
+        d.exec()
+        if d.result():
+            data = d.get_data()
+            print(f'{data = }')
+
 
     def _check_max_yards_football(self, value: str) -> None:
         try:
@@ -205,13 +218,15 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
     def set_initial_window_state(self, x: int, y: int, width: int, height: int, theme: 'AppTheme', is_maximized: bool,
                                  tool_bar_visible: bool, tool_bar_area: 'Qt.ToolBarArea', presentation_mode: bool,
-                                 show_remove_scheme_dialog: bool, show_close_app_dialog: bool) -> None:
+                                 show_remove_scheme_dialog: bool, show_close_app_dialog: bool,
+                                 show_save_changed_playbook_dialog: bool) -> None:
         self.move(QPoint(x, y))
         self.resize(width, height)
         getattr(self, f'action_{theme.name}_theme'.lower()).setChecked(True)
         self.showMaximized() if is_maximized else self.showNormal()
         self.addToolBar(tool_bar_area, self.toolBar_main)
-        self.update_window(theme, tool_bar_visible, presentation_mode, show_remove_scheme_dialog, show_close_app_dialog)
+        self.update_window(theme, tool_bar_visible, presentation_mode, show_remove_scheme_dialog, show_close_app_dialog,
+                           show_save_changed_playbook_dialog)
 
     def _get_current_screen(self) -> 'QScreen':
         screen = self.screen()
@@ -241,11 +256,13 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
             self.main_presenter.handle_maximized_changed(self.isMaximized())
 
     def update_window(self, theme: 'AppTheme', tool_bar_visible: bool, presentation_mode: bool,
-                      show_remove_scheme_dialog: bool, show_close_app_dialog: bool) -> None:
+                      show_remove_scheme_dialog: bool, show_close_app_dialog: bool,
+                      show_save_changed_playbook_dialog: bool) -> None:
         self.action_toolbar_visible.setChecked(tool_bar_visible)
         self.toolBar_main.show() if tool_bar_visible else self.toolBar_main.hide()
         self.action_show_remove_scheme_dialog.setChecked(show_remove_scheme_dialog)
         self.action_show_close_app_dialog.setChecked(show_close_app_dialog)
+        self.action_show_save_changed_playbook_dialog.setChecked(show_save_changed_playbook_dialog)
         self.action_presentation_mode.setChecked(presentation_mode)
         self.groupBox_team_playbook_settings.setVisible(not presentation_mode)
         self.label_current_zoom.setVisible(not presentation_mode)

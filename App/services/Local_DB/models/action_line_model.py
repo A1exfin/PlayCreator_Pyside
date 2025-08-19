@@ -5,7 +5,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .common import pk, hex_color, action_fk
 from .common import EnumInt, uuid_binary
 from services.Local_DB import Base
-from services.Local_DB.DTO.output_DTO import ActionLineOutDTO
 from Config.Enums import ActionLineType
 
 if TYPE_CHECKING:
@@ -30,9 +29,6 @@ class ActionLineORM(Base):
 
     action_id: Mapped[action_fk]
     action: Mapped['ActionORM'] = relationship(back_populates='action_lines')
-
-    def __eq__(self, other) -> bool:
-        return self.id == other.id if isinstance(other, ActionLineOutDTO) else super().__eq__(other)
 
     def __repr__(self) -> str:
         return f'\n\t\t\t\t\t\t\t\t<{self.__class__.__name__} (id: {self.id}; ' \

@@ -6,14 +6,16 @@ from .base_model import BaseModel
 if TYPE_CHECKING:
     from PySide6.QtCore import QObject
     from Config.Enums import FinalActionType
+    from .playbook_model import PlaybookModel
 
 
 class FinalActionModel(BaseModel):
-    def __init__(self, action_type: 'FinalActionType', x: float, y: float, angle: float,
-                 line_thickness: int, color: str, uuid: Optional['UUID'] = None,
+    def __init__(self, playbook_model: 'PlaybookModel', action_type: 'FinalActionType', x: float, y: float,
+                 angle: float, line_thickness: int, color: str, uuid: Optional['UUID'] = None,
                  id_local_db: Optional[int] = None, id_api: Optional[int] = None,
                  parent: Optional['QObject'] = None):
         super().__init__(parent, uuid, id_local_db, id_api)
+        self._playbook_model = playbook_model
         self._action_type = action_type
         self._x = x
         self._y = y
@@ -21,8 +23,9 @@ class FinalActionModel(BaseModel):
         self._line_thickness = line_thickness
         self._color = color
 
-    def set_new_uuid(self) -> None:
-        self._uuid = uuid4()
+    def _set_changed(self) -> None:
+        super().set_changed()
+        self._playbook_model.changed = True
 
     @property
     def action_type(self) -> 'FinalActionType':

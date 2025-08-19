@@ -4,7 +4,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .common import pk, player_fk, uuid_binary
 from services.Local_DB import Base
-from services.Local_DB.DTO.output_DTO import ActionOutDTO
 
 if TYPE_CHECKING:
     from .player_model import PlayerORM
@@ -29,9 +28,6 @@ class ActionORM(Base):
     final_actions: Mapped[list['FinalActionORM']] = relationship(
         back_populates='action', cascade='all, delete-orphan', lazy='selectin'
     )
-
-    def __eq__(self, other) -> bool:
-        return self.id == other.id if isinstance(other, ActionOutDTO) else super().__eq__(other)
 
     def __repr__(self) -> str:
         return f'\n\t\t\t\t\t\t<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}) at {hex(id(self))}> ' \

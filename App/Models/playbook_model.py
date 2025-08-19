@@ -61,7 +61,7 @@ class PlaybookModel(BaseModel):
         self._team_fk = team_fk
 
     def set_new_uuid_for_all_items(self) -> None:
-        self._uuid = uuid4()
+        self.set_new_uuid()
         self._set_schemes_new_uuid()
 
     def _set_schemes_new_uuid(self) -> None:
@@ -69,13 +69,19 @@ class PlaybookModel(BaseModel):
             scheme_model.set_new_uuid()
 
     def reset_id_for_all_items(self, storage_type: 'StorageType') -> None:
-        if hasattr(self, f'_id_{storage_type.value}'):
-            setattr(self, f'_id_{storage_type.value}', None)
+        self.reset_id(storage_type)
         self._reset_schemes_id(storage_type)
 
     def _reset_schemes_id(self, storage_type: 'StorageType') -> None:
         for scheme_model in self._schemes:
             scheme_model.reset_id(storage_type)
+
+    def reset_changed_flag(self) -> None:
+        super().reset_changed_flag()
+
+    def _reset_schemes_changed_flag(self) -> None:
+        for scheme in self._schemes:
+            scheme.reset_changed_flag()
 
     @property
     def name(self) -> str:
@@ -84,6 +90,7 @@ class PlaybookModel(BaseModel):
     @name.setter
     def name(self, name: str) -> None:
         self._name = name
+        self._changed = True
         self.nameChanged.emit(name)
 
     @property
@@ -93,6 +100,7 @@ class PlaybookModel(BaseModel):
     @info.setter
     def info(self, info: str) -> None:
         self._info = info
+        self._changed = True
         self.infoChanged.emit(info)
 
     @property
@@ -128,14 +136,16 @@ class PlaybookModel(BaseModel):
             self._schemes.insert(row_index, scheme_model)
         else:
             self._schemes.append(scheme_model)
+        self._changed = True
         self.schemeAdded.emit(scheme_model)
 
-    def remove_scheme(self, scheme_model: 'SchemeModel') -> None:#############################################
+    def remove_scheme(self, scheme_model: 'SchemeModel') -> None:
         if scheme_model.id_local_db:
-            self.add_deleted_item_ids('schemes', StorageType.LOCAL_DB, [scheme_model.id_local_db])
+            self.add_deleted_item_ids('schemes', StorageType.LOCAL_DB, scheme_model.id_local_db)
         if scheme_model.id_api:
-            self.add_deleted_item_ids('schemes', StorageType.API, [scheme_model.id_api])
+            self.add_deleted_item_ids('schemes', StorageType.API, scheme_model.id_api)
         self._schemes.remove(scheme_model)
+        self._changed = True
         self.schemeRemoved.emit(scheme_model)
 
     def move_up_scheme(self, view_index: int, scheme_model: 'SchemeModel') -> None:
@@ -150,6 +160,7 @@ class PlaybookModel(BaseModel):
             scheme = self._schemes.pop(last_index)
             self._schemes.append(scheme)
             new_index = self._schemes.index(scheme)
+        self._changed = True
         self.schemeMoved.emit(last_index, new_index)
 
     def move_down_scheme(self, view_index: int, scheme_model: 'SchemeModel') -> None:
@@ -164,9 +175,10 @@ class PlaybookModel(BaseModel):
             scheme_model = self._schemes.pop(last_index)
             self._schemes.insert(0, scheme_model)
             new_index = self._schemes.index(scheme_model)
+        self._changed = True
         self.schemeMoved.emit(last_index, new_index)
 
-    def add_deleted_item_ids(self, item_type: str, storage: 'StorageType', ids: list[int] | int) -> None:
+    def add_deleted_item_ids(self, item_type: str, storage_type: 'StorageType', ids: list[int] | int) -> None:
         """
         Добавляет id удалённых итемов в хранилище для удаления этих итемов из БД при сохранении плейбука.
         Аргументы:
@@ -175,17 +187,18 @@ class PlaybookModel(BaseModel):
             ids_lst: Список целых чисел, для добавления в список id удаляемых итемов
         """
         # print('add_deleted_item_ids')
-        # print(f'{ids = }')
+        # print(f'{item_type = }, {storage_type = }, {ids = }')
         if not hasattr(self._deleted_items, item_type):
             raise ValueError(f'Unknown item type: {item_type}')
         if isinstance(ids, list):
-            getattr(self._deleted_items, item_type)[storage].extend(ids)
+            getattr(self._deleted_items, item_type)[storage_type].extend(ids)
         if isinstance(ids, int):
-            getattr(self._deleted_items, item_type)[storage].append(ids)
+            getattr(self._deleted_items, item_type)[storage_type].append(ids)
+        # print(f'{self.get_deleted_item_ids(item_type, storage_type) = }')
 
     def remove_deleted_item_ids(self, item_type: str, storage_type: 'StorageType', ids: list[int] | int) -> None:
         # print('remove_deleted_item_ids')
-        # print(f'{ids = }')
+        # print(f'{item_type = }, {storage_type = }, {ids = }')
         if not hasattr(self._deleted_items, item_type):
             raise ValueError(f'Unknown item type: {item_type}')
         deleted_items_ids = getattr(self._deleted_items, item_type)[storage_type]
@@ -194,13 +207,14 @@ class PlaybookModel(BaseModel):
         if isinstance(ids, list):
             for id in ids:
                 deleted_items_ids.remove(id)
+        # print(f'{self.get_deleted_item_ids(item_type, storage_type) = }')
 
     @property
     def deleted_items(self) -> 'DeletedPlaybookItems':
         return self._deleted_items
 
-    def get_deleted_item_ids(self, item_type: str, storage: 'StorageType') -> list[int]:
-        return getattr(self._deleted_items, item_type)[storage].copy()
+    def get_deleted_item_ids(self, item_type: str, storage_type: 'StorageType') -> list[int]:
+        return getattr(self._deleted_items, item_type)[storage_type].copy()
 
     def clear_all_deleted_item_ids(self) -> None:
         self._deleted_items = DeletedPlaybookItems()

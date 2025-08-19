@@ -23,12 +23,9 @@ class PencilLineModel(BaseModel):
         self._thickness = thickness
         self._color = color
 
-    def set_new_uuid(self) -> None:
-        self._uuid = uuid4()
-
-    def reset_id(self, storage_type: 'StorageType') -> None:
-        if hasattr(self, f'_id_{storage_type.value}'):
-            setattr(self, f'_id_{storage_type.value}', None)
+    def _set_changed(self) -> None:
+        super().set_changed()
+        self._playbook_model.changed = True
 
     @property
     def x1(self) -> float:

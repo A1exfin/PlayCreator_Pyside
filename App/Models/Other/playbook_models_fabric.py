@@ -145,15 +145,17 @@ class PlaybookModelsFabric:
 
     def create_action_model(self, parent: 'PlayerModel', uuid: Optional['UUID'] = None,
                             id_local_db: Optional[int] = None, id_api: Optional[int] = None) -> 'ActionModel':
-        return ActionModel(uuid, id_local_db, id_api, parent=parent)
+        return ActionModel(self._playbook_model, uuid, id_local_db, id_api, parent=parent)
 
     def create_action_line_model(self, parent: 'ActionModel', line_type: 'ActionLineType',
                                  x1: float, y1: float, x2: float, y2: float, thickness: int, color: str,
                                  uuid: Optional['UUID'] = None,
                                  id_local_db: Optional[int] = None, id_api: Optional[int] = None) -> 'ActionLineModel':
-        return ActionLineModel(line_type, x1, y1, x2, y2, thickness, color, uuid, id_local_db, id_api, parent=parent)
+        return ActionLineModel(self._playbook_model, line_type, x1, y1, x2, y2, thickness, color, uuid,
+                               id_local_db, id_api, parent=parent)
 
     def create_final_action_model(self, parent: 'ActionModel', action_type: 'FinalActionType', x: float, y: float,
                                   angle: float, line_thickness: int, color: str, uuid: Optional['UUID'] = None,
                                   id_local_db: Optional[int] = None, id_api: Optional[int] = None) -> 'FinalActionModel':
-        return FinalActionModel(action_type, x, y, angle, line_thickness, color, uuid, id_local_db, id_api, parent=parent)
+        return FinalActionModel(self._playbook_model, action_type, x, y, angle, line_thickness, color, uuid,
+                                id_local_db, id_api, parent=parent)

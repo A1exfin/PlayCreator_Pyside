@@ -4,7 +4,8 @@ from uuid import UUID, uuid4
 from PySide6.QtCore import QObject
 
 if TYPE_CHECKING:
-    pass
+    from Config.Enums import StorageType
+    from .playbook_model import PlaybookModel
 
 
 class BaseModel(QObject):
@@ -32,9 +33,16 @@ class BaseModel(QObject):
     def id_api(self, value: int) -> None:
         self._id_api = value
 
+    def reset_id(self, storage_type: 'StorageType') -> None:
+        if hasattr(self, f'_id_{storage_type.value}'):
+            setattr(self, f'_id_{storage_type.value}', None)
+
     @property
     def uuid(self) -> 'UUID':
         return self._uuid
+
+    def set_new_uuid(self) -> None:
+        self._uuid = uuid4()
 
     @property
     def changed(self) -> bool:
@@ -43,4 +51,10 @@ class BaseModel(QObject):
     @changed.setter
     def changed(self, value: bool) -> None:
         self._changed = value
+
+    def set_changed(self) -> None:
+        self._changed = True
+
+    def reset_changed_flag(self) -> None:
+        self._changed = False
 

@@ -110,6 +110,15 @@ class MainWindowModel(QObject):
         self.modelChanged.emit(self)
 
     @property
+    def show_save_changed_playbook_dialog(self) -> bool:
+        return self._show_save_changed_playbook_dialog
+
+    @show_save_changed_playbook_dialog.setter
+    def show_save_changed_playbook_dialog(self, value: bool) -> None:
+        self._show_save_changed_playbook_dialog = value
+        self.modelChanged.emit(self)
+
+    @property
     def tool_bar_visible(self) -> bool:
         return self._tool_bar_visible
 
@@ -155,6 +164,7 @@ class MainWindowModel(QObject):
         self._tool_bar_area = Qt.ToolBarArea(settings.value('toolBar/area', defaultValue=4, type=int))
         self._show_remove_scheme_dialog = settings.value('app/show_remove_scheme_dialog', defaultValue=True, type=bool)
         self._show_close_app_dialog = settings.value('app/show_close_app_dialog', defaultValue=True, type=bool)
+        self._show_save_changed_playbook_dialog = settings.value('app/show_save_changed_playbook_dialog', defaultValue=True, type=bool)
         self._presentation_mode = False
         self._about_ico_path = f'://themes/{self._theme.name}_theme/tactic.png'.lower()
         self._version = Config.VERSION
@@ -175,5 +185,6 @@ class MainWindowModel(QObject):
         settings.setValue('toolBar/area', self._tool_bar_area.value)
         settings.setValue('app/show_remove_scheme_dialog', self._show_remove_scheme_dialog)
         settings.setValue('app/show_close_app_dialog', self._show_close_app_dialog)
+        settings.setValue('app/show_save_changed_playbook_dialog', self._show_save_changed_playbook_dialog)
 
 

@@ -10,9 +10,11 @@ from .dialog_edit_scheme import DialogEditScheme
 from .dialog_info import DialogInfo
 from .dialog_progress_bar import DialogProgressBar
 from .dialog_input import DialogInput
+from .dialog_save_changed_playbook import DialogSaveChangedPlaybook
 
 __all__ = ('DialogSignUp', 'DialogLogIn', 'DialogAbout', 'DialogInfo', 'DialogInput', 'DialogProgressBar',
-           'DialogNewPlaybook', 'DialogOpenPlaybook', 'DialogEditPlaybook', 'DialogEditScheme',
+           'DialogNewPlaybook', 'DialogOpenPlaybook', 'DialogSaveChangedPlaybook',
+           'DialogEditPlaybook', 'DialogEditScheme',
            'DialogEditFirstTeamPlayer', 'DialogEditSecondTeamPlayer', 'DialogEditFigure')
 
 

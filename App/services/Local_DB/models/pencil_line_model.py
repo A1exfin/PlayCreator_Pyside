@@ -5,7 +5,6 @@ from sqlalchemy.orm import Mapped, relationship
 from .common import pk, scheme_fk, hex_color
 from .common import uuid_binary
 from services.Local_DB import Base
-from services.Local_DB.DTO.output_DTO import PencilLineOutDTO
 
 if TYPE_CHECKING:
     from .scheme_model import SchemeORM
@@ -27,9 +26,6 @@ class PencilLineORM(Base):
 
     scheme_id: Mapped[scheme_fk]
     scheme: Mapped['SchemeORM'] = relationship(back_populates='pencil_lines')
-
-    def __eq__(self, other) -> bool:
-        return self.id == other.id if isinstance(other, PencilLineOutDTO) else super().__eq__(other)
 
     def __repr__(self) -> str:
         return f'\n\t\t\t\t<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \

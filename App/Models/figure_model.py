@@ -35,12 +35,9 @@ class FigureModel(BaseModel):
         self._fill_color = fill_color
         self._fill_opacity = fill_opacity
 
-    def reset_id(self, storage_type: 'StorageType') -> None:
-        if hasattr(self, f'_id_{storage_type.value}'):
-            setattr(self, f'_id_{storage_type.value}', None)
-
-    def set_new_uuid(self) -> None:
-        self._uuid = uuid4()
+    def _set_changed(self) -> None:
+        super().set_changed()
+        self._playbook_model.changed = True
 
     @property
     def figure_type(self):
@@ -88,18 +85,21 @@ class FigureModel(BaseModel):
 
     def set_pos(self, x: float, y: float) -> None:
         self._x, self._y = x, y
+        self._set_changed()
         self.coordsChanged.emit(QPointF(self._x, self._y))
 
     def set_size(self, x: float, y: float, width: float, height: float) -> None:
         self._x, self._y, self._width, self._height = x, y, width, height
+        self._set_changed()
         self.sizeChanged.emit(self._x, self._y, self._width, self._height)
 
     def set_figure_style(self, border: bool, border_thickness: int, border_color: str,
                          fill: bool,  fill_opacity: str, fill_color: str) -> None:
         if not border and not fill:
             raise ValueError('У фигуры одновременно не могут отсутствовать граница и заливка.')
-        self._border, self._border_thickness, self._border_color, self._fill, self._fill_opacity, self._fill_color = \
-            border, border_thickness, border_color, fill, fill_opacity, fill_color,
+        self._border, self._border_thickness, self._border_color = border, border_thickness, border_color
+        self._fill, self._fill_opacity, self._fill_color = fill, fill_opacity, fill_color
+        self._set_changed()
         self.styleChanged.emit(self._border, self._border_thickness, self._border_color,
                                self._fill, self._fill_opacity, self._fill_color)
 

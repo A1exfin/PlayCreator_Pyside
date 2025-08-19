@@ -6,7 +6,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .common import pk
 from .common import uuid_binary, EnumInt
 from services.Local_DB import Base
-from services.Local_DB.DTO.output_DTO import SchemeOutDTO
 from Config.Enums import TeamType
 
 if TYPE_CHECKING:
@@ -47,9 +46,6 @@ class SchemeORM(Base):
                                                     lazy='selectin')
     pencil_lines: Mapped[list['PencilLineORM']] = relationship(back_populates='scheme', cascade='all, delete-orphan',
                                                                lazy='selectin')
-
-    def __eq__(self, other) -> bool:
-        return self.id == other.id if isinstance(other, SchemeOutDTO) else super().__eq__(other)
 
     def __repr__(self) -> str:
         return f'\n\t\t<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \

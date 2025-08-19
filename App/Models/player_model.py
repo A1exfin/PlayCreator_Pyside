@@ -39,9 +39,12 @@ class PlayerModel(BaseModel):
         self._player_color = player_color
         self._actions: list['ActionModel'] = list()
 
+    def _set_changed(self) -> None:
+        super().set_changed()
+        self._playbook_model.changed = True
+
     def reset_id(self, storage_type: 'StorageType') -> None:
-        if hasattr(self, f'_id_{storage_type.value}'):
-            setattr(self, f'_id_{storage_type.value}', None)
+        super().reset_id(storage_type)
         self._reset_actions_id(storage_type)
 
     def _reset_actions_id(self, storage_type: 'StorageType') -> None:
@@ -50,13 +53,22 @@ class PlayerModel(BaseModel):
                 action_model.reset_id(storage_type)
 
     def set_new_uuid(self) -> None:
-        self._uuid = uuid4()
+        super().set_new_uuid()
         self._set_actions_new_uuid()
 
     def _set_actions_new_uuid(self) -> None:
         for action_model in self._actions:
             if action_model:
                 action_model.set_new_uuid()
+
+    def reset_changed_flag(self) -> None:
+        super().reset_changed_flag()
+        self._reset_actions_changed_flag()
+
+    def _reset_actions_changed_flag(self) -> None:
+        for action_model in self._actions:
+            if action_model:
+                action_model.reset_changed_flag()
 
     @property
     def x(self) -> float:
@@ -68,6 +80,7 @@ class PlayerModel(BaseModel):
 
     def set_pos(self, x: float, y: float) -> None:
         self._x, self._y = x, y
+        self._set_changed()
         self.coordsChanged.emit(QPointF(self.x, self.y))
 
     @property
@@ -102,12 +115,13 @@ class PlayerModel(BaseModel):
                          fill_type: Optional['FillType'] = None, symbol_type: Optional['SymbolType'] = None) -> None:
         if fill_type and symbol_type:
             raise ValueError('Заливка и символ не могут быть заданы одновренно.')
-        self._text, self._text_color, self._player_color, self._fill_type, self._symbol_type = \
-            text, text_color, player_color, fill_type, symbol_type
+        self._text, self._text_color, self._player_color = text, text_color, player_color
+        self._fill_type, self._symbol_type = fill_type, symbol_type
         if self._team_type in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF, TeamType.OFFENCE_ADD):
             self.playerStyleChanged.emit(self._fill_type, self._text, self._text_color, self._player_color)
         if self._team_type in (TeamType.DEFENCE, TeamType.KICK_RET, TeamType.PUNT_RET, TeamType.FIELD_GOAL_DEF):
             self.playerStyleChanged.emit(self._symbol_type, self._text, self._text_color, self._player_color)
+        self._set_changed()
 
     @property
     def actions(self) -> list['ActionModel']:
@@ -115,14 +129,17 @@ class PlayerModel(BaseModel):
 
     def add_action(self, action_model: 'ActionModel') -> None:
         self._actions.append(action_model)
+        self._set_changed()
         self.actionAdded.emit(action_model)
 
     def remove_action(self, action: 'ActionModel') -> None:
         self._actions.remove(action)
+        self._set_changed()
         self.actionRemoved.emit(action)
 
     def remove_all_actions(self) -> None:
         self._actions.clear()
+        self._set_changed()
         self.allActionsRemoved.emit()
 
     def get_data_for_view(self) -> dict:

@@ -2565,6 +2565,7 @@
      </property>
      <addaction name="action_show_remove_scheme_dialog"/>
      <addaction name="action_show_close_app_dialog"/>
+     <addaction name="action_show_save_changed_playbook_dialog"/>
     </widget>
     <addaction name="action_presentation_mode"/>
     <addaction name="action_toolbar_visible"/>
@@ -2958,6 +2959,20 @@
    </property>
    <property name="iconVisibleInMenu">
     <bool>false</bool>
+   </property>
+  </action>
+  <action name="action_show_save_changed_playbook_dialog">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Подтверждение сохранения изменённого плейбука</string>
+   </property>
+   <property name="statusTip">
+    <string>Показывать окно сохранения изменённого плейбука</string>
    </property>
   </action>
  </widget>

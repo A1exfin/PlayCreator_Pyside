@@ -8,7 +8,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .common import pk
 from .common import uuid_binary, EnumInt
 from services.Local_DB import Base
-from services.Local_DB.DTO.output_DTO import PlaybookOutDTO
 from Config.Enums import PlaybookType
 
 if TYPE_CHECKING:
@@ -40,9 +39,6 @@ class PlaybookORM(Base):
     deleted_pencil_lines: list[int] = []
     deleted_players: list[int] = []
     deleted_actions: list[int] = []
-
-    def __eq__(self, other) -> bool:
-        return self.id == other.id if isinstance(other, PlaybookOutDTO) else super().__eq__(other)
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \

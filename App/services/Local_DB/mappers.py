@@ -116,26 +116,13 @@ class PlaybookMapperLocalDB():
 
     def _create_playbook_orm_with_nested_items(self, is_new_playbook: bool, playbook: 'PlaybookModel') -> 'PlaybookORM':
         playbook_dto = self.get_playbook_dto(playbook, is_new_playbook)
-        playbook_orm = PlaybookORM(id=playbook_dto.id, uuid=playbook_dto.uuid, name=playbook_dto.name,
-                                   playbook_type=playbook_dto.playbook_type, info=playbook_dto.info,
-                                   schemes=list(),
-                                   deleted_schemes=playbook_dto.deleted_schemes,
-                                   deleted_figures=playbook_dto.deleted_figures,
-                                   deleted_labels=playbook_dto.deleted_labels,
-                                   deleted_pencil_lines=playbook_dto.deleted_pencil_lines,
-                                   deleted_players=playbook_dto.deleted_players,
-                                   deleted_actions=playbook_dto.deleted_actions)
+        playbook_orm = PlaybookORM(**playbook_dto.model_dump(exclude={'schemes'}))
         for scheme_dto in playbook_dto.schemes:
             playbook_orm.schemes.append(self.create_scheme_orm_with_nested_items(scheme_dto))
         return playbook_orm
 
     def create_scheme_orm_with_nested_items(self, scheme_dto: 'SchemeOutDTO') -> 'SchemeORM':
-        scheme_orm = SchemeORM(id=scheme_dto.id, uuid=scheme_dto.uuid, name=scheme_dto.name,
-                               row_index=scheme_dto.row_index, zoom=scheme_dto.zoom,
-                               view_point_x=scheme_dto.view_point_x, view_point_y=scheme_dto.view_point_y,
-                               first_team=scheme_dto.first_team, second_team=scheme_dto.second_team,
-                               first_team_position=scheme_dto.first_team_position, note=scheme_dto.note,
-                               figures=list(), labels=list(), pencil_lines=list(), players=list())
+        scheme_orm = SchemeORM(**scheme_dto.model_dump(exclude={'figures', 'labels', 'pencil_lines', 'players'}))
         scheme_orm.figures.extend(FigureORM(**figure.model_dump()) for figure in scheme_dto.figures)
         scheme_orm.labels.extend(LabelORM(**label.model_dump()) for label in scheme_dto.labels)
         scheme_orm.pencil_lines.extend(PencilLineORM(**pencil_line.model_dump()) for pencil_line in scheme_dto.pencil_lines)
@@ -144,55 +131,30 @@ class PlaybookMapperLocalDB():
         return scheme_orm
 
     def create_player_orm_with_nested_items(self, player_dto: 'PlayerOutDTO') -> 'PlayerORM':
-        player_orm = PlayerORM(id=player_dto.id, uuid=player_dto.uuid, x=player_dto.x, y=player_dto.y,
-                               team_type=player_dto.team_type, position=player_dto.position,
-                               text=player_dto.text, text_color=player_dto.text_color, player_color=player_dto.player_color,
-                               fill_type=player_dto.fill_type, symbol_type=player_dto.symbol_type,
-                               actions=list())
+        player_orm = PlayerORM(**player_dto.model_dump(exclude={'actions'}))
         for action_dto in player_dto.actions:
             player_orm.actions.append(self.create_action_orm_with_nested_items(action_dto))
         return player_orm
 
     def create_action_orm_with_nested_items(self, action_dto: 'ActionOutDTO') -> 'ActionORM':
-        action_orm = ActionORM(id=action_dto.id, uuid=action_dto.uuid,
-                               action_lines=list(), final_actions=list())
+        action_orm = ActionORM(**action_dto.model_dump(exclude={'action_lines', 'final_actions'}))
         action_orm.action_lines.extend(ActionLineORM(**line.model_dump()) for line in action_dto.action_lines)
         action_orm.final_actions.extend(FinalActionORM(**final_action.model_dump()) for final_action in action_dto.final_actions)
         return action_orm
 
     def create_playbook_orm(self, playbook_dto: 'PlaybookOutDTO') -> 'PlaybookORM':
-        return PlaybookORM(id=playbook_dto.id, uuid=playbook_dto.uuid, name=playbook_dto.name,
-                           playbook_type=playbook_dto.playbook_type, info=playbook_dto.info,
-                           schemes=list(),
-                           deleted_schemes=playbook_dto.deleted_schemes,
-                           deleted_figures=playbook_dto.deleted_figures,
-                           deleted_labels=playbook_dto.deleted_labels,
-                           deleted_pencil_lines=playbook_dto.deleted_pencil_lines,
-                           deleted_players=playbook_dto.deleted_players,
-                           deleted_actions=playbook_dto.deleted_actions)
+        return PlaybookORM(**playbook_dto.model_dump(exclude={'schemes'}))
 
     def create_scheme_orm(self, scheme_dto: 'SchemeOutDTO', playbook_orm: 'PlaybookORM') -> 'SchemeORM':
-        return SchemeORM(id=scheme_dto.id, uuid=scheme_dto.uuid, name=scheme_dto.name,
-                         row_index=scheme_dto.row_index, zoom=scheme_dto.zoom,
-                         view_point_x=scheme_dto.view_point_x, view_point_y=scheme_dto.view_point_y,
-                         first_team=scheme_dto.first_team, second_team=scheme_dto.second_team,
-                         first_team_position=scheme_dto.first_team_position, note=scheme_dto.note,
-                         playbook=playbook_orm, playbook_id=playbook_orm.id,
-                         figures=list(), labels=list(), pencil_lines=list(), players=list())
+        return SchemeORM(**scheme_dto.model_dump(exclude={'figures', 'labels', 'pencil_lines', 'players'}),
+                         playbook=playbook_orm, playbook_id=playbook_orm)
 
     def create_player_orm(self, player_dto: 'PlayerOutDTO', scheme_orm: 'SchemeORM') -> 'PlayerORM':
-        return PlayerORM(id=player_dto.id, uuid=player_dto.uuid, x=player_dto.x, y=player_dto.y,
-                         team_type=player_dto.team_type, position=player_dto.position,
-                         text=player_dto.text, text_color=player_dto.text_color, player_color=player_dto.player_color,
-                         fill_type=player_dto.fill_type, symbol_type=player_dto.symbol_type,
-                         scheme=scheme_orm, scheme_id=scheme_orm.id,
-                         actions=list())
+        return PlayerORM(**player_dto.model_dump(exclude={'actions'}), scheme=scheme_orm, scheme_id=scheme_orm.id)
 
     def create_action_orm(self, action_dto: 'ActionOutDTO', player_orm: 'PlayerORM') -> 'ActionORM':
-        action_orm = ActionORM(id=action_dto.id, uuid=action_dto.uuid,
-                               player=player_orm, player_id=player_orm.id,
-                               action_lines=list(), final_actions=list())
-        return action_orm
+        return ActionORM(**action_dto.model_dump(exclude={'action_lines', 'final_actions'}),
+                         player=player_orm, player_id=player_orm.id)
 
     def create_action_line_orm(self, action_line_dto: 'ActionLineOutDTO', action_orm: 'ActionORM') -> 'ActionLineORM':
         action_line_orm = ActionLineORM(**action_line_dto.model_dump())
