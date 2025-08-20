@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 
 if TYPE_CHECKING:
-    from Models import LabelModel
+    from View_Models import LabelModel
 
 
 __all__ = ('MoveLabelCommand', 'ChangeLabelTextAttributesCommand', 'ChangeLabelSizeCommand')

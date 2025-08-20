@@ -5,17 +5,16 @@ from PySide6.QtCore import Qt
 from Config.Enums import StorageType, AppTheme, TeamType
 from Views.Dialog_windows import DialogInfo, DialogAbout, DialogNewPlaybook, DialogOpenPlaybook, DialogProgressBar,\
     DialogSaveChangedPlaybook
-from Models import PlaybookModel
+from View_Models import PlaybookModel
 from .playbook_presenter import PlaybookPresenter
-from Models.Other import PlaybookModelsFabric, DeletionObserver
-from services.Local_DB.repository.playbook_repository import PlaybookManager
-from services.Local_DB import get_session
+from View_Models.Other import PlaybookModelsFabric, DeletionObserver
+from Services.Local_DB import PlaybookManager
 
 if TYPE_CHECKING:
     from uuid import UUID
-    from Models import MainWindowModel
+    from View_Models import MainWindowModel
     from PlayCreator_main import PlayCreatorApp
-    from services.Local_DB.DTO.input_DTO import PlaybookInputDTO
+    from Services.Local_DB.DTO.input_DTO import PlaybookInputDTO
     from Config.Enums import SymbolType
 
 
@@ -29,7 +28,7 @@ class MainWindowPresenter:
         self._playbook_presenter: Optional['PlaybookPresenter'] = None
         self._playbook_items_fabric: Optional['PlaybookModelsFabric'] = None
         self._deletion_observer: Optional['DeletionObserver'] = None
-        self._playbook_manager = PlaybookManager(next(get_session()))
+        self._playbook_manager = PlaybookManager()
 
     def set_model_and_view(self, model: 'MainWindowModel', view: 'PlayCreatorApp') -> None:
         self._model = model

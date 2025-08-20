@@ -1,8 +1,5 @@
-from .Graphics import FirstTeamPlayerView, SecondTeamPlayerView, ActionLineView, FinalActionRouteView, FinalActionBlockView,\
-    RectangleView, EllipseView, ProxyWidgetLabel, PencilLineView
+from .Graphics.graphics_view import CustomGraphicsView
 from .Widgets.scheme_widget import SchemeWidget
 
 
-__all__ = ('FirstTeamPlayerView', 'SecondTeamPlayerView', 'ActionLineView', 'FinalActionRouteView', 'FinalActionBlockView',
-           'RectangleView', 'EllipseView', 'ProxyWidgetLabel', 'PencilLineView',
-           'SchemeWidget')
+__all__ = ('CustomGraphicsView', 'SchemeWidget', )

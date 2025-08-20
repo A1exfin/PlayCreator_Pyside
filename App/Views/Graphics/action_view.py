@@ -2,14 +2,16 @@ from typing import TYPE_CHECKING, Optional, Union
 from itertools import chain
 
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QGraphicsItem
 
 from Config.Enums import FinalActionType
 from Views import Graphics
 
 if TYPE_CHECKING:
     from uuid import UUID
-    from Views.Graphics import Field, PlayerView
+    from .player_view import PlayerView
+    from .field_view import Field
+    from .final_action_view import FinalActionRouteView, FinalActionBlockView
+    from .action_line_view import ActionLineView
 
 __all__ = ('ActionView',)
 
@@ -56,8 +58,8 @@ class ActionView(QObject):
         self._lines.append(line_item)
         return line_item
 
-    def add_final_action(self, final_action_data: dict) -> Union['Graphics.FinalActionRouteView',
-                                                                 'Graphics.FinalActionBlockView']:
+    def add_final_action(self, final_action_data: dict) -> Union['FinalActionRouteView',
+                                                                 'FinalActionBlockView']:
         if final_action_data['action_type'] is FinalActionType.ARROW:
             final_action_item = Graphics.FinalActionRouteView(**final_action_data, action=self)
         if final_action_data['action_type'] is FinalActionType.LINE:
@@ -66,12 +68,12 @@ class ActionView(QObject):
         self._final_actions.append(final_action_item)
         return final_action_item
 
-    def remove_action_line(self, line_item: 'Graphics.ActionLineView') -> None:
+    def remove_action_line(self, line_item: 'ActionLineView') -> None:
         self._lines.remove(line_item)
         self._scene.removeItem(line_item)
 
-    def remove_final_action(self, final_action_item: Union['Graphics.FinalActionRouteView',
-                                                           'Graphics.FinalActionBlockView']) -> None:
+    def remove_final_action(self, final_action_item: Union['FinalActionRouteView',
+                                                           'FinalActionBlockView']) -> None:
         self._final_actions.remove(final_action_item)
         self._scene.removeItem(final_action_item)
 
@@ -84,7 +86,7 @@ class ActionView(QObject):
         self._final_actions.clear()
 
     def get_all_action_parts(self) \
-            -> list[Union['Graphics.ActionLineView', 'Graphics.FinalActionRouteView', 'Graphics.FinalActionBlockView']]:
+            -> list[Union['ActionLineView', 'FinalActionRouteView', 'FinalActionBlockView']]:
         return [item for item in chain(self._lines, self._final_actions)]
 
     def set_hover_state(self, hover_state: bool) -> None:

@@ -2,9 +2,9 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Mapped, relationship
 
+from .base import Base
 from .common import pk, scheme_fk, hex_color
 from .common import uuid_binary
-from services.Local_DB import Base
 
 if TYPE_CHECKING:
     from .scheme_model import SchemeORM

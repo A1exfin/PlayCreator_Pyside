@@ -4,8 +4,8 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from services.Local_DB import Base###################################################
-from services.Local_DB.models import *
+from Services.Local_DB import Base###################################################
+from Services.Local_DB.Models import *
 
 config = context.config
 

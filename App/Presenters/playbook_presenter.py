@@ -4,18 +4,18 @@ from typing import TYPE_CHECKING, Optional
 from PySide6.QtWidgets import QFileDialog
 
 import Config
-from Models import PlaybookModel, SchemeModel
+from View_Models import PlaybookModel, SchemeModel
 from Views.Dialog_windows import DialogEditPlaybook, DialogProgressBar, DialogInfo, DialogInput
 from .scheme_presenter import SchemePresenter
 from .Mappers import SchemeMapper
-from services.Local_DB.mappers import PlaybookMapperLocalDB
+from Services.Local_DB.mapper import PlaybookMapperLocalDB
 
 if TYPE_CHECKING:
     from uuid import UUID
     from Config.Enums import TeamType, SymbolType
-    from Models.Other import PlaybookModelsFabric, DeletionObserver
+    from View_Models.Other import PlaybookModelsFabric, DeletionObserver
     from PlayCreator_main import PlayCreatorApp
-    from services.Local_DB.repository.playbook_repository import PlaybookManager
+    from Services.Local_DB.Repositories.playbook_manager import PlaybookManager
 
 __all__ = ('PlaybookPresenter', )
 

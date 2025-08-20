@@ -6,13 +6,12 @@ from collections import namedtuple
 
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsItemGroup
 from PySide6.QtCore import Qt, Signal, QPointF, QLineF
-from PySide6.QtGui import QFont, QPen, QBrush, QColor, QTransform
+from PySide6.QtGui import QPen, QBrush, QColor, QTransform
 
 import Config
 from .field_parts import FieldTriangle, FieldNumber
-from Config import football_field_data as football_field, flag_field_data as flag_field,\
-    football_players_data as football_players, flag_players_data as flag_players
-from Config.Enums import PlaybookType, Mode, TeamType, FigureType, ActionLineType
+from Config import football_field_data as football_field, flag_field_data as flag_field
+from Config.Enums import PlaybookType, Mode, FigureType, ActionLineType
 from Views import Graphics
 
 if TYPE_CHECKING:

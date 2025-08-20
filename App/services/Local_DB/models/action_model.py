@@ -2,8 +2,9 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from .base import Base
 from .common import pk, player_fk, uuid_binary
-from services.Local_DB import Base
+
 
 if TYPE_CHECKING:
     from .player_model import PlayerORM

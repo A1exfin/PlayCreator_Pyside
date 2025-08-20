@@ -44,12 +44,12 @@ class DialogInfo(QDialog):
         ico_label_checkbox_layout.addWidget(ico_label)
         ico_label_checkbox_layout.addLayout(self._label_checkbox_layout)
 
-        button_box = ButtonBox(self, decline_button, Qt.AlignRight, accept_button_text, decline_button_text)
+        self._button_box = ButtonBox(self, decline_button, Qt.AlignRight, accept_button_text, decline_button_text)
 
         main_layout = QVBoxLayout(self)
         main_layout.addLayout(ico_label_checkbox_layout)
         main_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))
-        main_layout.addWidget(button_box)
+        main_layout.addWidget(self._button_box)
 
-        button_box.accepted.connect(self.accept)
-        button_box.declined.connect(self.reject)
+        self._button_box.accepted.connect(self.accept)
+        self._button_box.declined.connect(self.reject)

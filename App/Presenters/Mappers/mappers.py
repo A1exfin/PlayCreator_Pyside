@@ -6,10 +6,9 @@ if TYPE_CHECKING:
     from Presenters.figure_presenter import FigurePresenter
     from Presenters.label_presenter import LabelPresenter
     from Presenters.action_presenter import ActionPresenter
-    from Models import SchemeModel, PlayerModel, FigureModel, LabelModel, PencilLineModel, ActionModel,\
+    from View_Models import SchemeModel, PlayerModel, FigureModel, LabelModel, PencilLineModel, ActionModel,\
         ActionLineModel, FinalActionModel
-    from Views.Graphics import FirstTeamPlayerView, SecondTeamPlayerView, RectangleView, EllipseView, ProxyWidgetLabel,\
-        PencilLineView, ActionView, ActionLineView, FinalActionRouteView, FinalActionBlockView
+    from Views import Graphics
     from Views import SchemeWidget
 
 __all__ = ('SchemeMapper', 'FigureMapper', 'LabelMapper', 'PencilLineMapper', 'PlayerMapper',
@@ -39,31 +38,35 @@ class SchemeMapper(BaseMapper['SchemeModel', 'SchemeWidget'], PresenterMixin['Sc
 
 
 class PlayerMapper(BaseMapper['PlayerModel', Union['FirstTeamPlayerView', 'SecondTeamPlayerView']], PresenterMixin['PlayerPresenter']):
-    def __init__(self, presenter: 'PlayerPresenter', model: 'PlayerModel', view: Union[
-        'FirstTeamPlayerView', 'SecondTeamPlayerView']):
+    def __init__(self, presenter: 'PlayerPresenter', model: 'PlayerModel',
+                 view: Union['Graphics.FirstTeamPlayerView', 'Graphics.SecondTeamPlayerView']):
         BaseMapper.__init__(self, model, view)
         PresenterMixin.__init__(self, presenter)
 
 
 class FigureMapper(BaseMapper['FigureModel', Union['Rectangle', 'EllipseView']], PresenterMixin['FigurePresenter']):
-    def __init__(self, presenter: 'FigurePresenter', model: 'FigureModel', view: Union['RectangleView', 'EllipseView']):
+    def __init__(self, presenter: 'FigurePresenter', model: 'FigureModel',
+                 view: Union['Graphics.RectangleView', 'Graphics.EllipseView']):
         BaseMapper.__init__(self, model, view)
         PresenterMixin.__init__(self, presenter)
 
 
 class LabelMapper(BaseMapper['LabelModel', 'ProxyWidgetLabel'], PresenterMixin['LabelPresenter']):
-    def __init__(self, presenter: 'LabelPresenter', model: 'LabelModel', view: 'ProxyWidgetLabel'):
+    def __init__(self, presenter: 'LabelPresenter', model: 'LabelModel',
+                 view: 'Graphics.ProxyWidgetLabel'):
         BaseMapper.__init__(self, model, view)
         PresenterMixin.__init__(self, presenter)
 
 
 class PencilLineMapper(BaseMapper['PencilLineModel', 'PencilLineView']):
-    def __init__(self, model: 'PencilLineModel', view: 'PencilLineView'):
+    def __init__(self, model: 'PencilLineModel',
+                 view: 'Graphics.PencilLineView'):
         BaseMapper.__init__(self, model, view)
 
 
 class ActionMapper(BaseMapper['ActionModel', 'ActionView'], PresenterMixin['ActionPresenter']):
-    def __init__(self, presenter: 'ActionPresenter', model: 'ActionModel', view: 'ActionView'):
+    def __init__(self, presenter: 'ActionPresenter', model: 'ActionModel',
+                 view: 'Graphics.ActionView'):
         BaseMapper.__init__(self, model, view)
         PresenterMixin.__init__(self, presenter)
 
@@ -71,5 +74,6 @@ class ActionMapper(BaseMapper['ActionModel', 'ActionView'], PresenterMixin['Acti
 class ActionPartsMapper(BaseMapper[Union['ActionModel', 'FinalActionModel'],
                                    Union['ActionLineView', 'FinalActionRouteView', 'FinalActionBlockView']]):
     def __init__(self, model: Union['ActionLineModel', 'FinalActionModel'],
-                 view: Union['ActionLineView', 'FinalActionRouteView', 'FinalActionBlockView']):
+                 view: Union['Graphics.ActionLineView', 'Graphics.FinalActionRouteView',
+                             'Graphics.FinalActionBlockView']):
         BaseMapper.__init__(self, model, view)

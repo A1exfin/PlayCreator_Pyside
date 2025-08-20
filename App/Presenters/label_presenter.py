@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from PySide6.QtCore import QPointF
     from PlayCreator_main import PlayCreatorApp
     from Views import Graphics
-    from Models import LabelModel
+    from View_Models import LabelModel
 
 
 __all__ = ('LabelPresenter', )

@@ -6,7 +6,7 @@ import Config
 from Config.Enums import AppTheme
 
 if TYPE_CHECKING:
-    from Models import PlaybookModel
+    from View_Models import PlaybookModel
 
 
 __all__ = ('MainWindowModel', )

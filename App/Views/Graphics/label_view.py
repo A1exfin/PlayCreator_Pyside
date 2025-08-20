@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from uuid import UUID
     from PySide6.QtWidgets import QWidget, QGraphicsSceneMouseEvent, QGraphicsSceneHoverEvent, QStyleOptionGraphicsItem
     from PySide6.QtGui import QMouseEvent, QKeyEvent, QFocusEvent
-    from Views.Graphics import Field
+    from .field_view import Field
 
 
 __all__ = ('ProxyWidgetLabel', 'ProxyTextEdit')

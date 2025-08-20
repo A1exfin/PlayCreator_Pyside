@@ -11,18 +11,16 @@ from PySide6.QtCore import Qt, Signal, QFile, QTextStream, QPoint, QEvent
 from PlayCreator_ui import Ui_MainWindow
 
 import Config
-from Models import MainWindowModel
+from Config.Enums import AppTheme, PlaybookType, Mode, TeamType, SymbolType
+from View_Models import MainWindowModel
 from Presenters import MainWindowPresenter
-from Views import Graphics, SchemeWidget
-from Config.Enums import AppTheme, PlaybookType, Mode, TeamType, SymbolType, StorageType
+from Views import Graphics, CustomGraphicsView, SchemeWidget
 from Views.Dialog_windows import DialogSignUp, DialogLogIn
-from services.Local_DB.queryes import create_db_if_not_exists
+from Services.Local_DB import session_factory
 
 if TYPE_CHECKING:
     from uuid import UUID
     from PySide6.QtGui import QMoveEvent, QResizeEvent, QCloseEvent
-    from Views.Graphics import Field
-    from Views.Graphics.label_view import ProxyTextEdit
 
 
 def timeit(func):
@@ -54,12 +52,12 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.theme: Optional['AppTheme'] = None
         self.playbook_type: Optional['PlaybookType'] = None
         self.selected_scheme: Optional['SchemeWidget'] = None
-        self.selected_scene: Optional['Field'] = None
-        self.edited_label: Optional['ProxyTextEdit'] = None
+        self.selected_scene: Optional['Graphics.Field'] = None
+        self.edited_label: Optional['Graphics.ProxyTextEdit'] = None
 
         self.user = None
 
-        self.graphics_view = Graphics.CustomGraphicsView(parent=self)
+        self.graphics_view = CustomGraphicsView(parent=self)
         self.gridLayout_6.addWidget(self.graphics_view, 0, 0, 2, 1)
 
         action_theme_group = QActionGroup(self)
@@ -397,7 +395,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
             self.selected_scheme = None
             self.selected_scene = None
 
-    def select_scheme(self, scheme_widget: 'SchemeWidget', scene: 'Field',
+    def select_scheme(self, scheme_widget: 'SchemeWidget', scene: 'Graphics.Field',
                       view_point_x: int, view_point_y: int, zoom: int,
                       first_team: Optional['TeamType'], second_team: Optional['TeamType'],
                       additional_player: bool, first_team_position: int,
@@ -418,7 +416,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
             self.set_current_zoom(zoom)
         self._set_gui_for_selected_scheme(scene, first_team, second_team, additional_player, first_team_position, can_undo, can_redo)
 
-    def _set_gui_for_selected_scheme(self, scene: 'Field', first_team: Optional['TeamType'],
+    def _set_gui_for_selected_scheme(self, scene: 'Graphics.Field', first_team: Optional['TeamType'],
                                      second_team: Optional['TeamType'], additional_player_state: bool,
                                      first_team_position: Optional[int], can_undo: bool, can_redo: bool) -> None:
         getattr(self, f'pushButton_{scene.mode.name.lower()}').setChecked(True)
@@ -469,7 +467,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.label_current_zoom.setText(f'Приближение: {str(zoom)}%')
         self.graphics_view.set_current_zoom(zoom)
 
-    def _connect_signals_from_scene(self, scene: 'Field'):
+    def _connect_signals_from_scene(self, scene: 'Graphics.Field'):
         scene.modeChanged.connect(lambda mode: getattr(self, f'pushButton_{mode.name.lower()}').setChecked(True))
         scene.labelSelected.connect(self._set_gui_config_from_label)
         scene.labelDeselected.connect(self._set_gui_config_from_scene)
@@ -543,7 +541,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         if user_color_dialog.exec():
             self._set_color(user_color_dialog.selectedColor().name())
 
-    def _combobox_font_changed(self, scene: 'Field', font: str):
+    def _combobox_font_changed(self, scene: 'Graphics.Field', font: str):
         if self.edited_label:
             edited_label_font = self.edited_label.font()
             edited_label_font.setFamily(font)
@@ -552,7 +550,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         else:
             scene.set_config('font_type', font)
 
-    def _font_size_changed(self, scene: 'Field', font_size: str):
+    def _font_size_changed(self, scene: 'Graphics.Field', font_size: str):
         if self.edited_label:
             edited_label_font = self.edited_label.font()
             edited_label_font.setPointSize(int(font_size))
@@ -561,7 +559,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         else:
             scene.set_config('font_size', int(font_size))
 
-    def _bold_changed(self, scene: 'Field', bold: bool):
+    def _bold_changed(self, scene: 'Graphics.Field', bold: bool):
         if self.edited_label:
             edited_label_font = self.edited_label.font()
             edited_label_font.setBold(bold)
@@ -570,7 +568,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         else:
             scene.set_config('bold', bold)
 
-    def _italic_changed(self, scene: 'Field', italic: bool):
+    def _italic_changed(self, scene: 'Graphics.Field', italic: bool):
         if self.edited_label:
             edited_label_font = self.edited_label.font()
             edited_label_font.setItalic(italic)
@@ -579,7 +577,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         else:
             scene.set_config('italic', italic)
 
-    def _underline_changed(self, scene: 'Field', underline: bool):
+    def _underline_changed(self, scene: 'Graphics.Field', underline: bool):
         if self.edited_label:
             edited_label_font = self.edited_label.font()
             edited_label_font.setUnderline(underline)
@@ -588,7 +586,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         else:
             scene.set_config('underline', underline)
 
-    def _color_changed(self, scene: 'Field', color: str):
+    def _color_changed(self, scene: 'Graphics.Field', color: str):
         if self.edited_label:
             text_cursor = self.edited_label.textCursor()
             self.edited_label.selectAll()
@@ -607,7 +605,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.pushButton_font_underline.setChecked(self.selected_scene.underline)
         self.pushButton_color_current.setStyleSheet(f'background-color: {self.selected_scene.color};')
 
-    def _set_gui_config_from_label(self, label: 'ProxyTextEdit'):
+    def _set_gui_config_from_label(self, label: 'Graphics.ProxyTextEdit'):
         self.edited_label = label
         self.comboBox_font_type.setCurrentFont(label.font())
         self.comboBox_font_size.setCurrentText(str(label.font().pointSize()))
@@ -677,7 +675,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
 
 if __name__ == '__main__':
-    create_db_if_not_exists()
+    session_factory.create_tables()
     app = QApplication(sys.argv)
     main_window_presenter = MainWindowPresenter()
     if not Config.DEBUG:

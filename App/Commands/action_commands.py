@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 
 if TYPE_CHECKING:
-    from Models import ActionModel, ActionLineModel, FinalActionModel
+    from View_Models import ActionModel, ActionLineModel, FinalActionModel
 
 __all__ = ('AddOptionalActionCommand', )
 

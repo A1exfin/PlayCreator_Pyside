@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated
 from pydantic import Field
 
-from services.common.base_DTOs import PlaybookBaseDTO, SchemeBaseDTO, FigureBaseDTO,\
+from Services.Common.base_DTO import PlaybookBaseDTO, SchemeBaseDTO, FigureBaseDTO,\
     LabelBaseDTO, PencilLineBaseDTO, PlayerBaseDTO, ActionBaseDTO, ActionLineBaseDTO, FinalActionBaseDTO
 
 

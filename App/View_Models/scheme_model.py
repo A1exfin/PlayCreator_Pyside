@@ -21,11 +21,11 @@ class SchemeModel(BaseModel):
     zoomChanged = Signal(int)
     firstTeamPlayerAdded = Signal(object)  # PlayerModel
     firstTeamPlayersRemoved = Signal()
-    firstTeamStateChanged = Signal(object, object)  # TeamType, self._first_team_position
+    firstTeamStateChanged = Signal(object, object)  # TeamType | None, self._first_team_position | None
     # object из-за того что None автоматически преобразуется в 0 при типе int
     secondTeamPlayerAdded = Signal(object)  # PlayerModel
     secondTeamPlayersRemoved = Signal()
-    secondTeamStateChanged = Signal(object)  # TeamType
+    secondTeamStateChanged = Signal(object)  # TeamType | None
     # object из-за того что None автоматически преобразуется в 0 при типе int
     additionalPlayerAdded = Signal(object)  # PlayerModel
     additionalPlayerRemoved = Signal()

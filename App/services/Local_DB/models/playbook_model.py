@@ -5,10 +5,10 @@ from uuid import UUID
 from sqlalchemy import func, Enum, Integer, Column, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from Config.Enums import PlaybookType
+from .base import Base
 from .common import pk
 from .common import uuid_binary, EnumInt
-from services.Local_DB import Base
-from Config.Enums import PlaybookType
 
 if TYPE_CHECKING:
     from .scheme_model import SchemeORM

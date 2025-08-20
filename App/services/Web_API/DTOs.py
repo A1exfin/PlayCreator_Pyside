@@ -6,9 +6,9 @@ from pydantic import BaseModel, Field, field_validator, model_validator, Positiv
 
 from Config import PlayerData
 from Config.Enums import PlaybookType, PlaybookAccessOptions, Mode, TeamType, FillType, SymbolType
-from services.common.validators import validate_x, validate_y, validate_first_team_position, validate_right_border, \
+from Services.Common.validators_DTO import validate_x, validate_y, validate_first_team_position, validate_right_border, \
     validate_bot_border
-from services.common.mixins import ValidatePointCoordinatesMixin, ValidateLineCoordinatesMixin, ValidateWidthAndHeightMixin
+from Services.Common.mixins_DTO import ValidatePointCoordinatesMixin, ValidateLineCoordinatesMixin, ValidateWidthAndHeightMixin
 
 
 class SerializersBase(BaseModel):

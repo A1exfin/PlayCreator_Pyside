@@ -11,8 +11,8 @@ if TYPE_CHECKING:
     from PySide6.QtCore import QPointF
     from Config.Enums import FillType, SymbolType
     from PlayCreator_main import PlayCreatorApp
-    from Models import PlayerModel, ActionModel
-    from Models.Other import PlaybookModelsFabric, DeletionObserver
+    from View_Models import PlayerModel, ActionModel
+    from View_Models.Other import PlaybookModelsFabric, DeletionObserver
     from Views import Graphics
 
 

@@ -1,6 +1,6 @@
 from Views.Widgets import PlaybookWidget
-from services.Local_DB.DTO.output_DTO import PlaybookOutDTO
-from services.common.base_mapper import BaseMapper
+from Services.Local_DB.DTO.output_DTO import PlaybookOutDTO
+from Services.Common.base_mapper import BaseMapper
 
 
 class PlaybookMapperAPI(BaseMapper[PlaybookWidget, PlaybookOutDTO]):

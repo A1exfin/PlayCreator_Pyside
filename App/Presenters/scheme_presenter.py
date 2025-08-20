@@ -25,8 +25,8 @@ if TYPE_CHECKING:
     from PySide6.QtGui import QUndoCommand
     from Config.Enums import PlaybookType, SymbolType
     from PlayCreator_main import PlayCreatorApp
-    from Models import SchemeModel, PlayerModel, FigureModel, LabelModel, PencilLineModel
-    from Models.Other import PlaybookModelsFabric, DeletionObserver
+    from View_Models import SchemeModel, PlayerModel, FigureModel, LabelModel, PencilLineModel
+    from View_Models.Other import PlaybookModelsFabric, DeletionObserver
 
 
 class SceneYPoints(NamedTuple):

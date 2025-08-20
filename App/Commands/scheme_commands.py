@@ -4,13 +4,13 @@ from dataclasses import dataclass, field
 from PySide6.QtGui import QUndoCommand
 
 import Config
-from Models import PlayerModel, FigureModel, LabelModel, PencilLineModel, ActionModel, ActionLineModel, FinalActionModel
+from View_Models import PlayerModel, FigureModel, LabelModel, PencilLineModel, ActionModel, ActionLineModel, FinalActionModel
 from Config.Enums import TeamType, StorageType
 
 if TYPE_CHECKING:
     from Config.Enums import SymbolType
-    from Models import SchemeModel
-    from Models.Other import DeletionObserver
+    from View_Models import SchemeModel
+    from View_Models.Other import DeletionObserver
 
 __all__ = ('PlaceFirstTeamCommand', 'PlaceSecondTeamCommand', 'RemoveSecondTeamCommand',
            'PlaceAdditionalPlayerCommand', 'RemoveAdditionalOffencePlayerCommand', 'RemoveAllPlayersCommand',

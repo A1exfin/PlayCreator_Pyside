@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from Config.Enums import TeamType
+from .base import Base
 from .common import pk
 from .common import uuid_binary, EnumInt
-from services.Local_DB import Base
-from Config.Enums import TeamType
 
 if TYPE_CHECKING:
     from .playbook_model import PlaybookORM

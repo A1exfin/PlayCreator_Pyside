@@ -4,7 +4,6 @@ from PySide6.QtWidgets import QGraphicsPolygonItem, QGraphicsLineItem
 from PySide6.QtGui import QColor, QPen, QPainter, QBrush, QPolygonF, QCursor, QPixmap
 from PySide6.QtCore import QPointF, Qt, QLineF
 
-from Views import Graphics
 from Config import HOVER_ITEM_COLOR, ERASER_CURSOR_PATH
 from Config.Enums import Mode, FinalActionType
 
@@ -12,14 +11,15 @@ if TYPE_CHECKING:
     from uuid import UUID
     from PySide6.QtGui import QPainter
     from PySide6.QtWidgets import QWidget, QStyleOptionGraphicsItem, QGraphicsSceneMouseEvent, QGraphicsSceneHoverEvent
-    from Views.Graphics import Field
+    from .field_view import Field
+    from .action_view import ActionView
 
 __all__ = ('FinalActionRouteView', 'FinalActionBlockView')
 
 
 class FinalActionView:
     def __init__(self, action_type: 'FinalActionType', x: float, y: float, angle: float,
-                 line_thickness: int, color: str, action: Optional['Graphics.ActionView'], model_uuid: Optional['UUID']):
+                 line_thickness: int, color: str, action: Optional['ActionView'], model_uuid: Optional['UUID']):
         self._model_uuid = model_uuid
         self._action = action
         self._action_type = action_type
@@ -91,7 +91,7 @@ class FinalActionView:
 
 class FinalActionRouteView(FinalActionView, QGraphicsPolygonItem):
     def __init__(self, x: float, y: float, angle: float, line_thickness: int, color: str,
-                 action_type: 'FinalActionType' = FinalActionType.ARROW, action: Optional['Graphics.ActionView'] = None,
+                 action_type: 'FinalActionType' = FinalActionType.ARROW, action: Optional['ActionView'] = None,
                  model_uuid: Optional['UUID'] = None):
         polygon = QPolygonF([QPointF(0, 0), QPointF(-10, -4), QPointF(-10, 4)])
         QGraphicsPolygonItem.__init__(self, polygon)
@@ -112,7 +112,7 @@ class FinalActionRouteView(FinalActionView, QGraphicsPolygonItem):
 
 class FinalActionBlockView(FinalActionView, QGraphicsLineItem):
     def __init__(self, x: float, y: float, angle: float, line_thickness: int, color: str,
-                 action_type: 'FinalActionType' = FinalActionType.LINE, action: Optional['Graphics.ActionView'] = None,
+                 action_type: 'FinalActionType' = FinalActionType.LINE, action: Optional['ActionView'] = None,
                  model_uuid: Optional['UUID'] = None):
         line = QLineF(QPointF(0, -7), QPointF(0, 7))
         QGraphicsLineItem.__init__(self, line)

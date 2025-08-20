@@ -5,9 +5,9 @@ from .Mappers import ActionPartsMapper
 
 if TYPE_CHECKING:
     from uuid import UUID
-    from Models import ActionModel, ActionLineModel, FinalActionModel
+    from View_Models import ActionModel, ActionLineModel, FinalActionModel
     from Views import Graphics
-    from Models.Other import PlaybookModelsFabric, DeletionObserver
+    from View_Models.Other import PlaybookModelsFabric, DeletionObserver
 
 
 __all__ = ('ActionPresenter', )

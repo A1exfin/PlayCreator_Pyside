@@ -2,11 +2,11 @@ from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtGui import QUndoCommand
 
-from Models import PlayerModel, ActionModel, ActionLineModel, FinalActionModel
+from View_Models import PlayerModel, ActionModel, ActionLineModel, FinalActionModel
 
 if TYPE_CHECKING:
     from Config.Enums import FillType, SymbolType
-    from Models.Other import DeletionObserver
+    from View_Models.Other import DeletionObserver
 
 
 __all__ = ('MovePlayerCommand', 'ChangePlayerStyleCommand', 'AddActionCommand', 'RemoveActionCommand')

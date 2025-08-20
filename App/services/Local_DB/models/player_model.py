@@ -2,10 +2,10 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from Config.Enums import TeamType, FillType, SymbolType, PlayerPositionType
+from .base import Base
 from .common import pk, scheme_fk, hex_color
 from .common import uuid_binary, EnumInt
-from services.Local_DB import Base
-from Config.Enums import TeamType, FillType, SymbolType, PlayerPositionType
 
 if TYPE_CHECKING:
     from .scheme_model import SchemeORM

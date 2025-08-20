@@ -2,7 +2,7 @@ from datetime import datetime
 from typing_extensions import Annotated
 from pydantic import PositiveInt, Field
 
-from services.common.base_DTOs import PlaybookBaseDTO, SchemeBaseDTO, FigureBaseDTO, LabelBaseDTO, PencilLineBaseDTO,\
+from Services.Common.base_DTO import PlaybookBaseDTO, SchemeBaseDTO, FigureBaseDTO, LabelBaseDTO, PencilLineBaseDTO,\
     PlayerBaseDTO, ActionBaseDTO, ActionLineBaseDTO, FinalActionBaseDTO
 
 

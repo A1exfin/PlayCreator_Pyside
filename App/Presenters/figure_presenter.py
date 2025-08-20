@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from PySide6.QtCore import QPointF
     from PlayCreator_main import PlayCreatorApp
     from Views import Graphics
-    from Models import FigureModel
+    from View_Models import FigureModel
 
 
 class FigurePresenter:

@@ -4,7 +4,6 @@ from PySide6.QtWidgets import QGraphicsLineItem
 from PySide6.QtGui import QColor, QPen, QPainter, QCursor, QPixmap
 from PySide6.QtCore import Qt
 
-from Views import Graphics
 from Config import HOVER_ITEM_COLOR, ERASER_CURSOR_PATH
 from Config.Enums import Mode, ActionLineType
 
@@ -12,14 +11,15 @@ if TYPE_CHECKING:
     from uuid import UUID
     from PySide6.QtGui import QPainter
     from PySide6.QtWidgets import QWidget, QStyleOptionGraphicsItem, QGraphicsSceneMouseEvent, QGraphicsSceneHoverEvent
-    from Views.Graphics import Field
+    from .action_view import ActionView
+    from .field_view import Field
 
-__all__ = ('ActionLineView',)
+__all__ = ('ActionLineView', )
 
 
 class ActionLineView(QGraphicsLineItem):
     def __init__(self, line_type: 'ActionLineType', x1: float, y1: float, x2: float, y2: float,
-                 thickness: int, color: str, action: Optional['Graphics.ActionView'] = None,
+                 thickness: int, color: str, action: Optional['ActionView'] = None,
                  model_uuid: Optional['UUID'] = None):
         super().__init__(x1, y1, x2, y2)
         self._model_uuid = model_uuid
@@ -51,7 +51,7 @@ class ActionLineView(QGraphicsLineItem):
         self._hover_state = value
 
     @property
-    def action(self) -> 'Graphics.ActionView':
+    def action(self) -> 'ActionView':
         return self._action
 
     @property
