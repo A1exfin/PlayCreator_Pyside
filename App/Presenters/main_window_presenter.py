@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import Qt
 
-from Config.Enums import StorageType, AppTheme, TeamType
+from Core.Enums import StorageType, AppTheme, TeamType
 from Views.Dialog_windows import DialogInfo, DialogAbout, DialogNewPlaybook, DialogOpenPlaybook, DialogProgressBar,\
     DialogSaveChangedPlaybook
 from View_Models import PlaybookModel
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from View_Models import MainWindowModel
     from PlayCreator_main import PlayCreatorApp
     from Services.Local_DB.DTO.input_DTO import PlaybookInputDTO
-    from Config.Enums import SymbolType
+    from Core.Enums import SymbolType
 
 
 __all__ = ('MainWindowPresenter', )

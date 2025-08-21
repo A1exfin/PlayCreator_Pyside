@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING, Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 from itertools import chain
 
 from PySide6.QtCore import Signal
@@ -8,7 +8,7 @@ from .base_model import BaseModel
 
 if TYPE_CHECKING:
     from PySide6.QtCore import QObject
-    from Config.Enums import StorageType
+    from Core.Enums import StorageType
     from .playbook_model import PlaybookModel
     from .action_line_model import ActionLineModel
     from .final_action_model import FinalActionModel
@@ -27,8 +27,8 @@ class ActionModel(BaseModel):
         self._action_lines = []
         self._final_actions = []
 
-    def _set_changed(self) -> None:
-        super().set_changed()
+    def _set_changed_flag(self) -> None:
+        super().set_changed_flag()
         self._playbook_model.changed = True
 
     def set_new_uuid(self) -> None:
@@ -69,13 +69,13 @@ class ActionModel(BaseModel):
     def add_action_parts(self, action_lines: list['ActionLineModel'], final_actions: list['FinalActionModel']) -> None:
         self._action_lines.extend(action_lines)
         self._final_actions.extend(final_actions)
-        self._set_changed()
+        self._set_changed_flag()
         self.actionPartsAdded.emit(action_lines, final_actions)
 
     def remove_action_parts(self, action_lines: list['ActionLineModel'], final_actions: list['FinalActionModel']) -> None:
         self._action_lines = list(set(self._action_lines) - set(action_lines))
         self._final_actions = list(set(self._final_actions) - set(final_actions))
-        self._set_changed()
+        self._set_changed_flag()
         self.actionPartsRemoved.emit(action_lines, final_actions)
 
     def get_data_for_view(self) -> dict:

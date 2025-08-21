@@ -3,12 +3,11 @@ from dataclasses import dataclass, field
 
 from PySide6.QtGui import QUndoCommand
 
-import Config
 from View_Models import PlayerModel, FigureModel, LabelModel, PencilLineModel, ActionModel, ActionLineModel, FinalActionModel
-from Config.Enums import TeamType, StorageType
+from Core.Enums import TeamType
 
 if TYPE_CHECKING:
-    from Config.Enums import SymbolType
+    from Core.Enums import SymbolType
     from View_Models import SchemeModel
     from View_Models.Other import DeletionObserver
 

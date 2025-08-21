@@ -9,10 +9,10 @@ from PySide6.QtCore import Qt
 from Config import DEFAULT_COLORS
 from .widgets.buttons_for_player_edit_dialog import CustomPushButtonFillType, CustomPushButtonSymbolType
 from .widgets.button_box import ButtonBox
-from Config.Enums import FillType, SymbolType
+from Core.Enums import FillType, SymbolType
 
 if TYPE_CHECKING:
-    from Config.Enums import PlayerPositionType
+    from Core.Enums import PlayerPositionType
 
 __all__ = ('DialogEditFirstTeamPlayer', 'DialogEditSecondTeamPlayer')
 
@@ -36,7 +36,6 @@ class DialogEditPlayer(QDialog):
 
         font = QFont()
         font.setPointSize(10)
-        font.setBold(False)
         self.group_box_position = QGroupBox('Позиция игрока')
         self.group_box_position.setFont(font)
         self.group_box_position.setFixedSize(244, 73)

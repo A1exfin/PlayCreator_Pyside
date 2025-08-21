@@ -5,7 +5,7 @@ from PySide6.QtGui import QColor, QPen, QPainter, QBrush, QPolygonF, QCursor, QP
 from PySide6.QtCore import QPointF, Qt, QLineF
 
 from Config import HOVER_ITEM_COLOR, ERASER_CURSOR_PATH
-from Config.Enums import Mode, FinalActionType
+from Core.Enums import Mode, FinalActionType
 
 if TYPE_CHECKING:
     from uuid import UUID

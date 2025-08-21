@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING
-from datetime import datetime
 from typing_extensions import Annotated
 from uuid import UUID
 
@@ -7,7 +6,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator, Positiv
     NonNegativeFloat, ConfigDict
 
 from Config import PlayerData
-from Config.Enums import PlaybookType, PlayerPositionType, TeamType, FillType, SymbolType, ActionLineType, FinalActionType, FigureType
+from Core.Enums import PlaybookType, PlayerPositionType, TeamType, FillType, SymbolType, ActionLineType, FinalActionType, FigureType
 from .validators_DTO import validate_x, validate_y, validate_first_team_position, validate_right_border, validate_bot_border
 from .mixins_DTO import ValidatePointCoordinatesMixin, ValidateLineCoordinatesMixin, ValidateWidthAndHeightMixin
 
@@ -155,7 +154,7 @@ class PlayerBaseDTO(BaseDTO, ValidatePointCoordinatesMixin):
     y: NonNegativeFloat
     team_type: TeamType
     position: PlayerPositionType
-    text: str
+    text: Annotated[str, Field(max_length=2)]
     text_color: Annotated[str, Field(pattern=r'^#[a-f\d]{6}$')]
     player_color: Annotated[str, Field(pattern=r'^#[a-f\d]{6}$')]
     fill_type: FillType | None
@@ -198,7 +197,7 @@ class PlayerBaseDTO(BaseDTO, ValidatePointCoordinatesMixin):
 class SchemeBaseDTO(BaseDTO):
     id: PositiveInt | None = None
     uuid: UUID
-    name: str
+    name: Annotated[str, Field(max_length=50)]
     note: str
     row_index: NonNegativeInt
     view_point_x: NonNegativeFloat
@@ -281,7 +280,7 @@ class SchemeBaseDTO(BaseDTO):
 class PlaybookBaseDTO(BaseDTO):
     id: PositiveInt | None = None
     uuid: UUID
-    name: str
+    name: Annotated[str, Field(max_length=50)]
     playbook_type: PlaybookType
     info: str
 

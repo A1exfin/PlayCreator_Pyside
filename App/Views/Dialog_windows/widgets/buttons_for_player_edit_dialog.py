@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from PySide6.QtWidgets import QPushButton
 from PySide6.QtGui import QFont, QPainter, QPen, QBrush, QPolygonF, QColor, QLinearGradient
 from PySide6.QtCore import Qt, QLineF, QPointF, QRectF
-from Config.Enums import FillType, SymbolType, PlayerPositionType
+from Core.Enums import FillType, SymbolType, PlayerPositionType
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QPaintEvent

@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING, Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from .base_model import BaseModel
 
 if TYPE_CHECKING:
     from PySide6.QtCore import QObject
-    from Config.Enums import ActionLineType
+    from Core.Enums import ActionLineType
     from .playbook_model import PlaybookModel
 
 
@@ -24,8 +24,8 @@ class ActionLineModel(BaseModel):
         self._thickness = thickness
         self._color = color
 
-    def _set_changed(self) -> None:
-        super().set_changed()
+    def _set_changed_flag(self) -> None:
+        super().set_changed_flag()
         self._playbook_model.changed = True
 
     @property

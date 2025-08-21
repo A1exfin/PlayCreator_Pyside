@@ -1,15 +1,17 @@
 from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass, field
-from uuid import uuid4, UUID
+from uuid import UUID
 
 from PySide6.QtCore import Signal
-from Config.Enums import StorageType
+
+from Core.settings import PLAYBOOK_NAME_MAX_LENGTH
+from Core.Enums import StorageType, PlaybookAccessOptions
 from .playbook_access_settings_model import PlaybookAccessSettingsModel
 from .base_model import BaseModel
 
 if TYPE_CHECKING:
     from PySide6.QtCore import QObject
-    from Config.Enums import PlaybookType, PlaybookAccessOptions
+    from Core.Enums import PlaybookType
     from scheme_model import SchemeModel
 
 __all__ = ('PlaybookModel', )
@@ -78,6 +80,7 @@ class PlaybookModel(BaseModel):
 
     def reset_changed_flag(self) -> None:
         super().reset_changed_flag()
+        self._reset_schemes_changed_flag()
 
     def _reset_schemes_changed_flag(self) -> None:
         for scheme in self._schemes:
@@ -89,8 +92,10 @@ class PlaybookModel(BaseModel):
 
     @name.setter
     def name(self, name: str) -> None:
+        if len(name) > PLAYBOOK_NAME_MAX_LENGTH:
+            raise ValueError(f'Имя плейбука не должно быть длиннее {PLAYBOOK_NAME_MAX_LENGTH} символов.')
         self._name = name
-        self._changed = True
+        self.set_changed_flag()
         self.nameChanged.emit(name)
 
     @property
@@ -100,7 +105,7 @@ class PlaybookModel(BaseModel):
     @info.setter
     def info(self, info: str) -> None:
         self._info = info
-        self._changed = True
+        self.set_changed_flag()
         self.infoChanged.emit(info)
 
     @property
@@ -136,7 +141,7 @@ class PlaybookModel(BaseModel):
             self._schemes.insert(row_index, scheme_model)
         else:
             self._schemes.append(scheme_model)
-        self._changed = True
+        self.set_changed_flag()
         self.schemeAdded.emit(scheme_model)
 
     def remove_scheme(self, scheme_model: 'SchemeModel') -> None:
@@ -145,13 +150,13 @@ class PlaybookModel(BaseModel):
         if scheme_model.id_api:
             self.add_deleted_item_ids('schemes', StorageType.API, scheme_model.id_api)
         self._schemes.remove(scheme_model)
-        self._changed = True
+        self.set_changed_flag()
         self.schemeRemoved.emit(scheme_model)
 
     def move_up_scheme(self, view_index: int, scheme_model: 'SchemeModel') -> None:
         scheme_index = self._schemes.index(scheme_model)
         if view_index != scheme_index:
-            raise ValueError('Индексы представления и модели не совпадают.')
+            raise IndexError('Индексы представления и модели не совпадают.')
         last_index = view_index
         if last_index > 0:
             new_index = last_index - 1
@@ -160,13 +165,13 @@ class PlaybookModel(BaseModel):
             scheme = self._schemes.pop(last_index)
             self._schemes.append(scheme)
             new_index = self._schemes.index(scheme)
-        self._changed = True
+        self.set_changed_flag()
         self.schemeMoved.emit(last_index, new_index)
 
     def move_down_scheme(self, view_index: int, scheme_model: 'SchemeModel') -> None:
         scheme_index = self._schemes.index(scheme_model)
         if view_index != scheme_index:
-            raise ValueError('Индексы представления и модели не совпадают.')
+            raise IndexError('Индексы представления и модели не совпадают.')
         last_index = view_index
         if last_index < len(self._schemes) - 1:
             new_index = last_index + 1
@@ -175,7 +180,7 @@ class PlaybookModel(BaseModel):
             scheme_model = self._schemes.pop(last_index)
             self._schemes.insert(0, scheme_model)
             new_index = self._schemes.index(scheme_model)
-        self._changed = True
+        self.set_changed_flag()
         self.schemeMoved.emit(last_index, new_index)
 
     def add_deleted_item_ids(self, item_type: str, storage_type: 'StorageType', ids: list[int] | int) -> None:
@@ -184,12 +189,12 @@ class PlaybookModel(BaseModel):
         Аргументы:
             item_type: Тип итема ('schemes', 'figures', 'labels', 'pencil_lines', 'players', 'actions')
             storage: Тип хранилища (StorageType.LOCAL_DB or StorageType.API)
-            ids_lst: Список целых чисел, для добавления в список id удаляемых итемов
+            ids_lst: Список целых чисел или целое число, для добавления в список id удаляемых итемов
         """
         # print('add_deleted_item_ids')
         # print(f'{item_type = }, {storage_type = }, {ids = }')
         if not hasattr(self._deleted_items, item_type):
-            raise ValueError(f'Unknown item type: {item_type}')
+            raise ValueError(f'Неправильный тип итема: {item_type}')
         if isinstance(ids, list):
             getattr(self._deleted_items, item_type)[storage_type].extend(ids)
         if isinstance(ids, int):
@@ -200,7 +205,7 @@ class PlaybookModel(BaseModel):
         # print('remove_deleted_item_ids')
         # print(f'{item_type = }, {storage_type = }, {ids = }')
         if not hasattr(self._deleted_items, item_type):
-            raise ValueError(f'Unknown item type: {item_type}')
+            raise ValueError(f'Неправильный тип итема: {item_type}')
         deleted_items_ids = getattr(self._deleted_items, item_type)[storage_type]
         if isinstance(ids, int):
             deleted_items_ids.remove(ids)

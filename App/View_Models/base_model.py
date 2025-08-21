@@ -4,8 +4,7 @@ from uuid import UUID, uuid4
 from PySide6.QtCore import QObject
 
 if TYPE_CHECKING:
-    from Config.Enums import StorageType
-    from .playbook_model import PlaybookModel
+    from Core.Enums import StorageType
 
 
 class BaseModel(QObject):
@@ -52,7 +51,7 @@ class BaseModel(QObject):
     def changed(self, value: bool) -> None:
         self._changed = value
 
-    def set_changed(self) -> None:
+    def set_changed_flag(self) -> None:
         self._changed = True
 
     def reset_changed_flag(self) -> None:

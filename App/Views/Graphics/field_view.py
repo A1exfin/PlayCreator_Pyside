@@ -8,10 +8,9 @@ from PySide6.QtWidgets import QGraphicsScene, QGraphicsItemGroup
 from PySide6.QtCore import Qt, Signal, QPointF, QLineF
 from PySide6.QtGui import QPen, QBrush, QColor, QTransform
 
-import Config
 from .field_parts import FieldTriangle, FieldNumber
 from Config import football_field_data as football_field, flag_field_data as flag_field
-from Config.Enums import PlaybookType, Mode, FigureType, ActionLineType
+from Core.Enums import PlaybookType, Mode, FigureType, ActionLineType
 from Views import Graphics
 
 if TYPE_CHECKING:
@@ -66,7 +65,7 @@ class Field(QGraphicsScene):
         self._additional_offence_player: Optional['Graphics.FirstTeamPlayerView'] = None  # Представление дополнительного игрока
 
         self._figures: list[Union['Graphics.RectangleView', 'Graphics.EllipseView']] = []  # Представления фигур
-        self._labels: list['Graphics.ProxyWidgetLabel']  = []  # Представления надписей
+        self._labels: list['Graphics.ProxyWidgetLabel'] = []  # Представления надписей
         self._pencil_lines: list['Graphics.PencilLineView'] = []  # Представления линий карандаша
         self._tmp_figure: Optional['Graphics.RectangleView', 'Graphics.EllipseView'] = None  # Используется при интерактивном рисовании новой фигуры
         self._tmp_painted_pencil_lines: list['Graphics.PencilLineView'] = []  # Используется при интерактивном рисовании карандашом

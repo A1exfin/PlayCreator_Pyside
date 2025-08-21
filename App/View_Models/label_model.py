@@ -1,12 +1,11 @@
 from typing import TYPE_CHECKING, Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from PySide6.QtCore import Signal, QPointF
 
 from .base_model import BaseModel
 
 if TYPE_CHECKING:
-    from Config.Enums import StorageType
     from .playbook_model import PlaybookModel
     from .scheme_model import SchemeModel
 
@@ -34,8 +33,8 @@ class LabelModel(BaseModel):
         self._font_color = font_color
         self._text = text
 
-    def _set_changed(self) -> None:
-        super().set_changed()
+    def _set_changed_flag(self) -> None:
+        super().set_changed_flag()
         self._playbook_model.changed = True
 
     @property
@@ -84,12 +83,12 @@ class LabelModel(BaseModel):
 
     def set_pos(self, x: float, y: float) -> None:
         self._x, self._y = x, y
-        self._set_changed()
+        self._set_changed_flag()
         self.coordsChanged.emit(QPointF(self._x, self._y))
 
     def set_size(self, x: float, y: float, width: float, height: float) -> None:
         self._x, self._y, self._width, self._height = x, y, width, height
-        self._set_changed()
+        self._set_changed_flag()
         self.sizeChanged.emit(self._x, self._y, self._width, self._height)
 
     def set_text_attributes(self, text: str, font_type: str, font_size: int,
@@ -99,7 +98,7 @@ class LabelModel(BaseModel):
         self._text, self._font_color = text, font_color
         self._font_type, self._font_size = font_type, font_size
         self._font_bold, self._font_italic, self._font_underline = font_bold, font_italic, font_underline
-        self._set_changed()
+        self._set_changed_flag()
         self.textAttributesChanged.emit(self._text, self._font_type, self._font_size, self._font_bold,
                                         self._font_italic, self._font_underline, self._font_color, self._y, self._height)
 

@@ -1,15 +1,15 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from collections import namedtuple
 from datetime import datetime
 
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QTableWidget,  QTableWidgetItem, QAbstractItemView, \
-    QSpacerItem, QSizePolicy, QPushButton, QHeaderView, QMessageBox
+    QSpacerItem, QSizePolicy, QPushButton, QHeaderView
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt
 
 from .widgets.button_box import ButtonBox
 from .dialog_info import DialogInfo
-from Config.Enums import PlaybookType
+from Core.Enums import PlaybookType
 # from Local_DB.queryes import delete_playbook
 
 if TYPE_CHECKING:

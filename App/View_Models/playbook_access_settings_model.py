@@ -1,6 +1,4 @@
-from typing import TYPE_CHECKING, Optional
-
-from Config.Enums import PlaybookAccessOptions
+from Core.Enums import PlaybookAccessOptions
 
 
 __all__ = ('PlaybookAccessSettingsModel', )

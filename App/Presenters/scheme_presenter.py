@@ -4,6 +4,7 @@ from PySide6.QtCore import QRect, Qt
 from PySide6.QtGui import QUndoStack, QImage, QPainter
 from PySide6.QtWidgets import QFileDialog
 
+from Core.settings import UNDO_STACK_LIMIT
 import Config
 from Commands import PlaceFirstTeamCommand, PlaceSecondTeamCommand, PlaceAdditionalPlayerCommand,\
     RemoveSecondTeamCommand, RemoveAdditionalOffencePlayerCommand, RemoveAllPlayersCommand,\
@@ -13,7 +14,7 @@ from Commands import PlaceFirstTeamCommand, PlaceSecondTeamCommand, PlaceAdditio
     PlaceLabelCommand, RemoveLabelCommand, RemoveAllLabelsCommand, RemoveAllActionsCommand
 from Views.Graphics import Field
 from Views import SchemeWidget
-from Config.Enums import TeamType
+from Core.Enums import TeamType
 from Views.Dialog_windows import DialogEditScheme
 from .player_presenter import PlayerPresenter
 from .figure_presenter import FigurePresenter
@@ -23,7 +24,7 @@ from .Mappers import PlayerMapper, FigureMapper, LabelMapper, PencilLineMapper
 if TYPE_CHECKING:
     from uuid import UUID
     from PySide6.QtGui import QUndoCommand
-    from Config.Enums import PlaybookType, SymbolType
+    from Core.Enums import PlaybookType, SymbolType
     from PlayCreator_main import PlayCreatorApp
     from View_Models import SchemeModel, PlayerModel, FigureModel, LabelModel, PencilLineModel
     from View_Models.Other import PlaybookModelsFabric, DeletionObserver
@@ -44,7 +45,7 @@ class SchemePresenter:
         self._playbook_items_fabric = playbook_items_fabric
         self._deletion_observer = deletion_observer
         self._scene = Field(playbook_type)
-        self._undo_stack = QUndoStack(active=True, undoLimit=10)
+        self._undo_stack = QUndoStack(active=True, undoLimit=UNDO_STACK_LIMIT)
         self._first_team_player_mappers: dict['UUID', 'PlayerMapper'] = {}
         self._second_team_player_mappers: dict['UUID', 'PlayerMapper'] = {}
         self._additional_player_mapper: Optional['PlayerMapper'] = None

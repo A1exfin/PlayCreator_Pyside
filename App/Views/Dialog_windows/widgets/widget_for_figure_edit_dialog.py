@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPainter, QBrush, QPen, QColor
 from PySide6.QtCore import Qt
 
-from Config.Enums import FigureType
+from Core.Enums import FigureType
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QPaintEvent

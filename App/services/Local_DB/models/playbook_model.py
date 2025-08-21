@@ -1,11 +1,10 @@
 from typing import TYPE_CHECKING
 from datetime import datetime
-from uuid import UUID
 
-from sqlalchemy import func, Enum, Integer, Column, UUID
+from sqlalchemy import func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from Config.Enums import PlaybookType
+from Core.Enums import PlaybookType
 from .base import Base
 from .common import pk
 from .common import uuid_binary, EnumInt

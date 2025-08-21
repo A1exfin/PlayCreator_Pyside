@@ -10,8 +10,9 @@ from PySide6.QtCore import Qt, Signal, QFile, QTextStream, QPoint, QEvent
 
 from PlayCreator_ui import Ui_MainWindow
 
+import Core
 import Config
-from Config.Enums import AppTheme, PlaybookType, Mode, TeamType, SymbolType
+from Core.Enums import AppTheme, PlaybookType, Mode, TeamType, SymbolType
 from View_Models import MainWindowModel
 from Presenters import MainWindowPresenter
 from Views import Graphics, CustomGraphicsView, SchemeWidget
@@ -76,29 +77,6 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
             button.setStyleSheet(f'background-color: {color};')
             button.pressed.connect(lambda color=color: self._set_color(color))
 
-        # self.comboBox_team_type.setEnabled(False)
-        # self.lineEdit_yards.setEnabled(False)
-        # self.pushButton_place_first_team.setEnabled(False)
-        # self.pushButton_add_additional_off_player.setEnabled(False)
-        # self.pushButton_add_additional_off_player.setVisible(False)
-        # self.pushButton_del_additional_off_player.setEnabled(False)
-        # self.pushButton_del_additional_off_player.setVisible(False)
-        # self.pushButton_place_second_team.setEnabled(False)
-        # self.pushButton_remove_second_team.setEnabled(False)
-        # self.comboBox_second_players_symbol.setEnabled(False)
-        # self.comboBox_second_players_symbol.setVisible(False)
-        # self.pushButton_remove_all_players.setEnabled(False)
-        # self.pushButton_edit_playbook.setEnabled(False)
-        # self.listWidget_schemes.setEnabled(False)
-        # self.pushButton_edit_scheme.setEnabled(False)
-        # self.pushButton_add_scheme.setEnabled(False)
-        # self.pushButton_remove_scheme.setEnabled(False)
-        # self.pushButton_move_up_scheme.setEnabled(False)
-        # self.pushButton_move_down_scheme.setEnabled(False)
-        # self.action_undo.setEnabled(False)
-        # self.action_redo.setEnabled(False)
-
-
         self.toolBar_main.topLevelChanged.connect(lambda topLevel: self.toolBarAreaChanged.emit(self.toolBarArea(self.toolBar_main)) if not topLevel else ...)
         self.lineEdit_yards.textChanged.connect(lambda text: getattr(self, f'_check_max_yards_{self.playbook_type.name}'.lower())(text))
         self.pushButton_color_current.clicked.connect(self._get_user_color)
@@ -130,9 +108,9 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         # self.action_open_playbook_offline.triggered.connect(self.open_playbook_offline)
 
 
-        if Config.DEBUG:
+        if Core.DEBUG:
             self.debug_btn.clicked.connect(self._debug_method)  ############################## тестовая функция
-        if not Config.DEBUG:
+        if not Core.DEBUG:
             self.debug_btn.setEnabled(False)
             self.debug_btn.setVisible(False)
 
@@ -141,18 +119,17 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
     def _debug_method(self):
         ...
-        from Views.Dialog_windows.dialog_save_changed_playbook import DialogSaveChangedPlaybook
-        from Views.Dialog_windows.dialog_select_team import DialogSelectTeam
         # d = DialogSaveChangedPlaybook(self, True)
         # d.exec()
         # if d.result():
         #     print('')
 
-        d = DialogSelectTeam(self, [(1, 'Warriors'), (2, 'Iron Wings'), (3, 'Спартанцы')])
-        d.exec()
-        if d.result():
-            data = d.get_data()
-            print(f'{data = }')
+        # from Views.Dialog_windows.dialog_select_team import DialogSelectTeam
+        # d = DialogSelectTeam(self, [(1, 'Warriors'), (2, 'Iron Wings'), (3, 'Спартанцы')])
+        # d.exec()
+        # if d.result():
+        #     data = d.get_data()
+        #     print(f'{data = }')
 
 
     def _check_max_yards_football(self, value: str) -> None:
@@ -678,7 +655,7 @@ if __name__ == '__main__':
     session_factory.create_tables()
     app = QApplication(sys.argv)
     main_window_presenter = MainWindowPresenter()
-    if not Config.DEBUG:
+    if not Core.DEBUG:
         if os.path.exists(f'splash_screen.jpg'):
             splash = QSplashScreen(QPixmap('splash_screen.jpg').scaled(1000, 700, Qt.AspectRatioMode.KeepAspectRatio), f=Qt.WindowStaysOnTopHint)
         else:
@@ -697,6 +674,6 @@ if __name__ == '__main__':
     main_window_model = MainWindowModel(screen_rect_center, main_window_minimum_size)
     main_window_presenter.set_model_and_view(main_window_model, play_creator)
     play_creator.show()
-    if not Config.DEBUG:
+    if not Core.DEBUG:
         splash.finish(play_creator)
     sys.exit(app.exec())

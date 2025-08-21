@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Union, Callable
 
-from Config.Enums import TeamType
+from Core.Enums import TeamType
 from Commands import MovePlayerCommand, ChangePlayerStyleCommand, AddActionCommand, RemoveActionCommand
 from Views.Dialog_windows import DialogEditFirstTeamPlayer, DialogEditSecondTeamPlayer
 from .Mappers import ActionMapper
@@ -9,7 +9,7 @@ from .action_presenter import ActionPresenter
 if TYPE_CHECKING:
     from uuid import UUID
     from PySide6.QtCore import QPointF
-    from Config.Enums import FillType, SymbolType
+    from Core.Enums import FillType, SymbolType
     from PlayCreator_main import PlayCreatorApp
     from View_Models import PlayerModel, ActionModel
     from View_Models.Other import PlaybookModelsFabric, DeletionObserver

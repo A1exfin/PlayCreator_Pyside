@@ -8,11 +8,10 @@ from View_Models import PlaybookModel, SchemeModel
 from Views.Dialog_windows import DialogEditPlaybook, DialogProgressBar, DialogInfo, DialogInput
 from .scheme_presenter import SchemePresenter
 from .Mappers import SchemeMapper
-from Services.Local_DB.mapper import PlaybookMapperLocalDB
 
 if TYPE_CHECKING:
     from uuid import UUID
-    from Config.Enums import TeamType, SymbolType
+    from Core.Enums import TeamType, SymbolType
     from View_Models.Other import PlaybookModelsFabric, DeletionObserver
     from PlayCreator_main import PlayCreatorApp
     from Services.Local_DB.Repositories.playbook_manager import PlaybookManager

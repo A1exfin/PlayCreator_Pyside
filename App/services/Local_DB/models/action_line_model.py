@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from Config.Enums import ActionLineType
+from Core.Enums import ActionLineType
 from .base import Base
 from .common import pk, hex_color, action_fk
 from .common import EnumInt, uuid_binary

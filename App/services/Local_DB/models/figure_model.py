@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from Config.Enums import FigureType
+from Core.Enums import FigureType
 from .base import Base
 from .common import pk, hex_color, scheme_fk
 from .common import uuid_binary, EnumInt

@@ -1,7 +1,6 @@
 import re
-from pydantic import ValidationError
 
-from Config.Enums import PlaybookType
+from Core.Enums import PlaybookType
 from Config import football_field_data as football_field, flag_field_data as flag_field
 
 

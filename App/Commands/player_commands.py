@@ -5,7 +5,7 @@ from PySide6.QtGui import QUndoCommand
 from View_Models import PlayerModel, ActionModel, ActionLineModel, FinalActionModel
 
 if TYPE_CHECKING:
-    from Config.Enums import FillType, SymbolType
+    from Core.Enums import FillType, SymbolType
     from View_Models.Other import DeletionObserver
 
 

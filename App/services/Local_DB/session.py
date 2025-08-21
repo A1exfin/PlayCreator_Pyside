@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.engine import Engine
 
-from Config import DB_URL
+from Core import DB_URL
 from .Models.base import Base
 
 __all__ = ('session_factory', )

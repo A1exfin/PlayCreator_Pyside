@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
-from Config.Enums import StorageType
+from Core.Enums import StorageType
 
 if TYPE_CHECKING:
     from ..playbook_model import PlaybookModel

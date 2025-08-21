@@ -2,8 +2,9 @@ from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import QObject, Signal, QSettings, Qt, QSize, QPoint
 
+import Core
 import Config
-from Config.Enums import AppTheme
+from Core.Enums import AppTheme
 
 if TYPE_CHECKING:
     from View_Models import PlaybookModel
@@ -13,7 +14,7 @@ __all__ = ('MainWindowModel', )
 
 
 class MainWindowModel(QObject):
-    modelChanged = Signal(object)
+    modelChanged = Signal(object)  # self
     playbookInstalled = Signal(object)  # PlaybookModel
 
     def __init__(self, screen_rect_center: 'QPoint', main_window_minimum_size: 'QSize'):
@@ -146,10 +147,10 @@ class MainWindowModel(QObject):
         self.modelChanged.emit(self)
 
     def _restore_window_state(self, screen_rect_center: 'QPoint', main_window_minimum_size: 'QSize'):
-        if Config.DEBUG:
+        if Core.DEBUG:
             settings = QSettings('settings.ini', QSettings.Format.IniFormat)
         else:
-            settings = QSettings(Config.ORGANIZATION, Config.APP_NAME)
+            settings = QSettings(Core.ORGANIZATION, Core.APP_NAME)
         self._x = settings.value('window/x',
                                  defaultValue=screen_rect_center.x() - main_window_minimum_size.width() // 2,
                                  type=int)
@@ -167,13 +168,13 @@ class MainWindowModel(QObject):
         self._show_save_changed_playbook_dialog = settings.value('app/show_save_changed_playbook_dialog', defaultValue=True, type=bool)
         self._presentation_mode = False
         self._about_ico_path = f'://themes/{self._theme.name}_theme/tactic.png'.lower()
-        self._version = Config.VERSION
+        self._version = Core.VERSION
 
     def save_window_state(self):
-        if Config.DEBUG:
+        if Core.DEBUG:
             settings = QSettings('settings.ini', QSettings.Format.IniFormat)
         else:
-            settings = QSettings(Config.ORGANIZATION, Config.APP_NAME)
+            settings = QSettings(Core.ORGANIZATION, Core.APP_NAME)
         if not self._is_maximized:
             settings.setValue('window/x', self._x)
             settings.setValue('window/y', self._y)

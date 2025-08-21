@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 import Config
-from Config.Enums import PlaybookType, TeamType
+from Core.Enums import PlaybookType, TeamType
 
 from ..scheme_model import SchemeModel
 from ..figure_model import FigureModel
@@ -16,7 +16,7 @@ from ..final_action_model import FinalActionModel
 
 if TYPE_CHECKING:
     from ..playbook_model import PlaybookModel
-    from Config.Enums import FigureType, PlayerPositionType, FillType, SymbolType,\
+    from Core.Enums import FigureType, PlayerPositionType, FillType, SymbolType,\
         ActionLineType, FinalActionType
 
 __all__ = ('PlaybookModelsFabric',)

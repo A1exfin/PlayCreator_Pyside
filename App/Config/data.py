@@ -1,41 +1,13 @@
-import os
 from dataclasses import dataclass
 
-from PySide6.QtCore import QRect, QPointF
-from PySide6.QtGui import QPen, QPolygonF, QColor
+from PySide6.QtCore import QPointF, QRect
+from PySide6.QtGui import QPolygonF, QColor, QPen
 
-from Config.Enums import TeamType, FillType, SymbolType, PlayerPositionType
+from Core.Enums import TeamType, PlayerPositionType, FillType, SymbolType
 
-
-__all__ = ('ORGANIZATION', 'APP_NAME', 'DEBUG', 'VERSION', 'DEFAULT_COLORS', 'HOVER_ITEM_COLOR',
-           'DARK_THEME_LIST_WIDGET_ITEM_DEFAULT_COLOR', 'DARK_THEME_LIST_WIDGET_ITEM_SELECTED_COLOR',
-           'LIGHT_THEME_LIST_WIDGET_ITEM_DEFAULT_COLOR', 'LIGHT_THEME_LIST_WIDGET_ITEM_SELECTED_COLOR',
-           'ERASER_CURSOR_PATH', 'DB_URL',
-           'FieldData', 'FootballFieldData', 'FlagFieldData',
+__all__ = ('FieldData', 'FootballFieldData', 'FlagFieldData',
            'PlayerData', 'FootballPlayersData', 'FlagPlayersData')
 
-ORGANIZATION = 'alexfin_dev'
-
-APP_NAME = 'PlayCreator'
-
-DEBUG = True
-
-VERSION = '4.0'
-
-DEFAULT_COLORS = ('#000000', '#800000', '#400080', '#0004ff', '#8d8b9a', '#22b14c',
-                  '#ff0000', '#ff00ea', '#ff80ff', '#ff8000', '#dcdc00', '#00ff00')
-
-HOVER_ITEM_COLOR = QColor('#ffcb30')
-
-DARK_THEME_LIST_WIDGET_ITEM_DEFAULT_COLOR = QColor('#b1b1b1')
-DARK_THEME_LIST_WIDGET_ITEM_SELECTED_COLOR = QColor('#27c727')
-LIGHT_THEME_LIST_WIDGET_ITEM_DEFAULT_COLOR = QColor('#000000')
-LIGHT_THEME_LIST_WIDGET_ITEM_SELECTED_COLOR = QColor('#1a6aa7')
-
-ERASER_CURSOR_PATH = '://cursors/cursors/eraser.cur'
-
-DB_NAME = 'PlayCreator.db'
-DB_URL = f'sqlite:///{os.getcwd()}/{DB_NAME}'
 
 # Field settings
 @dataclass(frozen=True)

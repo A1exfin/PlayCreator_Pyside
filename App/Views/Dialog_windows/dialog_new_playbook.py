@@ -4,8 +4,9 @@ from PySide6.QtWidgets import QDialog, QLabel, QLineEdit, QRadioButton, QFormLay
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt
 
+from Core.settings import PLAYBOOK_NAME_MAX_LENGTH
+from Core.Enums import PlaybookType
 from .widgets.button_box import ButtonBox
-from Config.Enums import PlaybookType
 
 __all__ = ('DialogNewPlaybook', )
 
@@ -30,6 +31,7 @@ class DialogNewPlaybook(QDialog):
 
         self.line_edit = QLineEdit(parent=self)
         self.line_edit.setFont(font)
+        self.line_edit.setMaxLength(PLAYBOOK_NAME_MAX_LENGTH)
 
         self.radio_button_football = QRadioButton('Футбол', parent=self)
         self.radio_button_football.setFont(font)

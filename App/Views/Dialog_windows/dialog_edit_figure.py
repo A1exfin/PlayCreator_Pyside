@@ -11,7 +11,7 @@ from .widgets.widget_for_figure_edit_dialog import FigurePix
 from .widgets.button_box import ButtonBox
 
 if TYPE_CHECKING:
-    from Config.Enums import FigureType
+    from Core.Enums import FigureType
 
 __all__ = ('DialogEditFigure',)
 
@@ -41,7 +41,6 @@ class DialogEditFigure(QDialog):
         # QGroupBox::title {subcontrol-origin: margin; subcontrol-position: top LEFT; LEFT: 15px;}''' % window_text_color)
         font = QFont()
         font.setPointSize(10)
-        font.setBold(False)
         self.group_box_border = QGroupBox('Граница')  # , parent=self
         self.group_box_border.setFont(font)
         self.group_box_border.setFixedSize(244, 73)

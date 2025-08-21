@@ -1,9 +1,8 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from Config.Enums import FinalActionType
+from Core.Enums import FinalActionType
 from .base import Base
 from .common import pk, hex_color, action_fk, EnumInt, uuid_binary
 

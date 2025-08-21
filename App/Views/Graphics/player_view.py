@@ -6,7 +6,7 @@ from PySide6.QtCore import QPointF, QRectF, QLineF, Qt, QObject, Signal
 
 from Config import PlayerData
 from Views import Graphics
-from Config.Enums import TeamType, FillType, SymbolType, Mode, PlayerPositionType
+from Core.Enums import TeamType, FillType, SymbolType, Mode, PlayerPositionType
 
 if TYPE_CHECKING:
     from uuid import UUID

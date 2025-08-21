@@ -3,7 +3,7 @@ from itertools import chain
 
 from PySide6.QtCore import QObject, Signal
 
-from Config.Enums import FinalActionType
+from Core.Enums import FinalActionType
 from Views import Graphics
 
 if TYPE_CHECKING:

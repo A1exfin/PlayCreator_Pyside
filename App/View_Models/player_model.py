@@ -1,15 +1,15 @@
-from typing import TYPE_CHECKING, Optional, Union
-from uuid import UUID, uuid4
+from typing import TYPE_CHECKING, Optional
+from uuid import UUID
 
 from PySide6.QtCore import Signal, QPointF
 
-from Config.Enums import TeamType, StorageType
+from Core.Enums import TeamType, StorageType
 from .base_model import BaseModel
 from .playbook_model import PlaybookModel
 
 if TYPE_CHECKING:
     from PySide6.QtCore import QObject
-    from Config.Enums import PlayerPositionType, FillType, SymbolType
+    from Core.Enums import PlayerPositionType, FillType, SymbolType
     from .action_model import ActionModel
 
 
@@ -39,8 +39,8 @@ class PlayerModel(BaseModel):
         self._player_color = player_color
         self._actions: list['ActionModel'] = list()
 
-    def _set_changed(self) -> None:
-        super().set_changed()
+    def _set_changed_flag(self) -> None:
+        super().set_changed_flag()
         self._playbook_model.changed = True
 
     def reset_id(self, storage_type: 'StorageType') -> None:
@@ -80,7 +80,7 @@ class PlayerModel(BaseModel):
 
     def set_pos(self, x: float, y: float) -> None:
         self._x, self._y = x, y
-        self._set_changed()
+        self._set_changed_flag()
         self.coordsChanged.emit(QPointF(self.x, self.y))
 
     @property
@@ -121,7 +121,7 @@ class PlayerModel(BaseModel):
             self.playerStyleChanged.emit(self._fill_type, self._text, self._text_color, self._player_color)
         if self._team_type in (TeamType.DEFENCE, TeamType.KICK_RET, TeamType.PUNT_RET, TeamType.FIELD_GOAL_DEF):
             self.playerStyleChanged.emit(self._symbol_type, self._text, self._text_color, self._player_color)
-        self._set_changed()
+        self._set_changed_flag()
 
     @property
     def actions(self) -> list['ActionModel']:
@@ -129,17 +129,17 @@ class PlayerModel(BaseModel):
 
     def add_action(self, action_model: 'ActionModel') -> None:
         self._actions.append(action_model)
-        self._set_changed()
+        self._set_changed_flag()
         self.actionAdded.emit(action_model)
 
     def remove_action(self, action: 'ActionModel') -> None:
         self._actions.remove(action)
-        self._set_changed()
+        self._set_changed_flag()
         self.actionRemoved.emit(action)
 
     def remove_all_actions(self) -> None:
         self._actions.clear()
-        self._set_changed()
+        self._set_changed_flag()
         self.allActionsRemoved.emit()
 
     def get_data_for_view(self) -> dict:

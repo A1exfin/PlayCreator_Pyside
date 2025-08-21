@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Optional
 from itertools import chain
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from PySide6.QtCore import Signal
 
-from Config.Enums import StorageType, PlaybookType, TeamType
+from Core.Enums import StorageType, PlaybookType, TeamType
 from .base_model import BaseModel
 
 if TYPE_CHECKING:
@@ -65,8 +65,8 @@ class SchemeModel(BaseModel):
         self.set_first_team_state(first_team, first_team_position)
         self.set_second_team_state(second_team)
 
-    def _set_changed(self) -> None:
-        super().set_changed()
+    def _set_changed_flag(self) -> None:
+        super().set_changed_flag()
         self._playbook_model.changed = True
 
     def reset_id(self, storage_type: 'StorageType') -> None:
@@ -112,7 +112,7 @@ class SchemeModel(BaseModel):
     @name.setter
     def name(self, name: str) -> None:
         self._name = name
-        self._set_changed()
+        self._set_changed_flag()
         self.nameChanged.emit(name)
 
     @property
@@ -122,7 +122,7 @@ class SchemeModel(BaseModel):
     @note.setter
     def note(self, note: str) -> None:
         self._note = note
-        self._set_changed()
+        self._set_changed_flag()
         self.noteChanged.emit(note)
 
     @property
@@ -131,7 +131,7 @@ class SchemeModel(BaseModel):
 
     @view_point_x.setter
     def view_point_x(self, value: int) -> None:
-        # self._set_changed()
+        # self._set_changed_flag()
         self._view_point_x = value
 
     @property
@@ -140,7 +140,7 @@ class SchemeModel(BaseModel):
 
     @view_point_y.setter
     def view_point_y(self, value: int) -> None:
-        # self._set_changed()
+        # self._set_changed_flag()
         self._view_point_y = value
 
     @property
@@ -151,7 +151,7 @@ class SchemeModel(BaseModel):
     def zoom(self, value: int) -> None:
         if 0 <= value <= 200:
             self._zoom = value
-            # self._set_changed()
+            # self._set_changed_flag()
             self.zoomChanged.emit(self.zoom)
 
     @property
@@ -188,7 +188,7 @@ class SchemeModel(BaseModel):
                 #     raise ValueError('Игроков первой команды должно быть 5.')
         self._first_team = first_team_type
         self._first_team_position = first_team_position
-        self._set_changed()
+        self._set_changed_flag()
         self.firstTeamStateChanged.emit(self._first_team, self._first_team_position)
 
     def add_first_team_player(self, player_model: 'PlayerModel') -> None:
@@ -224,7 +224,7 @@ class SchemeModel(BaseModel):
                 # if len(self._second_team_players) != 5:
                 #     raise ValueError('Игроков второй команды должно быть 5.')
         self._second_team = second_team_type
-        self._set_changed()
+        self._set_changed_flag()
         self.secondTeamStateChanged.emit(self._second_team)
 
     def add_second_team_player(self, player_model: 'PlayerModel') -> None:
@@ -255,7 +255,7 @@ class SchemeModel(BaseModel):
         if self._first_team is not TeamType.OFFENCE:
             raise ValueError('Для добавления дополнительного игрока тип первой команды должен быть - нападение.')
         self._additional_player = player_model
-        self._set_changed()
+        self._set_changed_flag()
         self.additionalPlayerAdded.emit(self.additional_player)
 
     def remove_first_team_players(self) -> None:
@@ -270,7 +270,7 @@ class SchemeModel(BaseModel):
 
     def remove_additional_player(self) -> None:
         self._additional_player = None
-        self._set_changed()
+        self._set_changed_flag()
         self.additionalPlayerRemoved.emit()
 
     def remove_all_players(self) -> None:
@@ -290,17 +290,17 @@ class SchemeModel(BaseModel):
 
     def add_figure(self, figure: 'FigureModel') -> None:
         self._figures.append(figure)
-        self._set_changed()
+        self._set_changed_flag()
         self.figureAdded.emit(figure)
 
     def remove_figure(self, figure: 'FigureModel') -> None:
         self._figures.remove(figure)
-        self._set_changed()
+        self._set_changed_flag()
         self.figureRemoved.emit(figure)
 
     def remove_all_figures(self) -> None:
         self._figures.clear()
-        self._set_changed()
+        self._set_changed_flag()
         self.allFiguresRemoved.emit()
 
     @property
@@ -309,17 +309,17 @@ class SchemeModel(BaseModel):
 
     def add_label(self, label: 'LabelModel') -> None:
         self._labels.append(label)
-        self._set_changed()
+        self._set_changed_flag()
         self.labelAdded.emit(label)
 
     def remove_label(self, label: 'LabelModel') -> None:
         self._labels.remove(label)
-        self._set_changed()
+        self._set_changed_flag()
         self.labelRemoved.emit(label)
 
     def remove_all_labels(self) -> None:
         self._labels.clear()
-        self._set_changed()
+        self._set_changed_flag()
         self.allLabelsRemoved.emit()
 
     @property
@@ -328,17 +328,17 @@ class SchemeModel(BaseModel):
 
     def add_pencil_lines(self, pencil_lines: list['PencilLineModel']) -> None:
         self._pencil_lines.extend(pencil_lines)
-        self._set_changed()
+        self._set_changed_flag()
         self.pencilLinesAdded.emit(pencil_lines)
 
     def remove_pencil_lines(self, pencil_line_models: list['PencilLineModel']) -> None:
         self._pencil_lines = list(set(self._pencil_lines) - set(pencil_line_models))
-        # self._set_changed()
+        # self._set_changed_flag()
         self.pencilLinesRemoved.emit(pencil_line_models)
 
     def remove_all_pencil_lines(self) -> None:
         self._pencil_lines.clear()
-        self._set_changed()
+        self._set_changed_flag()
         self.allPencilLinesRemoved.emit()
 
     def to_dict(self) -> dict:
