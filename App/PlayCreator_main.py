@@ -13,6 +13,7 @@ from PlayCreator_ui import Ui_MainWindow
 import Core
 import Config
 from Core.Enums import AppTheme, PlaybookType, Mode, TeamType, SymbolType
+from Core.settings import FIRST_TEAM_POSITION_MAX, LINE_THICKNESS, SCENE_LABELS_FONT_SIZE
 from View_Models import MainWindowModel
 from Presenters import MainWindowPresenter
 from Views import Graphics, CustomGraphicsView, SchemeWidget
@@ -77,6 +78,9 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
             button.setStyleSheet(f'background-color: {color};')
             button.pressed.connect(lambda color=color: self._set_color(color))
 
+        self.comboBox_line_thickness.addItems(list(map(str, range(LINE_THICKNESS.min, LINE_THICKNESS.max + 1, 1))))
+        self.comboBox_font_size.addItems(list(map(str, range(SCENE_LABELS_FONT_SIZE.min, SCENE_LABELS_FONT_SIZE.max + 1, 1))))
+
         self.toolBar_main.topLevelChanged.connect(lambda topLevel: self.toolBarAreaChanged.emit(self.toolBarArea(self.toolBar_main)) if not topLevel else ...)
         self.lineEdit_yards.textChanged.connect(lambda text: getattr(self, f'_check_max_yards_{self.playbook_type.name}'.lower())(text))
         self.pushButton_color_current.clicked.connect(self._get_user_color)
@@ -134,15 +138,15 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
     def _check_max_yards_football(self, value: str) -> None:
         try:
-            if int(value) > 100:
-                self.lineEdit_yards.setText('100')
+            if int(value) > FIRST_TEAM_POSITION_MAX.football:
+                self.lineEdit_yards.setText(str(FIRST_TEAM_POSITION_MAX.football))
         except ValueError:
             pass
 
     def _check_max_yards_flag(self, value: str) -> None:
         try:
-            if int(value) > 50:
-                self.lineEdit_yards.setText('50')
+            if int(value) > FIRST_TEAM_POSITION_MAX.flag:
+                self.lineEdit_yards.setText(str(FIRST_TEAM_POSITION_MAX.flag))
         except ValueError:
             pass
 

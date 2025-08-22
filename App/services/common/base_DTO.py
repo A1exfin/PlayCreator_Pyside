@@ -2,11 +2,14 @@ from typing import TYPE_CHECKING
 from typing_extensions import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator, model_validator, PositiveInt, PositiveFloat, NonNegativeInt,\
-    NonNegativeFloat, ConfigDict
+from pydantic import (BaseModel, Field, field_validator, model_validator, PositiveInt, PositiveFloat, NonNegativeInt,
+                      NonNegativeFloat, ConfigDict)
 
 from Config import PlayerData
-from Core.Enums import PlaybookType, PlayerPositionType, TeamType, FillType, SymbolType, ActionLineType, FinalActionType, FigureType
+from Core.Enums import (PlaybookType, PlayerPositionType, TeamType, FillType, SymbolType, ActionLineType,
+                        FinalActionType, FigureType)
+from Core.settings import (ZOOM, LINE_THICKNESS, SCENE_LABELS_FONT_SIZE,
+                           PLAYBOOK_NAME_MAX_LENGTH, SCHEME_NAME_MAX_LENGTH)
 from .validators_DTO import validate_x, validate_y, validate_first_team_position, validate_right_border, validate_bot_border
 from .mixins_DTO import ValidatePointCoordinatesMixin, ValidateLineCoordinatesMixin, ValidateWidthAndHeightMixin
 
@@ -25,7 +28,7 @@ class PencilLineBaseDTO(BaseDTO, ValidateLineCoordinatesMixin):
     y1: NonNegativeFloat
     x2: NonNegativeFloat
     y2: NonNegativeFloat
-    thickness: Annotated[PositiveInt, Field(ge=2, le=6)]
+    thickness: Annotated[PositiveInt, Field(ge=LINE_THICKNESS.min, le=LINE_THICKNESS.max)]
     color: Annotated[str, Field(pattern=r'^#[a-f\d]{6}$')]
 
     def __repr__(self) -> str:
@@ -43,7 +46,7 @@ class LabelBaseDTO(BaseDTO, ValidatePointCoordinatesMixin, ValidateWidthAndHeigh
     height: PositiveFloat
     text: str
     font_type: str ################# ВАЛИДАТОР
-    font_size: Annotated[PositiveInt, Field(ge=8, le=36)]
+    font_size: Annotated[PositiveInt, Field(ge=SCENE_LABELS_FONT_SIZE.min, le=SCENE_LABELS_FONT_SIZE.max)]
     font_bold: bool
     font_italic: bool
     font_underline: bool
@@ -66,7 +69,7 @@ class FigureBaseDTO(BaseDTO, ValidatePointCoordinatesMixin, ValidateWidthAndHeig
     height: NonNegativeFloat
     figure_type: FigureType
     border: bool
-    border_thickness: Annotated[PositiveInt, Field(ge=2, le=6)]
+    border_thickness: Annotated[PositiveInt, Field(ge=LINE_THICKNESS.min, le=LINE_THICKNESS.max)]
     border_color: Annotated[str, Field(pattern=r'^#[a-f\d]{6}$')]
     fill: bool
     fill_opacity: Annotated[str, Field(pattern=r'^#[a-f\d]{2}$')]
@@ -98,7 +101,7 @@ class FinalActionBaseDTO(BaseDTO, ValidatePointCoordinatesMixin):
     y: NonNegativeFloat
     action_type: FinalActionType
     angle: Annotated[NonNegativeFloat, Field(ge=0, le=360)]
-    line_thickness: Annotated[PositiveInt, Field(ge=2, le=6)]
+    line_thickness: Annotated[PositiveInt, Field(ge=LINE_THICKNESS.min, le=LINE_THICKNESS.max)]
     color: Annotated[str, Field(pattern=r'^#[a-f\d]{6}$')]
 
     @field_validator('action_type', mode='after')
@@ -122,7 +125,7 @@ class ActionLineBaseDTO(BaseDTO, ValidateLineCoordinatesMixin):
     x2: NonNegativeFloat
     y2: NonNegativeFloat
     line_type: ActionLineType
-    thickness: Annotated[PositiveInt, Field(ge=2, le=6)]
+    thickness: Annotated[PositiveInt, Field(ge=LINE_THICKNESS.min, le=LINE_THICKNESS.max)]
     color: Annotated[str, Field(pattern=r'^#[a-f\d]{6}$')]
 
     @field_validator('line_type')
@@ -178,12 +181,19 @@ class PlayerBaseDTO(BaseDTO, ValidatePointCoordinatesMixin):
     def validate_fill_and_symbol(self):
         if self.fill_type is None and self.symbol_type is None:
             raise ValueError('У игрока одновременно не могут отсутствовать заливка и символ.')
-        if self.team_type in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF) \
+        if self.team_type in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF, TeamType.OFFENCE_ADD) \
                 and self.symbol_type is not None:
             raise ValueError('Для игроков команд нападения, пробития кикофа, пробития панта, и пробития филд-гола символ должен быть None. Сейчас "{symbol_type}".'.format(symbol_type=self.symbol_type))
         if self.team_type in (TeamType.DEFENCE, TeamType.KICK_RET, TeamType.PUNT_RET, TeamType.FIELD_GOAL_DEF) \
                 and self.fill_type is not None:
             raise ValueError('Для игроков команд защиты, возврата кикофа, возврата панта и защиты от филд-гола заливка должна быть None. Сейчас "{fill_type}".'.format(fill_type=self.fill_type))
+        return self
+
+    @model_validator(mode='after')
+    def validate_text(self):
+        if self.team_type in (TeamType.DEFENCE, TeamType.KICK_RET, TeamType.PUNT_RET, TeamType.FIELD_GOAL_DEF) \
+                and len(self.text) > 1:
+            raise ValueError('Длина текста игрока второй команды не должна превышать 1 символ.')
         return self
 
     def __repr__(self) -> str:
@@ -197,12 +207,12 @@ class PlayerBaseDTO(BaseDTO, ValidatePointCoordinatesMixin):
 class SchemeBaseDTO(BaseDTO):
     id: PositiveInt | None = None
     uuid: UUID
-    name: Annotated[str, Field(max_length=50)]
+    name: Annotated[str, Field(max_length=SCHEME_NAME_MAX_LENGTH)]
     note: str
     row_index: NonNegativeInt
     view_point_x: NonNegativeFloat
     view_point_y: NonNegativeFloat
-    zoom: Annotated[NonNegativeInt, Field(ge=0, le=200)]
+    zoom: Annotated[NonNegativeInt, Field(ge=ZOOM.min, le=ZOOM.max)]
     first_team: TeamType | None = None
     second_team: TeamType | None = None
     first_team_position: NonNegativeInt | None = None
@@ -228,7 +238,7 @@ class SchemeBaseDTO(BaseDTO):
             if playbook_type is PlaybookType.FOOTBALL and value not in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
                 raise ValueError('Для плейбука с типом "футбол" тип первой команды должен быть: надение, пробитие кикофа, пробитие панта, пробитие филдгола. Сейчас "{value}".'.format(value=value))
             elif playbook_type is PlaybookType.FLAG and value is not TeamType.OFFENCE:
-                raise ValueError('Для плейбука с типом "флаг-футбол" тип первой команды должен быть: надение. Сейчас "{value}".'.format(value=value))
+                raise ValueError('Для плейбука с типом "флаг-футбол" тип первой команды должен быть: нападение. Сейчас "{value}".'.format(value=value))
         return value
 
     @field_validator('second_team', mode='before')
@@ -250,10 +260,14 @@ class SchemeBaseDTO(BaseDTO):
 
     @model_validator(mode='after')
     def validate_first_team_and_second_team_matching(self, info):
-        if self.first_team is None and self.second_team:
-            raise ValueError('При отсутствующей первой команде должна отсутствовать и вторая.')
-        if self.first_team is None and self.first_team_position:
-            raise ValueError('При отсутствии первой команды должно отсутствовать положение первой команды на поле.')
+        if self.first_team is None:
+            if self.second_team:
+                raise ValueError('При отсутствующей первой команде должна отсутствовать и вторая.')
+            if self.first_team_position:
+                raise ValueError('При отсутствии первой команды должно отсутствовать положение первой команды на поле.')
+        else:
+            if self.first_team_position is None:
+                raise ValueError('При наличии первой команды должно быть установлено её положение на поле.')
         if self.first_team and self.second_team:
             if self.first_team is TeamType.OFFENCE and self.second_team is not TeamType.DEFENCE:
                 raise ValueError('Против команды нападения должна быть команда защиты. Сейчас "{second_team}".'.format(second_team=self.second_team))
@@ -280,14 +294,6 @@ class SchemeBaseDTO(BaseDTO):
 class PlaybookBaseDTO(BaseDTO):
     id: PositiveInt | None = None
     uuid: UUID
-    name: Annotated[str, Field(max_length=50)]
+    name: Annotated[str, Field(max_length=PLAYBOOK_NAME_MAX_LENGTH)]
     playbook_type: PlaybookType
     info: str
-
-    def __repr__(self) -> str:
-        return f'<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \
-               f'name: {self.name}; playbook_type: {self.playbook_type}; info: {self.info}; ' \
-               f'deleted_schemes: {self.deleted_schemes}; deleted_figures: {self.deleted_figures}; ' \
-               f'deleted_labels: {self.deleted_labels}; deleted_pencil_lines: {self.deleted_pencil_lines}; ' \
-               f'deleted_players: {self.deleted_players}; deleted_actions: {self.deleted_actions}) at {hex(id(self))}' \
-               f'\n\t schemes: {self.schemes}>'

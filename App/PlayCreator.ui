@@ -1970,33 +1970,8 @@
                <string>Толщина линий</string>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>-1</number>
               </property>
-              <item>
-               <property name="text">
-                <string>2</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>3</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>4</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>5</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>6</string>
-               </property>
-              </item>
              </widget>
             </item>
            </layout>
@@ -2202,78 +2177,8 @@
              <string>Размер шрифта</string>
             </property>
             <property name="currentIndex">
-             <number>0</number>
+             <number>-1</number>
             </property>
-            <item>
-             <property name="text">
-              <string>8</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>9</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>10</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>11</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>12</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>14</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>16</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>18</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>20</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>22</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>24</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>26</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>28</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>36</string>
-             </property>
-            </item>
            </widget>
           </item>
           <item row="0" column="4">

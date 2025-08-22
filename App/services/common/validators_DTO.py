@@ -1,6 +1,7 @@
 import re
 
 from Core.Enums import PlaybookType
+from Core.settings import FIRST_TEAM_POSITION_MAX
 from Config import football_field_data as football_field, flag_field_data as flag_field
 
 
@@ -56,9 +57,9 @@ def validate_bot_border(y: float, height: float, playbook_type: 'PlaybookType') 
 
 def validate_first_team_position(value: int, playbook_type: 'PlaybookType') -> int:
     if playbook_type is PlaybookType.FOOTBALL:
-        max_value = 100
+        max_value = FIRST_TEAM_POSITION_MAX.football
     elif playbook_type is PlaybookType.FLAG:
-        max_value = 50
+        max_value = FIRST_TEAM_POSITION_MAX.flag
     if not 0 <= value <= max_value:
         raise ValueError('Позиция первой команды на поле должна быть в диапазоне от 0 до {max_value}. Сейчас "{value}".'.format(max_value=max_value, value=value))
     return value

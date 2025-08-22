@@ -51,3 +51,11 @@ class PlaybookOutDTO(PlaybookBaseDTO):
     deleted_pencil_lines: Annotated[list[PositiveInt], Field(default_factory=list)]
     deleted_players: Annotated[list[PositiveInt], Field(default_factory=list)]
     deleted_actions: Annotated[list[PositiveInt], Field(default_factory=list)]
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \
+               f'name: {self.name}; playbook_type: {self.playbook_type}; info: {self.info}; ' \
+               f'deleted_schemes: {self.deleted_schemes}; deleted_figures: {self.deleted_figures}; ' \
+               f'deleted_labels: {self.deleted_labels}; deleted_pencil_lines: {self.deleted_pencil_lines}; ' \
+               f'deleted_players: {self.deleted_players}; deleted_actions: {self.deleted_actions}) at {hex(id(self))}' \
+               f'\n\t schemes: {self.schemes}>'

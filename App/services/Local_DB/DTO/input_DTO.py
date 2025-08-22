@@ -48,3 +48,7 @@ class PlaybookInputDTO(PlaybookBaseDTO):
     # created_at: datetime
     # updated_at: datetime
 
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} (id: {self.id}; uuid: {self.uuid}; ' \
+               f'name: {self.name}; playbook_type: {self.playbook_type}; info: {self.info}) at {hex(id(self))}' \
+               f'\n\t schemes: {self.schemes}>'
