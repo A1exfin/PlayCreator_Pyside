@@ -7,7 +7,7 @@ from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt
 
 from Config import DEFAULT_COLORS
-from Core.settings import LINE_THICKNESS
+from Core.settings import LINE_THICKNESS_RANGE
 from .widgets.widget_for_figure_edit_dialog import FigurePix
 from .widgets.button_box import ButtonBox
 
@@ -59,7 +59,7 @@ class DialogEditFigure(QDialog):
         self.group_box_fill.toggled.connect(self._set_fill)
 
         self.combo_box_border_width = QComboBox(parent=self.group_box_border)
-        self.combo_box_border_width.addItems(list(map(str, range(LINE_THICKNESS.min, LINE_THICKNESS.max + 1, 1))))
+        self.combo_box_border_width.addItems(list(map(str, range(LINE_THICKNESS_RANGE.min, LINE_THICKNESS_RANGE.max + 1, 1))))
         self.combo_box_border_width.setCurrentText(str(self._border_thickness))
         self.combo_box_border_width.setFixedSize(40, 25)
         self.combo_box_border_width.currentTextChanged.connect(self._set_border_thickness)

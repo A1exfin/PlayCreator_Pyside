@@ -2136,7 +2136,7 @@
              <bool>false</bool>
             </property>
             <property name="currentIndex">
-             <number>110</number>
+             <number>212</number>
             </property>
             <property name="fontFilters">
              <set>QFontComboBox::ScalableFonts</set>

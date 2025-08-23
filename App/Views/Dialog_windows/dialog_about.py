@@ -1,20 +1,28 @@
+from typing import TYPE_CHECKING, Union
+
 from PySide6.QtWidgets import QDialog, QLabel, QDialogButtonBox, QVBoxLayout, QHBoxLayout, QSpacerItem, QSizePolicy
 from PySide6.QtGui import QFont, QPixmap
 from PySide6.QtCore import Qt
 
+import Config
 from .widgets.button_box import ButtonBox
+
+if TYPE_CHECKING:
+    from Core.Enums import AppTheme
+    from Config import DarkThemeStyle, LightThemeStyle
 
 __all__ = ('DialogAbout', )
 
 
 class DialogAbout(QDialog):
-    def __init__(self, version: str, ico: str, parent=None, flags=Qt.WindowFlags()):
+    def __init__(self, version: str, theme: 'AppTheme', parent=None, flags=Qt.WindowFlags()):
         super().__init__(parent, flags)
         self.setWindowTitle('PlayCreator')
         self.setFixedSize(639, 191)
 
+        style: Union['DarkThemeStyle', 'LightThemeStyle'] = getattr(Config, f'{theme.name.title()}ThemeStyle')
         label_ico = QLabel(parent=self)
-        label_ico.setPixmap(QPixmap(ico))
+        label_ico.setPixmap(QPixmap(style.tactic_ico_path))
 
         font = QFont()
         font.setPointSize(14)

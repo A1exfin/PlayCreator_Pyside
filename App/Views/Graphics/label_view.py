@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QGraphicsProxyWidget, QTextEdit, QFrame, QApplicat
 from PySide6.QtCore import Qt, QRectF, QPointF, QObject, Signal
 from PySide6.QtGui import QCursor, QPen, QBrush, QPixmap, QFont, QTextCursor, QPainter
 
-from Config import HOVER_ITEM_COLOR, ERASER_CURSOR_PATH
+from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
 from Core.Enums import Mode
 
 if TYPE_CHECKING:
@@ -155,7 +155,7 @@ class ProxyWidgetLabel(QGraphicsProxyWidget):
             painter.setPen(QPen(Qt.red, 2, Qt.DashLine, c=Qt.RoundCap))
             painter.drawRect(self.rect())
         elif self._hover:
-            painter.setPen(QPen(HOVER_ITEM_COLOR, 2, Qt.DashLine, c=Qt.RoundCap))
+            painter.setPen(QPen(HOVER_SCENE_ITEM_COLOR, 2, Qt.DashLine, c=Qt.RoundCap))
             painter.drawRect(self.rect())
         rect = QRectF(self.x() - 10, self.y() - 10, self.rect().width() + 20, self.rect().height() + 20)
         self.scene().update(rect)

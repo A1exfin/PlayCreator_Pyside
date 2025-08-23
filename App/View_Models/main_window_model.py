@@ -85,14 +85,6 @@ class MainWindowModel(QObject):
         self.modelChanged.emit(self)
 
     @property
-    def about_ico_path(self) -> str:
-        return self._about_ico_path
-
-    @about_ico_path.setter
-    def about_ico_path(self, value: str) -> None:
-        self._about_ico_path = value
-
-    @property
     def show_remove_scheme_dialog(self) -> bool:
         return self._show_remove_scheme_dialog
 
@@ -167,7 +159,6 @@ class MainWindowModel(QObject):
         self._show_close_app_dialog = settings.value('app/show_close_app_dialog', defaultValue=True, type=bool)
         self._show_save_changed_playbook_dialog = settings.value('app/show_save_changed_playbook_dialog', defaultValue=True, type=bool)
         self._presentation_mode = False
-        self._about_ico_path = f'://themes/{self._theme.name}_theme/tactic.png'.lower()
         self._version = Core.VERSION
 
     def save_window_state(self):

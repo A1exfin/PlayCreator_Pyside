@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QGraphicsLineItem
 from PySide6.QtGui import QColor, QPen, QPainter, QCursor, QPixmap
 from PySide6.QtCore import Qt
 
-from Config import HOVER_ITEM_COLOR, ERASER_CURSOR_PATH
+from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
 from Core.Enums import Mode, ActionLineType
 
 if TYPE_CHECKING:
@@ -29,7 +29,7 @@ class ActionLineView(QGraphicsLineItem):
         #     self.object_name = f'{self._action.player.text}_{self._line_type.name}'
         self._default_pen = QPen(QColor(color), thickness, s=Qt.SolidLine, c=Qt.RoundCap, j=Qt.RoundJoin)
         self._default_pen.setStyle(Qt.DashLine if self._line_type is ActionLineType.MOTION else Qt.SolidLine)
-        self._hover_pen = QPen(HOVER_ITEM_COLOR, thickness, c=Qt.RoundCap, j=Qt.RoundJoin)
+        self._hover_pen = QPen(HOVER_SCENE_ITEM_COLOR, thickness, c=Qt.RoundCap, j=Qt.RoundJoin)
         self._hover_pen.setStyle(Qt.DashLine if self._line_type is ActionLineType.MOTION else Qt.SolidLine)
         self._hover_state = False
         self.setAcceptHoverEvents(True)

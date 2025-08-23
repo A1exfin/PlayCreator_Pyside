@@ -1,27 +1,26 @@
 import os
+from typing import Final
 from collections import namedtuple
 
-first_team_position = namedtuple('FirstTeamPosition', 'football flag')
-thickness = namedtuple('Thickness', 'min max')
-zoom = namedtuple('Zoom', 'min max')
-font_size = namedtuple('FontSize', 'min max')
+first_team_max_position = namedtuple('FirstTeamPosition', 'football flag')
+thickness_range = namedtuple('Thickness', 'min max')
+zoom_range = namedtuple('Zoom', 'min max')
+font_size_range = namedtuple('FontSize', 'min max')
 
-DEBUG = True
+DEBUG: Final[bool] = True
 
-DB_NAME = 'PlayCreator.db'
-DB_URL = f'sqlite:///{os.getcwd()}/{DB_NAME}'
+DB_NAME: Final[str] = 'PlayCreator.db'
+DB_URL: Final[str] = f'sqlite:///{os.getcwd()}/{DB_NAME}'
 
-PLAYBOOK_NAME_MAX_LENGTH = 50
+PLAYBOOK_NAME_MAX_LENGTH: Final[int] = 50
 
-SCHEME_NAME_MAX_LENGTH = 50
+SCHEME_NAME_MAX_LENGTH: Final[int] = 50
 
-UNDO_STACK_LIMIT = 15
+UNDO_STACK_LIMIT: Final[int] = 15
 
-FIRST_TEAM_POSITION_MAX = first_team_position(100, 50)
-ZOOM = zoom(0, 200)
-
-LINE_THICKNESS = thickness(2, 6)
-
-SCENE_LABELS_FONT_SIZE = font_size(8, 36)
+FIRST_TEAM_MAX_POSITION = first_team_max_position(100, 50)
+ZOOM_RANGE = zoom_range(0, 200)
+LINE_THICKNESS_RANGE = thickness_range(2, 6)
+SCENE_LABELS_FONT_SIZE_RANGE = font_size_range(8, 36)
 
 

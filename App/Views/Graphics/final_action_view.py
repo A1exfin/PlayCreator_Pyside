@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QGraphicsPolygonItem, QGraphicsLineItem
 from PySide6.QtGui import QColor, QPen, QPainter, QBrush, QPolygonF, QCursor, QPixmap
 from PySide6.QtCore import QPointF, Qt, QLineF
 
-from Config import HOVER_ITEM_COLOR, ERASER_CURSOR_PATH
+from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
 from Core.Enums import Mode, FinalActionType
 
 if TYPE_CHECKING:
@@ -26,7 +26,7 @@ class FinalActionView:
         # if action:
         #     self.object_name = f'{self._action.player.text}_{self._action_type.name}'
         self._default_pen = QPen(QColor(color), line_thickness, s=Qt.SolidLine, c=Qt.RoundCap, j=Qt.RoundJoin)
-        self._hover_pen = QPen(HOVER_ITEM_COLOR, line_thickness, s=Qt.SolidLine, c=Qt.RoundCap, j=Qt.RoundJoin)
+        self._hover_pen = QPen(HOVER_SCENE_ITEM_COLOR, line_thickness, s=Qt.SolidLine, c=Qt.RoundCap, j=Qt.RoundJoin)
         self.setRotation(-angle)
         self.setPos(x, y)
         self.setAcceptHoverEvents(True)
@@ -97,7 +97,7 @@ class FinalActionRouteView(FinalActionView, QGraphicsPolygonItem):
         QGraphicsPolygonItem.__init__(self, polygon)
         FinalActionView.__init__(self, action_type, x, y, angle, line_thickness, color, action, model_uuid)
         self._default_brush = QBrush(color)
-        self._hover_brush = QBrush(HOVER_ITEM_COLOR)
+        self._hover_brush = QBrush(HOVER_SCENE_ITEM_COLOR)
 
     def paint(self, painter: 'QPainter', option: 'QStyleOptionGraphicsItem', widget: Optional['QWidget'] = None) -> None:
         painter.setRenderHint(QPainter.Antialiasing)

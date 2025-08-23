@@ -5,7 +5,7 @@ from uuid import UUID
 from PySide6.QtCore import Signal
 
 from Core.Enums import StorageType, PlaybookType, TeamType
-from Core.settings import FIRST_TEAM_POSITION_MAX, ZOOM
+from Core.settings import FIRST_TEAM_MAX_POSITION, ZOOM_RANGE
 from .base_model import BaseModel
 
 if TYPE_CHECKING:
@@ -150,7 +150,7 @@ class SchemeModel(BaseModel):
 
     @zoom.setter
     def zoom(self, value: int) -> None:
-        if ZOOM.min <= value <= ZOOM.max:
+        if ZOOM_RANGE.min <= value <= ZOOM_RANGE.max:
             self._zoom = value
             # self._set_changed_flag()
             self.zoomChanged.emit(self.zoom)
@@ -176,15 +176,15 @@ class SchemeModel(BaseModel):
             if self._playbook_type is PlaybookType.FOOTBALL:
                 if first_team_type not in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
                     raise ValueError(f'Неверный тип первой команды - {first_team_type.name.capitalize()}.')
-                if first_team_position > FIRST_TEAM_POSITION_MAX.football:
-                    raise ValueError('Позиция первой команды не может превышать {position} ярдов.'.format(position=FIRST_TEAM_POSITION_MAX.football))
+                if first_team_position > FIRST_TEAM_MAX_POSITION.football:
+                    raise ValueError('Позиция первой команды не может превышать {position} ярдов.'.format(position=FIRST_TEAM_MAX_POSITION.football))
                 # if len(self._first_team_players) != 11:
                 #     raise ValueError('Игроков первой команды должно быть 11.')
             if self._playbook_type is PlaybookType.FLAG:
                 if first_team_type is not TeamType.OFFENCE:
                     raise ValueError(f'Неверный тип первой команды - {first_team_type.name.capitalize()}.')
-                if first_team_position > FIRST_TEAM_POSITION_MAX.flag:
-                    raise ValueError('Позиция первой команды не может превышать {position} ярдов.'.format(position=FIRST_TEAM_POSITION_MAX.flag))
+                if first_team_position > FIRST_TEAM_MAX_POSITION.flag:
+                    raise ValueError('Позиция первой команды не может превышать {position} ярдов.'.format(position=FIRST_TEAM_MAX_POSITION.flag))
                 # if len(self._first_team_players) != 5:
                 #     raise ValueError('Игроков первой команды должно быть 5.')
         self._first_team = first_team_type

@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsEllipseItem, QGraphics
 from PySide6.QtGui import QColor, QPainter, QPen, QCursor, QPixmap, QBrush
 from PySide6.QtCore import Qt, QRectF, QObject, Signal
 
-from Config import HOVER_ITEM_COLOR, ERASER_CURSOR_PATH
+from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
 from Core.Enums import Mode, FigureType
 
 if TYPE_CHECKING:
@@ -54,7 +54,7 @@ class FigureView:
         painter.setRenderHints(QPainter.Antialiasing)
         self.setBrush(self._brush)
         if self._hover:
-            self.setPen(QPen(HOVER_ITEM_COLOR, self._border_thickness if self._border else 2, self._pen.style(), self._pen.capStyle(), self._pen.joinStyle()))
+            self.setPen(QPen(HOVER_SCENE_ITEM_COLOR, self._border_thickness if self._border else 2, self._pen.style(), self._pen.capStyle(), self._pen.joinStyle()))
         else:
             self.setPen(self._pen)
         super().paint(painter, option, widget)

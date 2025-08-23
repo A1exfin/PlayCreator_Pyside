@@ -1,7 +1,9 @@
+from typing import Final
+
 __all__ = ('ORGANIZATION', 'APP_NAME', 'VERSION')
 
-ORGANIZATION = 'alexfin_dev'
+ORGANIZATION: Final[str] = 'alexfin_dev'
 
-APP_NAME = 'PlayCreator'
+APP_NAME: Final[str] = 'PlayCreator'
 
-VERSION = '4.0'
+VERSION: Final[str] = '4.0'

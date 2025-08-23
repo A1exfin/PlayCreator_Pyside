@@ -106,11 +106,9 @@ class MainWindowPresenter:
 
     def _handle_dark_theme(self) -> None:
         self._model.theme = AppTheme.DARK
-        self._model.about_ico_path = f'://themes/dark_theme/tactic.png'
 
     def _handle_light_theme(self) -> None:
         self._model.theme = AppTheme.LIGHT
-        self._model.about_ico_path = f'://themes/light_theme/tactic.png'
 
     def _handle_tool_bar_visible(self, visible: bool) -> None:
         self._model.tool_bar_visible = visible
@@ -133,7 +131,7 @@ class MainWindowPresenter:
                                  model.show_save_changed_playbook_dialog)
 
     def _handle_about(self) -> None:
-        dialog = DialogAbout(self._model.version, self._model.about_ico_path, parent=self._view)
+        dialog = DialogAbout(self._model.version, self._model.theme, parent=self._view)
         dialog.exec()
 
     def _ask_save_changed_playbook(self) -> None:
