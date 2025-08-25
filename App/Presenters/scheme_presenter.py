@@ -55,8 +55,8 @@ class SchemePresenter:
         self._connect_signals()
 
     def _connect_signals(self) -> None:
-        self._undo_stack.canUndoChanged.connect(lambda is_enabled: self._view.set_undo_action_enabled(is_enabled))
-        self._undo_stack.canRedoChanged.connect(lambda is_enabled: self._view.set_redo_action_enabled(is_enabled))
+        self._undo_stack.canUndoChanged.connect(lambda is_enabled: self._view.set_undo_action_state(is_enabled))
+        self._undo_stack.canRedoChanged.connect(lambda is_enabled: self._view.set_redo_action_state(is_enabled))
         self._model.zoomChanged.connect(lambda zoom_value: self._view.set_current_zoom(zoom_value))
         self._model.nameChanged.connect(lambda name: self._scheme_view.setText(name))
         self._model.noteChanged.connect(lambda note: self._scheme_view.setToolTip(note))

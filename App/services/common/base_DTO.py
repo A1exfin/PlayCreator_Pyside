@@ -8,7 +8,7 @@ from pydantic import (BaseModel, Field, field_validator, model_validator, Positi
 from Config import PlayerData
 from Core.Enums import (PlaybookType, PlayerPositionType, TeamType, FillType, SymbolType, ActionLineType,
                         FinalActionType, FigureType)
-from Core.settings import (ZOOM, LINE_THICKNESS, SCENE_LABELS_FONT_SIZE,
+from Core.settings import (ZOOM_RANGE, LINE_THICKNESS_RANGE, SCENE_LABELS_FONT_SIZE_RANGE,
                            PLAYBOOK_NAME_MAX_LENGTH, SCHEME_NAME_MAX_LENGTH)
 from .validators_DTO import validate_x, validate_y, validate_first_team_position, validate_right_border, validate_bot_border
 from .mixins_DTO import ValidatePointCoordinatesMixin, ValidateLineCoordinatesMixin, ValidateWidthAndHeightMixin
@@ -28,7 +28,7 @@ class PencilLineBaseDTO(BaseDTO, ValidateLineCoordinatesMixin):
     y1: NonNegativeFloat
     x2: NonNegativeFloat
     y2: NonNegativeFloat
-    thickness: Annotated[PositiveInt, Field(ge=LINE_THICKNESS.min, le=LINE_THICKNESS.max)]
+    thickness: Annotated[PositiveInt, Field(ge=LINE_THICKNESS_RANGE.min, le=LINE_THICKNESS_RANGE.max)]
     color: Annotated[str, Field(pattern=r'^#[a-f\d]{6}$')]
 
     def __repr__(self) -> str:
@@ -46,7 +46,7 @@ class LabelBaseDTO(BaseDTO, ValidatePointCoordinatesMixin, ValidateWidthAndHeigh
     height: PositiveFloat
     text: str
     font_type: str ################# ВАЛИДАТОР
-    font_size: Annotated[PositiveInt, Field(ge=SCENE_LABELS_FONT_SIZE.min, le=SCENE_LABELS_FONT_SIZE.max)]
+    font_size: Annotated[PositiveInt, Field(ge=SCENE_LABELS_FONT_SIZE_RANGE.min, le=SCENE_LABELS_FONT_SIZE_RANGE.max)]
     font_bold: bool
     font_italic: bool
     font_underline: bool
@@ -69,7 +69,7 @@ class FigureBaseDTO(BaseDTO, ValidatePointCoordinatesMixin, ValidateWidthAndHeig
     height: NonNegativeFloat
     figure_type: FigureType
     border: bool
-    border_thickness: Annotated[PositiveInt, Field(ge=LINE_THICKNESS.min, le=LINE_THICKNESS.max)]
+    border_thickness: Annotated[PositiveInt, Field(ge=LINE_THICKNESS_RANGE.min, le=LINE_THICKNESS_RANGE.max)]
     border_color: Annotated[str, Field(pattern=r'^#[a-f\d]{6}$')]
     fill: bool
     fill_opacity: Annotated[str, Field(pattern=r'^#[a-f\d]{2}$')]
@@ -101,7 +101,7 @@ class FinalActionBaseDTO(BaseDTO, ValidatePointCoordinatesMixin):
     y: NonNegativeFloat
     action_type: FinalActionType
     angle: Annotated[NonNegativeFloat, Field(ge=0, le=360)]
-    line_thickness: Annotated[PositiveInt, Field(ge=LINE_THICKNESS.min, le=LINE_THICKNESS.max)]
+    line_thickness: Annotated[PositiveInt, Field(ge=LINE_THICKNESS_RANGE.min, le=LINE_THICKNESS_RANGE.max)]
     color: Annotated[str, Field(pattern=r'^#[a-f\d]{6}$')]
 
     @field_validator('action_type', mode='after')
@@ -125,7 +125,7 @@ class ActionLineBaseDTO(BaseDTO, ValidateLineCoordinatesMixin):
     x2: NonNegativeFloat
     y2: NonNegativeFloat
     line_type: ActionLineType
-    thickness: Annotated[PositiveInt, Field(ge=LINE_THICKNESS.min, le=LINE_THICKNESS.max)]
+    thickness: Annotated[PositiveInt, Field(ge=LINE_THICKNESS_RANGE.min, le=LINE_THICKNESS_RANGE.max)]
     color: Annotated[str, Field(pattern=r'^#[a-f\d]{6}$')]
 
     @field_validator('line_type')
@@ -212,7 +212,7 @@ class SchemeBaseDTO(BaseDTO):
     row_index: NonNegativeInt
     view_point_x: NonNegativeFloat
     view_point_y: NonNegativeFloat
-    zoom: Annotated[NonNegativeInt, Field(ge=ZOOM.min, le=ZOOM.max)]
+    zoom: Annotated[NonNegativeInt, Field(ge=ZOOM_RANGE.min, le=ZOOM_RANGE.max)]
     first_team: TeamType | None = None
     second_team: TeamType | None = None
     first_team_position: NonNegativeInt | None = None
