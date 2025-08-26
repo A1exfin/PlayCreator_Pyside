@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 import Config
+from Core import log_method_decorator, logger
 from Core.Enums import PlaybookType, TeamType
 
 from ..scheme_model import SchemeModel
@@ -30,6 +31,7 @@ class PlaybookModelsFabric:
     def playbook(self) -> 'PlaybookModel':
         return self._playbook_model
 
+    @log_method_decorator()
     def create_scheme_model(self, parent: 'PlaybookModel', name: str, view_point_x: int, view_point_y: int, note: str = '', zoom: int = 60,
                             first_team: Optional['TeamType'] = None, second_team: Optional['TeamType'] = None,
                             first_team_position: Optional[int] = None, uuid: Optional['UUID'] = None,
@@ -37,6 +39,7 @@ class PlaybookModelsFabric:
         return SchemeModel(self._playbook_model, name, view_point_x, view_point_y, note, zoom, first_team,
                            second_team, first_team_position, uuid, id_local_db, id_api, parent=parent)
 
+    @log_method_decorator()
     def create_figure_model(self, parent: 'SchemeModel', figure_type: 'FigureType', x: float, y: float,
                             width: float, height: float,
                             border: bool, border_thickness: int, border_color: str,
@@ -48,6 +51,7 @@ class PlaybookModelsFabric:
                            fill, fill_opacity, fill_color,
                            uuid, id_local_db, id_api, parent=parent)
 
+    @log_method_decorator()
     def create_label_model(self, parent: 'SchemeModel', x: float, y: float, width: float, height: float,
                            text: str, font_type: str, font_size: int,
                            font_bold: bool, font_italic: bool, font_underline: bool, font_color: str,
@@ -56,12 +60,14 @@ class PlaybookModelsFabric:
         return LabelModel(self._playbook_model, x, y, width, height, text, font_type, font_size,
                           font_bold, font_italic, font_underline, font_color, uuid, id_local_db, id_api, parent=parent)
 
+    @log_method_decorator()
     def create_pencil_line_model(self, parent: 'SchemeModel', x1: float, y1: float, x2: float, y2: float,
                                  thickness: int, color: str,
                                  uuid: Optional['UUID'] = None,
                                  id_local_db: Optional[int] = None, id_api: Optional[int] = None,) -> 'PencilLineModel':
         return PencilLineModel(self._playbook_model, x1, y1, x2, y2, thickness, color, uuid, id_local_db, id_api, parent=parent)
 
+    @log_method_decorator()
     def create_new_first_team_player_models(self, parent: 'SchemeModel', team_type: 'TeamType',
                                             first_team_position: int) -> list['PlayerModel']:
         player_models_lst = []
@@ -80,6 +86,7 @@ class PlaybookModelsFabric:
             player_models_lst.append(player_model)
         return player_models_lst
 
+    @log_method_decorator()
     def create_new_second_team_player_models(self, parent: 'SchemeModel', team_type: 'TeamType', first_team_position: int) -> list['PlayerModel']:
         player_models_lst = []
         playbook_type = self._playbook_model.playbook_type
@@ -120,6 +127,7 @@ class PlaybookModelsFabric:
             player_models_lst.append(player_model)
         return player_models_lst
 
+    @log_method_decorator()
     def create_new_additional_player_model(self, parent: 'SchemeModel', first_team_position: int):
         playbook_type = self._playbook_model.playbook_type
         yards_to_top_border = self._get_yards_to_top_field_border(playbook_type, first_team_position)
@@ -134,6 +142,7 @@ class PlaybookModelsFabric:
         vertical_one_yard = field_data.vertical_one_yard
         return vertical_ten_yards + vertical_one_yard * first_team_position
 
+    @log_method_decorator()
     def create_player_model(self, parent: 'SchemeModel', team_type: 'TeamType', position: 'PlayerPositionType',
                             text: str, x: int, y: int,
                             fill_type: Optional['FillType'] = None, symbol_type: Optional['SymbolType'] = None,
@@ -143,10 +152,12 @@ class PlaybookModelsFabric:
         return PlayerModel(self._playbook_model, team_type, position, text, x, y, fill_type, symbol_type,
                            text_color, player_color, uuid, id_local_db, id_api, parent=parent)
 
+    @log_method_decorator()
     def create_action_model(self, parent: 'PlayerModel', uuid: Optional['UUID'] = None,
                             id_local_db: Optional[int] = None, id_api: Optional[int] = None) -> 'ActionModel':
         return ActionModel(self._playbook_model, uuid, id_local_db, id_api, parent=parent)
 
+    @log_method_decorator()
     def create_action_line_model(self, parent: 'ActionModel', line_type: 'ActionLineType',
                                  x1: float, y1: float, x2: float, y2: float, thickness: int, color: str,
                                  uuid: Optional['UUID'] = None,
@@ -154,6 +165,7 @@ class PlaybookModelsFabric:
         return ActionLineModel(self._playbook_model, line_type, x1, y1, x2, y2, thickness, color, uuid,
                                id_local_db, id_api, parent=parent)
 
+    @log_method_decorator()
     def create_final_action_model(self, parent: 'ActionModel', action_type: 'FinalActionType', x: float, y: float,
                                   angle: float, line_thickness: int, color: str, uuid: Optional['UUID'] = None,
                                   id_local_db: Optional[int] = None, id_api: Optional[int] = None) -> 'FinalActionModel':

@@ -4,6 +4,7 @@ from uuid import UUID
 
 from PySide6.QtCore import Signal
 
+from Core import log_method_decorator, logger
 from Core.settings import PLAYBOOK_NAME_MAX_LENGTH
 from Core.Enums import StorageType, PlaybookAccessOptions
 from .playbook_access_settings_model import PlaybookAccessSettingsModel
@@ -62,6 +63,7 @@ class PlaybookModel(BaseModel):
     def team_fk(self, team_fk: int) -> None:
         self._team_fk = team_fk
 
+    @log_method_decorator()
     def set_new_uuid_for_all_items(self) -> None:
         self.set_new_uuid()
         self._set_schemes_new_uuid()
@@ -70,6 +72,7 @@ class PlaybookModel(BaseModel):
         for scheme_model in self._schemes:
             scheme_model.set_new_uuid()
 
+    @log_method_decorator()
     def reset_id_for_all_items(self, storage_type: 'StorageType') -> None:
         self.reset_id(storage_type)
         self._reset_schemes_id(storage_type)
@@ -78,6 +81,7 @@ class PlaybookModel(BaseModel):
         for scheme_model in self._schemes:
             scheme_model.reset_id(storage_type)
 
+    @log_method_decorator()
     def reset_changed_flag(self) -> None:
         super().reset_changed_flag()
         self._reset_schemes_changed_flag()
@@ -91,6 +95,7 @@ class PlaybookModel(BaseModel):
         return self._name
 
     @name.setter
+    @log_method_decorator()
     def name(self, name: str) -> None:
         if len(name) > PLAYBOOK_NAME_MAX_LENGTH:
             raise ValueError(f'Имя плейбука не должно быть длиннее {PLAYBOOK_NAME_MAX_LENGTH} символов.')
@@ -103,6 +108,7 @@ class PlaybookModel(BaseModel):
         return self._info
 
     @info.setter
+    @log_method_decorator()
     def info(self, info: str) -> None:
         self._info = info
         self.set_changed_flag()
@@ -117,6 +123,7 @@ class PlaybookModel(BaseModel):
         return self._settings.who_can_edit
 
     @who_can_edit.setter
+    @log_method_decorator()
     def who_can_edit(self, value: 'PlaybookAccessOptions') -> None:
         self._settings.who_can_edit = value
 
@@ -125,6 +132,7 @@ class PlaybookModel(BaseModel):
         return self._settings.who_can_see
 
     @who_can_see.setter
+    @log_method_decorator()
     def who_can_see(self, value: 'PlaybookAccessOptions') -> None:
         self._settings.who_can_see = value
 
@@ -136,6 +144,7 @@ class PlaybookModel(BaseModel):
     def schemes(self) -> list['SchemeModel']:
         return self._schemes.copy()
 
+    @log_method_decorator()
     def add_scheme(self, scheme_model: 'SchemeModel', row_index: Optional[int] = None) -> None:
         if row_index:
             self._schemes.insert(row_index, scheme_model)
@@ -144,6 +153,7 @@ class PlaybookModel(BaseModel):
         self.set_changed_flag()
         self.schemeAdded.emit(scheme_model)
 
+    @log_method_decorator()
     def remove_scheme(self, scheme_model: 'SchemeModel') -> None:
         if scheme_model.id_local_db:
             self.add_deleted_item_ids('schemes', StorageType.LOCAL_DB, scheme_model.id_local_db)
@@ -153,6 +163,7 @@ class PlaybookModel(BaseModel):
         self.set_changed_flag()
         self.schemeRemoved.emit(scheme_model)
 
+    @log_method_decorator()
     def move_up_scheme(self, view_index: int, scheme_model: 'SchemeModel') -> None:
         scheme_index = self._schemes.index(scheme_model)
         if view_index != scheme_index:
@@ -168,6 +179,7 @@ class PlaybookModel(BaseModel):
         self.set_changed_flag()
         self.schemeMoved.emit(last_index, new_index)
 
+    @log_method_decorator()
     def move_down_scheme(self, view_index: int, scheme_model: 'SchemeModel') -> None:
         scheme_index = self._schemes.index(scheme_model)
         if view_index != scheme_index:
@@ -183,6 +195,7 @@ class PlaybookModel(BaseModel):
         self.set_changed_flag()
         self.schemeMoved.emit(last_index, new_index)
 
+    @log_method_decorator()
     def add_deleted_item_ids(self, item_type: str, storage_type: 'StorageType', ids: list[int] | int) -> None:
         """
         Добавляет id удалённых итемов в хранилище для удаления этих итемов из БД при сохранении плейбука.
@@ -191,19 +204,15 @@ class PlaybookModel(BaseModel):
             storage: Тип хранилища (StorageType.LOCAL_DB or StorageType.API)
             ids_lst: Список целых чисел или целое число, для добавления в список id удаляемых итемов
         """
-        # print('add_deleted_item_ids')
-        # print(f'{item_type = }, {storage_type = }, {ids = }')
         if not hasattr(self._deleted_items, item_type):
             raise ValueError(f'Неправильный тип итема: {item_type}')
         if isinstance(ids, list):
             getattr(self._deleted_items, item_type)[storage_type].extend(ids)
         if isinstance(ids, int):
             getattr(self._deleted_items, item_type)[storage_type].append(ids)
-        # print(f'{self.get_deleted_item_ids(item_type, storage_type) = }')
 
+    @log_method_decorator()
     def remove_deleted_item_ids(self, item_type: str, storage_type: 'StorageType', ids: list[int] | int) -> None:
-        # print('remove_deleted_item_ids')
-        # print(f'{item_type = }, {storage_type = }, {ids = }')
         if not hasattr(self._deleted_items, item_type):
             raise ValueError(f'Неправильный тип итема: {item_type}')
         deleted_items_ids = getattr(self._deleted_items, item_type)[storage_type]
@@ -212,7 +221,6 @@ class PlaybookModel(BaseModel):
         if isinstance(ids, list):
             for id in ids:
                 deleted_items_ids.remove(id)
-        # print(f'{self.get_deleted_item_ids(item_type, storage_type) = }')
 
     @property
     def deleted_items(self) -> 'DeletedPlaybookItems':
@@ -221,9 +229,11 @@ class PlaybookModel(BaseModel):
     def get_deleted_item_ids(self, item_type: str, storage_type: 'StorageType') -> list[int]:
         return getattr(self._deleted_items, item_type)[storage_type].copy()
 
+    @log_method_decorator()
     def clear_all_deleted_item_ids(self) -> None:
         self._deleted_items = DeletedPlaybookItems()
 
+    @log_method_decorator()
     def clear_deleted_item_ids(self, storage_type: 'StorageType') -> None:
         self._deleted_items.schemes[storage_type].clear()
         self._deleted_items.figures[storage_type].clear()

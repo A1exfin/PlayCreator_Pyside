@@ -4,14 +4,15 @@ from PySide6.QtWidgets import QGraphicsProxyWidget, QTextEdit, QFrame, QApplicat
 from PySide6.QtCore import Qt, QRectF, QPointF, QObject, Signal
 from PySide6.QtGui import QCursor, QPen, QBrush, QPixmap, QFont, QTextCursor, QPainter
 
-from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
+from Core.logger_settings import log_method_decorator, logger
 from Core.Enums import Mode
+from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
+from Views import Graphics
 
 if TYPE_CHECKING:
     from uuid import UUID
     from PySide6.QtWidgets import QWidget, QGraphicsSceneMouseEvent, QGraphicsSceneHoverEvent, QStyleOptionGraphicsItem
     from PySide6.QtGui import QMouseEvent, QKeyEvent, QFocusEvent
-    from .field_view import Field
 
 
 __all__ = ('ProxyWidgetLabel', 'ProxyTextEdit')
@@ -28,7 +29,7 @@ class ProxyTextEdit(QTextEdit):
         super().__init__(parent=parent)
         self._proxy = proxy
         self._tmp_label = tmp_label
-        self.signals = LabelSignals()
+        self._signals = LabelSignals()
         self.setFont(font)
         self.setTextColor(color)
         self.setText(text)
@@ -65,7 +66,7 @@ class ProxyTextEdit(QTextEdit):
             self._proxy.scene().removeItem(self._proxy)
             self._proxy.deleteLater()
         else:
-            self.signals.itemEdited.emit(self.toPlainText(), self.font().family(), self.font().pointSize(),
+            self.emit_item_edited_signal(self.toPlainText(), self.font().family(), self.font().pointSize(),
                                          self.font().bold(), self.font().italic(), self.font().underline(),
                                          self.textColor().name(), self._proxy.y(), self._proxy.rect().height())
             self._proxy.scene().labelDeselected.emit()
@@ -106,9 +107,27 @@ class ProxyTextEdit(QTextEdit):
         self._proxy.setGeometry(self._proxy.x(), y, self._proxy.rect().width(), height)
         self._proxy._update_borders_pos()
 
+    @log_method_decorator()
+    def emit_item_moved_signal(self, pos: 'QPointF') -> None:
+        self._signals.itemMoved.emit(pos)
+
+    @log_method_decorator()
+    def emit_item_resized_signal(self, new_x: float, new_y: float, new_width: float, new_height: float) -> None:
+        self._signals.itemResized.emit(new_x, new_y, new_width, new_height)
+
+    @log_method_decorator()
+    def emit_item_edited_signal(self, new_text: str, new_font_type: str, new_font_size: int, new_font_bold: bool,
+                                new_font_italic: bool, new_font_underline: bool, new_font_color: str,
+                                new_y: float, new_height: float) -> None:
+        self._signals.itemEdited.emit(new_text, new_font_type, new_font_size, new_font_bold, new_font_italic,
+                                      new_font_underline, new_font_color, new_y, new_height)
+
+    @property
+    def signals(self) -> 'LabelSignals':
+        return self._signals
+
     def __repr__(self):
-        return f'<{self.__class__.__name__} (text: {self.toPlainText()}; font: {self.font().family()}; font_size: {self.font().pointSize()};' \
-               f' color: {self.textColor().name()}; B: {self.font().bold()}; I: {self.font().italic()}; U: {self.font().underline()}) at {hex(id(self))}>'
+        return f'<{self.__class__.__name__} (model_uuid: {self._proxy.model_uuid}; text: {self.toPlainText()}) at {hex(id(self))}>'
 
 
 class ProxyWidgetLabel(QGraphicsProxyWidget):
@@ -193,10 +212,10 @@ class ProxyWidgetLabel(QGraphicsProxyWidget):
         self._update_borders_pos()
         if self.scene().mode is Mode.MOVE and event.button() == Qt.LeftButton and self.widget().isReadOnly() and not self._selected_border:
             self._start_pos = None
-            self.widget().signals.itemMoved.emit(self.pos())
+            self.widget().emit_item_moved_signal(self.pos())
         elif self.scene().mode is Mode.MOVE and event.button() == Qt.LeftButton and not self.widget().isReadOnly() and self._selected_border:
             self._selected_border = None
-            self.widget().signals.itemResized.emit(self.x(), self.y(), self.rect().width(), self.rect().height())
+            self.widget().emit_item_resized_signal(self.x(), self.y(), self.rect().width(), self.rect().height())
         else:
             super().mouseReleaseEvent(event)
 
@@ -272,7 +291,7 @@ class ProxyWidgetLabel(QGraphicsProxyWidget):
     def widget(self) -> 'ProxyTextEdit':
         return super().widget()
 
-    def scene(self) -> 'Field':
+    def scene(self) -> 'Graphics.Field':
         return super().scene()
 
     @property

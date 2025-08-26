@@ -3,6 +3,7 @@ from uuid import UUID
 
 from PySide6.QtCore import Signal, QPointF
 
+from Core import log_method_decorator, logger
 from .base_model import BaseModel
 
 if TYPE_CHECKING:
@@ -33,6 +34,7 @@ class LabelModel(BaseModel):
         self._font_color = font_color
         self._text = text
 
+    @log_method_decorator()
     def _set_changed_flag(self) -> None:
         super().set_changed_flag()
         self._playbook_model.changed = True
@@ -81,16 +83,19 @@ class LabelModel(BaseModel):
     def text(self) -> str:
         return self._text
 
+    @log_method_decorator()
     def set_pos(self, x: float, y: float) -> None:
         self._x, self._y = x, y
         self._set_changed_flag()
         self.coordsChanged.emit(QPointF(self._x, self._y))
 
+    @log_method_decorator()
     def set_size(self, x: float, y: float, width: float, height: float) -> None:
         self._x, self._y, self._width, self._height = x, y, width, height
         self._set_changed_flag()
         self.sizeChanged.emit(self._x, self._y, self._width, self._height)
 
+    @log_method_decorator()
     def set_text_attributes(self, text: str, font_type: str, font_size: int,
                             font_bold: bool, font_italic: bool, font_underline: bool, font_color: str,
                             y: float, height: float) -> None:

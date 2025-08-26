@@ -6,20 +6,20 @@ from PySide6.QtCore import QPointF, Qt, QLineF
 
 from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
 from Core.Enums import Mode, FinalActionType
+from Views import Graphics
 
 if TYPE_CHECKING:
     from uuid import UUID
     from PySide6.QtGui import QPainter
     from PySide6.QtWidgets import QWidget, QStyleOptionGraphicsItem, QGraphicsSceneMouseEvent, QGraphicsSceneHoverEvent
     from .field_view import Field
-    from .action_view import ActionView
 
 __all__ = ('FinalActionRouteView', 'FinalActionBlockView')
 
 
 class FinalActionView:
     def __init__(self, action_type: 'FinalActionType', x: float, y: float, angle: float,
-                 line_thickness: int, color: str, action: Optional['ActionView'], model_uuid: Optional['UUID']):
+                 line_thickness: int, color: str, action: Optional['Graphics.ActionView'], model_uuid: Optional['UUID']):
         self._model_uuid = model_uuid
         self._action = action
         self._action_type = action_type
@@ -57,7 +57,7 @@ class FinalActionView:
             self.setCursor(Qt.ArrowCursor)  # Возврат стандартного курсора сразу после клика
             if self._action:
                 self._action.set_hover_state(False)
-                self._action.player.signals.actionRemoveClicked.emit(self._action.model_id)
+                self._action.player.emit_action_remove_clicked(self._action.model_uuid)
 
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
         if self.scene().mode is Mode.ERASE:
@@ -91,7 +91,7 @@ class FinalActionView:
 
 class FinalActionRouteView(FinalActionView, QGraphicsPolygonItem):
     def __init__(self, x: float, y: float, angle: float, line_thickness: int, color: str,
-                 action_type: 'FinalActionType' = FinalActionType.ARROW, action: Optional['ActionView'] = None,
+                 action_type: 'FinalActionType' = FinalActionType.ARROW, action: Optional['Graphics.ActionView'] = None,
                  model_uuid: Optional['UUID'] = None):
         polygon = QPolygonF([QPointF(0, 0), QPointF(-10, -4), QPointF(-10, 4)])
         QGraphicsPolygonItem.__init__(self, polygon)
@@ -109,10 +109,13 @@ class FinalActionRouteView(FinalActionView, QGraphicsPolygonItem):
             self.setBrush(self._default_brush)
         super().paint(painter, option, widget)
 
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} (model_uuid: {self._model_uuid}; line_type: {self._action_type} at {hex(id(self))}'
+
 
 class FinalActionBlockView(FinalActionView, QGraphicsLineItem):
     def __init__(self, x: float, y: float, angle: float, line_thickness: int, color: str,
-                 action_type: 'FinalActionType' = FinalActionType.LINE, action: Optional['ActionView'] = None,
+                 action_type: 'FinalActionType' = FinalActionType.LINE, action: Optional['Graphics.ActionView'] = None,
                  model_uuid: Optional['UUID'] = None):
         line = QLineF(QPointF(0, -7), QPointF(0, 7))
         QGraphicsLineItem.__init__(self, line)
@@ -125,3 +128,6 @@ class FinalActionBlockView(FinalActionView, QGraphicsLineItem):
         else:
             self.setPen(self._default_pen)
         super().paint(painter, option, widget)
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} (model_uuid: {self._model_uuid}; line_type: {self._action_type}) at {hex(id(self))}'

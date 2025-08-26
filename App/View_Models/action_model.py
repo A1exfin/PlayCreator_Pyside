@@ -4,6 +4,7 @@ from itertools import chain
 
 from PySide6.QtCore import Signal
 
+from Core import log_method_decorator, logger
 from .base_model import BaseModel
 
 if TYPE_CHECKING:
@@ -27,10 +28,12 @@ class ActionModel(BaseModel):
         self._action_lines = []
         self._final_actions = []
 
+    @log_method_decorator()
     def _set_changed_flag(self) -> None:
         super().set_changed_flag()
         self._playbook_model.changed = True
 
+    @log_method_decorator()
     def set_new_uuid(self) -> None:
         super().set_new_uuid()
         self._set_action_parts_new_uuid()
@@ -40,6 +43,7 @@ class ActionModel(BaseModel):
             if action_part_model:
                 action_part_model.set_new_uuid()
 
+    @log_method_decorator()
     def reset_id(self, storage_type: 'StorageType') -> None:
         super().reset_id(storage_type)
         self._reset_id_for_action_parts(storage_type)
@@ -49,6 +53,7 @@ class ActionModel(BaseModel):
             if action_part_model:
                 action_part_model.reset_id(storage_type)
 
+    @log_method_decorator()
     def reset_changed_flag(self) -> None:
         super().reset_changed_flag()
         self._reset_action_parts_changed_flag()
@@ -66,12 +71,14 @@ class ActionModel(BaseModel):
     def final_actions(self) -> list['FinalActionModel']:
         return self._final_actions.copy()
 
+    @log_method_decorator()
     def add_action_parts(self, action_lines: list['ActionLineModel'], final_actions: list['FinalActionModel']) -> None:
         self._action_lines.extend(action_lines)
         self._final_actions.extend(final_actions)
         self._set_changed_flag()
         self.actionPartsAdded.emit(action_lines, final_actions)
 
+    @log_method_decorator()
     def remove_action_parts(self, action_lines: list['ActionLineModel'], final_actions: list['FinalActionModel']) -> None:
         self._action_lines = list(set(self._action_lines) - set(action_lines))
         self._final_actions = list(set(self._final_actions) - set(final_actions))

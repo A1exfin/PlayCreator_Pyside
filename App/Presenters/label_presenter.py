@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from Core import log_method_decorator, logger
 from Commands import MoveLabelCommand, ChangeLabelTextAttributesCommand, ChangeLabelSizeCommand
 
 if TYPE_CHECKING:
@@ -13,6 +14,7 @@ __all__ = ('LabelPresenter', )
 
 
 class LabelPresenter:
+    @log_method_decorator()
     def __init__(self, execute_command_func: callable, label_model: 'LabelModel', view: 'PlayCreatorApp',
                  label_view: 'Graphics.ProxyWidgetLabel'):
         self._execute_command_func = execute_command_func
@@ -21,6 +23,7 @@ class LabelPresenter:
         self._model = label_model
         self._connect_signals()
 
+    @log_method_decorator()
     def _connect_signals(self) -> None:
         self._label_view.widget().signals.itemMoved.connect(self._handle_label_item_moved)
         self._model.coordsChanged.connect(self._move_label_item)
@@ -29,6 +32,7 @@ class LabelPresenter:
         self._label_view.widget().signals.itemResized.connect(self._handle_label_item_resized)
         self._model.sizeChanged.connect(self._change_label_item_size)
 
+    @log_method_decorator()
     def _handle_label_item_moved(self, new_pos: 'QPointF') -> None:
         if self._model.x != new_pos.x() or self._model.y != new_pos.y():
             move_label_command = MoveLabelCommand(self._model, new_pos.x(), new_pos.y())
@@ -37,6 +41,7 @@ class LabelPresenter:
     def _move_label_item(self, new_pos: 'QPointF') -> None:
         self._label_view.set_pos(new_pos)
 
+    @log_method_decorator()
     def _handle_label_item_edited(self, new_text: str, new_font_type: str, new_font_size: int, new_font_bold: bool,
                                   new_font_italic: bool, new_font_underline: bool, new_font_color: str,
                                   new_y: float, new_height: float) -> None:
@@ -57,6 +62,7 @@ class LabelPresenter:
         self._label_view.set_text_attributes(new_text, new_font_type, new_font_size, new_font_bold, new_font_italic,
                                              new_font_underline, new_font_color, new_y, new_height)
 
+    @log_method_decorator()
     def _handle_label_item_resized(self, new_x: float, new_y: float, new_width: float, new_height: float) -> None:
         if self._model.x != new_x or self._model.y != new_y or self._model.width != new_width \
                 or self._model.height != new_height:

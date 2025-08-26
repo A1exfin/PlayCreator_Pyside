@@ -3,6 +3,7 @@ from uuid import UUID
 
 from PySide6.QtCore import Signal, QObject, QPointF
 
+from Core import log_method_decorator, logger
 from .base_model import BaseModel
 
 if TYPE_CHECKING:
@@ -83,16 +84,19 @@ class FigureModel(BaseModel):
     def fill_opacity(self) -> str:
         return self._fill_opacity
 
+    @log_method_decorator()
     def set_pos(self, x: float, y: float) -> None:
         self._x, self._y = x, y
         self._set_changed_flag()
         self.coordsChanged.emit(QPointF(self._x, self._y))
 
+    @log_method_decorator()
     def set_size(self, x: float, y: float, width: float, height: float) -> None:
         self._x, self._y, self._width, self._height = x, y, width, height
         self._set_changed_flag()
         self.sizeChanged.emit(self._x, self._y, self._width, self._height)
 
+    @log_method_decorator()
     def set_figure_style(self, border: bool, border_thickness: int, border_color: str,
                          fill: bool,  fill_opacity: str, fill_color: str) -> None:
         if not border and not fill:

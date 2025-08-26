@@ -3,6 +3,7 @@ from uuid import UUID
 
 from PySide6.QtCore import Signal, QPointF
 
+from Core import log_method_decorator, logger
 from Core.Enums import TeamType, StorageType
 from .base_model import BaseModel
 from .playbook_model import PlaybookModel
@@ -39,10 +40,12 @@ class PlayerModel(BaseModel):
         self._player_color = player_color
         self._actions: list['ActionModel'] = list()
 
+    @log_method_decorator()
     def _set_changed_flag(self) -> None:
         super().set_changed_flag()
         self._playbook_model.changed = True
 
+    @log_method_decorator()
     def reset_id(self, storage_type: 'StorageType') -> None:
         super().reset_id(storage_type)
         self._reset_actions_id(storage_type)
@@ -52,6 +55,7 @@ class PlayerModel(BaseModel):
             if action_model:
                 action_model.reset_id(storage_type)
 
+    @log_method_decorator()
     def set_new_uuid(self) -> None:
         super().set_new_uuid()
         self._set_actions_new_uuid()
@@ -61,6 +65,7 @@ class PlayerModel(BaseModel):
             if action_model:
                 action_model.set_new_uuid()
 
+    @log_method_decorator()
     def reset_changed_flag(self) -> None:
         super().reset_changed_flag()
         self._reset_actions_changed_flag()
@@ -78,6 +83,7 @@ class PlayerModel(BaseModel):
     def y(self) -> float:
         return self._y
 
+    @log_method_decorator()
     def set_pos(self, x: float, y: float) -> None:
         self._x, self._y = x, y
         self._set_changed_flag()
@@ -111,6 +117,7 @@ class PlayerModel(BaseModel):
     def player_color(self) -> str:
         return self._player_color
 
+    @log_method_decorator()
     def set_player_style(self, text: Optional[str], text_color: Optional[str], player_color: Optional[str],
                          fill_type: Optional['FillType'] = None, symbol_type: Optional['SymbolType'] = None) -> None:
         if fill_type and symbol_type:
@@ -127,16 +134,19 @@ class PlayerModel(BaseModel):
     def actions(self) -> list['ActionModel']:
         return self._actions.copy()
 
+    @log_method_decorator()
     def add_action(self, action_model: 'ActionModel') -> None:
         self._actions.append(action_model)
         self._set_changed_flag()
         self.actionAdded.emit(action_model)
 
+    @log_method_decorator()
     def remove_action(self, action: 'ActionModel') -> None:
         self._actions.remove(action)
         self._set_changed_flag()
         self.actionRemoved.emit(action)
 
+    @log_method_decorator()
     def remove_all_actions(self) -> None:
         self._actions.clear()
         self._set_changed_flag()

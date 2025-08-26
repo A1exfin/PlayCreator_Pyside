@@ -12,7 +12,7 @@ from PlayCreator_ui import Ui_MainWindow
 
 import Core
 import Config
-from Core.logger_settings import logger, log_method
+from Core import logger, log_method_decorator
 from Core.Enums import AppTheme, PlaybookType, Mode, TeamType, SymbolType
 from Core.settings import FIRST_TEAM_MAX_POSITION, LINE_THICKNESS_RANGE, SCENE_LABELS_FONT_SIZE_RANGE
 from View_Models import MainWindowModel
@@ -25,15 +25,6 @@ if TYPE_CHECKING:
     from uuid import UUID
     from PySide6.QtGui import QMoveEvent, QResizeEvent, QCloseEvent
     from Config import DarkThemeStyle, LightThemeStyle
-
-
-def timeit(func):
-    def wrapper(*args, **kwargs):
-        start = datetime.now()
-        result = func(*args, **kwargs)
-        print(datetime.now() - start)
-        return result
-    return wrapper
 
 
 class PlayCreatorApp(QMainWindow, Ui_MainWindow):
@@ -142,7 +133,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         except ValueError:
             pass
 
-    @log_method()
+    @log_method_decorator()
     def set_initial_gui_state(self):
         """Установка начального состояния GUI."""
         self.action_new_playbook.setEnabled(True)
@@ -189,7 +180,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.pushButton_move_up_scheme.setEnabled(False)
         self.pushButton_move_down_scheme.setEnabled(False)
 
-    @log_method()
+    @log_method_decorator()
     def set_initial_window_state(self, x: int, y: int, width: int, height: int, theme: 'AppTheme', is_maximized: bool,
                                  tool_bar_visible: bool, tool_bar_area: 'Qt.ToolBarArea', presentation_mode: bool,
                                  show_remove_scheme_dialog: bool, show_close_app_dialog: bool,
@@ -208,7 +199,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
             screen = QApplication.primaryScreen()
         return screen
 
-    @log_method()
+    @log_method_decorator()
     def moveEvent(self, event: 'QMoveEvent') -> None:
         super().moveEvent(event)
         current_screen_width = self._get_current_screen().availableSize().width()
@@ -217,7 +208,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
                 and self.y() + self.rect().height() < current_screen_height:
             self.main_presenter.handle_move(event.pos().x(), event.pos().y())
 
-    @log_method()
+    @log_method_decorator()
     def resizeEvent(self, event: 'QResizeEvent') -> None:
         super().resizeEvent(event)
         current_screen_size = self._get_current_screen().availableSize()
@@ -226,13 +217,13 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
                 and window_size.height() < current_screen_size.height() - 10:
             self.main_presenter.handle_resize(window_size.width(), window_size.height())
 
-    @log_method()
+    @log_method_decorator()
     def changeEvent(self, event: 'QEvent') -> None:
         super().changeEvent(event)
         if event.type() == QEvent.Type.WindowStateChange:
             self.main_presenter.handle_maximized_changed(self.isMaximized())
 
-    @log_method()
+    @log_method_decorator()
     def update_window(self, theme: 'AppTheme', tool_bar_visible: bool, presentation_mode: bool,
                       show_remove_scheme_dialog: bool, show_close_app_dialog: bool,
                       show_save_changed_playbook_dialog: bool) -> None:
@@ -246,7 +237,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.label_current_zoom.setVisible(not presentation_mode)
         self.set_theme(theme)
 
-    @log_method()
+    @log_method_decorator()
     def set_theme(self, theme: 'AppTheme') -> None:
         self.theme = theme
         style: Union['DarkThemeStyle', 'LightThemeStyle'] = getattr(Config, f'{theme.name.title()}ThemeStyle')
@@ -280,14 +271,14 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
             self.selected_scheme.setForeground(style.list_widget_item_selected_color)
         self.pushButton_edit_playbook.setIcon(QIcon(QPixmap(style.info_ico_path)))
 
-    @log_method()
+    @log_method_decorator()
     def closeEvent(self, event: 'QCloseEvent') -> None:
         if self.main_presenter.handle_close_app():
             event.accept()
         else:
             event.ignore()
 
-    @log_method()
+    @log_method_decorator()
     def set_playbook(self, name: str, playbook_type: 'PlaybookType', info: str) -> None:
         self.set_initial_gui_state()
         self.listWidget_schemes.clear()
@@ -320,15 +311,15 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
             self.label_place_players.setVisible(False)
             self.pushButton_edit_playbook.setToolTip(f'Тип: Флаг-футбол')
 
-    @log_method()
+    @log_method_decorator()
     def update_playbook_name(self, name: str) -> None:
         self.label_playbook_name.setText(name)
 
-    @log_method()
+    @log_method_decorator()
     def update_playbook_info(self, info: str) -> None:
         self.label_playbook_name.setToolTip(info)
 
-    @log_method()
+    @log_method_decorator()
     def add_scheme_widget(self, scheme_model_uuid: 'UUID', scheme_name: str, scheme_note: str) -> 'SchemeWidget':
         scheme_widget = SchemeWidget(scheme_model_uuid, scheme_name)
         scheme_widget.setToolTip(scheme_note)
@@ -343,7 +334,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.action_save_all_like_picture.setEnabled(True)
         return scheme_widget
 
-    @log_method()
+    @log_method_decorator()
     def remove_scheme_widget(self, scheme_widget: 'SchemeWidget') -> None:
         self.listWidget_schemes.takeItem(self.listWidget_schemes.row(scheme_widget))
         if self.listWidget_schemes.count() == 1:
@@ -375,7 +366,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
             self.selected_scheme = None
             self.selected_scene = None
 
-    @log_method()
+    @log_method_decorator()
     def select_scheme(self, scheme_widget: 'SchemeWidget', scene: 'Graphics.Field',
                       view_point_x: int, view_point_y: int, zoom: int,
                       first_team: Optional['TeamType'], second_team: Optional['TeamType'],
@@ -445,7 +436,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
             self.comboBox_second_players_symbol.setEnabled(False)
             self.comboBox_second_players_symbol.setVisible(False)
 
-    @log_method()
+    @log_method_decorator()
     def set_current_zoom(self, zoom: int) -> None:
         self.label_current_zoom.setText(f'Приближение: {str(zoom)}%')
         self.graphics_view.set_current_zoom(zoom)
@@ -455,17 +446,17 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         scene.labelSelected.connect(self._set_gui_config_from_label)
         scene.labelDeselected.connect(self._set_gui_config_from_scene)
 
-    @log_method()
+    @log_method_decorator()
     def move_scheme_widget(self, last_index: int, new_index: int) -> None:
         scheme_widget = self.listWidget_schemes.takeItem(last_index)
         self.listWidget_schemes.insertItem(new_index, scheme_widget)
         self.listWidget_schemes.setCurrentItem(scheme_widget)
 
-    @log_method()
+    @log_method_decorator()
     def set_undo_action_state(self, is_enabled: bool) -> None:
         self.action_undo.setEnabled(is_enabled)
 
-    @log_method()
+    @log_method_decorator()
     def set_redo_action_state(self, is_enabled: bool) -> None:
         self.action_redo.setEnabled(is_enabled)
 
@@ -489,7 +480,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.placeFirstTeamClicked.emit(TeamType(self.comboBox_team_type.currentIndex()),
                                         int(self.lineEdit_yards.text()))
 
-    @log_method()
+    @log_method_decorator()
     def set_gui_for_first_team(self, first_team_type: Optional['TeamType'], first_team_position: Optional[int]) -> None:
         first_team_state = bool(first_team_type)
         self.comboBox_team_type.setEnabled(not first_team_state)
@@ -507,7 +498,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.pushButton_remove_second_team.setEnabled(False)
         self.pushButton_remove_all_players.setEnabled(first_team_state)
 
-    @log_method()
+    @log_method_decorator()
     def set_gui_for_second_team(self, second_team_type: 'TeamType') -> None:
         second_team_state = bool(second_team_type)
         self.pushButton_place_second_team.setEnabled(not second_team_state)
@@ -515,7 +506,7 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         self.comboBox_second_players_symbol.setVisible(second_team_state)
         self.comboBox_second_players_symbol.setEnabled(second_team_state)
 
-    @log_method()
+    @log_method_decorator()
     def set_gui_for_additional_player(self, additional_player: bool) -> None:
         self.pushButton_add_additional_off_player.setEnabled(not additional_player)
         self.pushButton_del_additional_off_player.setEnabled(additional_player)

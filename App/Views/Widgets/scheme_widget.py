@@ -18,3 +18,6 @@ class SchemeWidget(QListWidgetItem):
     @property
     def model_uuid(self) -> 'UUID':
         return self._model_uuid
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} (model_uuid: {self._model_uuid}; name: {self.text()} at {hex(id(self))}'

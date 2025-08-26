@@ -25,3 +25,6 @@ class PencilLineView(QGraphicsLineItem):
     def get_data(self) -> dict:
         return {'x1': self.line().x1(), 'y1': self.line().y1(), 'x2': self.line().x2(), 'y2': self.line().y2(),
                 'thickness': self.pen().width(), 'color': self.pen().color().name()}
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} (model_uuid: {self._model_uuid}) at {hex(id(self))}'

@@ -4,22 +4,21 @@ from PySide6.QtWidgets import QGraphicsLineItem
 from PySide6.QtGui import QColor, QPen, QPainter, QCursor, QPixmap
 from PySide6.QtCore import Qt
 
-from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
 from Core.Enums import Mode, ActionLineType
+from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
+from Views import Graphics
 
 if TYPE_CHECKING:
     from uuid import UUID
     from PySide6.QtGui import QPainter
     from PySide6.QtWidgets import QWidget, QStyleOptionGraphicsItem, QGraphicsSceneMouseEvent, QGraphicsSceneHoverEvent
-    from .action_view import ActionView
-    from .field_view import Field
 
 __all__ = ('ActionLineView', )
 
 
 class ActionLineView(QGraphicsLineItem):
     def __init__(self, line_type: 'ActionLineType', x1: float, y1: float, x2: float, y2: float,
-                 thickness: int, color: str, action: Optional['ActionView'] = None,
+                 thickness: int, color: str, action: Optional['Graphics.ActionView'] = None,
                  model_uuid: Optional['UUID'] = None):
         super().__init__(x1, y1, x2, y2)
         self._model_uuid = model_uuid
@@ -35,7 +34,7 @@ class ActionLineView(QGraphicsLineItem):
         self.setAcceptHoverEvents(True)
         self.setZValue(1)
 
-    def scene(self) -> 'Field':
+    def scene(self) -> 'Graphics.Field':
         return super().scene()
 
     @property
@@ -51,7 +50,7 @@ class ActionLineView(QGraphicsLineItem):
         self._hover_state = value
 
     @property
-    def action(self) -> 'ActionView':
+    def action(self) -> 'Graphics.ActionView':
         return self._action
 
     @property
@@ -78,7 +77,7 @@ class ActionLineView(QGraphicsLineItem):
             self.setCursor(Qt.ArrowCursor)  # Возврат стандартного курсора сразу после клика
             if self._action:
                 self._action.set_hover_state(False)
-                self._action.player.signals.actionRemoveClicked.emit(self._action.model_uuid)
+                self._action.player.emit_action_remove_clicked(self._action.model_uuid)
 
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
         if self.scene().mode in (Mode.ERASE, Mode.ROUTE, Mode.BLOCK) or \
@@ -111,6 +110,7 @@ class ActionLineView(QGraphicsLineItem):
                 'x2': self.line().x2(), 'y2': self.line().y2(), 'thickness': self._default_pen.width(),
                 'color': self._default_pen.color().name()}
 
-
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} (model_uuid: {self._model_uuid}; line_type: {self._line_type}) at {hex(id(self))}'
 
 

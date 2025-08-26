@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Optional
 from PySide6.QtWidgets import QFileDialog
 
 import Config
+from Core import log_method_decorator, logger
 from View_Models import PlaybookModel, SchemeModel
 from Views.Dialog_windows import DialogEditPlaybook, DialogProgressBar, DialogInfo, DialogInput
 from .scheme_presenter import SchemePresenter
@@ -20,6 +21,7 @@ __all__ = ('PlaybookPresenter', )
 
 
 class PlaybookPresenter:
+    @log_method_decorator()
     def __init__(self, model: 'PlaybookModel', view: 'PlayCreatorApp', playbook_items_fabric: 'PlaybookModelsFabric',
                  deletion_observer: 'DeletionObserver'):
         self._view = view
@@ -30,6 +32,7 @@ class PlaybookPresenter:
         self._selected_scheme_presenter: Optional['SchemePresenter'] = None
         self._connect_signals()
 
+    @log_method_decorator()
     def _connect_signals(self) -> None:
         self._model.nameChanged.connect(lambda name: self._view.update_playbook_name(name))
         self._model.infoChanged.connect(lambda info: self._view.update_playbook_info(info))
@@ -37,6 +40,7 @@ class PlaybookPresenter:
         self._model.schemeRemoved.connect(self._remove_scheme_widget)
         self._model.schemeMoved.connect(self._move_scheme_widget)
 
+    @log_method_decorator()
     def handle_edit_playbook(self) -> None:
         dialog_edit_playbook = DialogEditPlaybook(self._model.name, self._model.info,
                                                   who_can_edit=self._model.who_can_edit,
@@ -50,6 +54,7 @@ class PlaybookPresenter:
             self._model.who_can_edit = data.who_can_edit
             self._model.who_can_see = data.who_can_see
 
+    @log_method_decorator()
     def handle_add_scheme(self) -> None:
         scheme_model = self._playbook_items_fabric.create_scheme_model(
             self._model, 'Новая схема',
@@ -69,6 +74,7 @@ class PlaybookPresenter:
         self._selected_scheme_presenter = self._scheme_mappers[model_uuid].presenter
         self._selected_scheme_presenter.handle_scheme_selected()
 
+    @log_method_decorator()
     def handle_remove_scheme(self, model_uuid: 'UUID') -> None:
         scheme_model = self._scheme_mappers[model_uuid].model
         self._model.remove_scheme(scheme_model)
@@ -80,15 +86,13 @@ class PlaybookPresenter:
                 self._view.listWidget_schemes.count() > 0:
             self.transfer_to_scheme_presenter_select_scheme(self._view.listWidget_schemes.currentItem().model_uuid)
         mapper = self._scheme_mappers.pop(scheme_model.uuid)
-        del mapper.model
-        del mapper.presenter
-        del mapper.view
-        del mapper
 
+    @log_method_decorator()
     def handle_move_up_scheme(self, model_uuid: 'UUID', view_index: int) -> None:
         scheme_model = self._scheme_mappers[model_uuid].model
         self._model.move_up_scheme(view_index, scheme_model)
 
+    @log_method_decorator()
     def handle_move_down_scheme(self, model_uuid: 'UUID', view_index: int) -> None:
         scheme_model = self._scheme_mappers[model_uuid].model
         self._model.move_down_scheme(view_index, scheme_model)
@@ -96,6 +100,7 @@ class PlaybookPresenter:
     def _move_scheme_widget(self, last_index: int, new_index: int) -> None:
         self._view.move_scheme_widget(last_index, new_index)
 
+    @log_method_decorator()
     def handle_save_all_schemes_like_picture(self) -> None:
         dir_path = QFileDialog.getExistingDirectory(parent=self._view, caption='Укажите путь для сохранения схем')
         if dir_path:
@@ -117,6 +122,7 @@ class PlaybookPresenter:
             file_name = file_name.replace(char, '_')
         return file_name.strip()
 
+    @log_method_decorator()
     def handle_save_playbook_local(self, playbook_manager: 'PlaybookManager') -> None:
         dialog_progress = DialogProgressBar(parent=self._view, operation_name='Сохранение плейбука')
         dialog_progress.show()
@@ -134,6 +140,7 @@ class PlaybookPresenter:
         finally:
             dialog_progress.finish()
 
+    @log_method_decorator()
     def handle_save_playbook_local_as(self, playbook_manager: 'PlaybookManager') -> None:
         dialog_input = DialogInput('Сохранить как', 'Введите название плейбука:', parent=self._view)
         dialog_input.exec()

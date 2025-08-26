@@ -4,15 +4,15 @@ from PySide6.QtWidgets import QGraphicsItem
 from PySide6.QtGui import QColor, QLinearGradient, QPen, QPainter, QFont, QPolygonF, QBrush
 from PySide6.QtCore import QPointF, QRectF, QLineF, Qt, QObject, Signal
 
+from Core import log_method_decorator
 from Config import PlayerData
 from Views import Graphics
 from Core.Enums import TeamType, FillType, SymbolType, Mode, PlayerPositionType
 
 if TYPE_CHECKING:
     from uuid import UUID
-    from PySide6.QtWidgets import QGraphicsSceneHoverEvent, QGraphicsSceneMouseEvent,\
-        QStyleOptionGraphicsItem, QWidget
-    from .field_view import Field
+    from PySide6.QtWidgets import (QGraphicsSceneHoverEvent, QGraphicsSceneMouseEvent,
+                                   QStyleOptionGraphicsItem, QWidget)
 
 __all__ = ('PlayerView', 'FirstTeamPlayerView', 'SecondTeamPlayerView')
 
@@ -21,7 +21,7 @@ class PlayerSignals(QObject):
     itemMoved = Signal(object)  # QPointF
     itemDoubleClicked = Signal()
     actionPainted = Signal(object)  # PaintedActionData
-    actionRemoveClicked = Signal(object)  # model_id
+    actionRemoveClicked = Signal(object)  # model_uuid
 
 
 class PlayerView(QGraphicsItem):
@@ -32,7 +32,7 @@ class PlayerView(QGraphicsItem):
     def __init__(self, model_uuid: 'UUID', x: float, y: float, team_type: 'TeamType', position: 'PlayerPositionType',
                  text: str, text_color: str, player_color: str):
         super().__init__()
-        self.signals = PlayerSignals()
+        self._signals = PlayerSignals()
         self._model_uuid = model_uuid
         self._team_type = team_type
         self._position = position
@@ -57,7 +57,7 @@ class PlayerView(QGraphicsItem):
         self._rect = self.boundingRect().\
             adjusted(self._border_width / 2, self._border_width / 2, - self._border_width / 2, - self._border_width / 2)
 
-    def scene(self) -> 'Field':
+    def scene(self) -> 'Graphics.Field':
         return super().scene()
 
     def boundingRect(self) -> 'QRectF':
@@ -84,7 +84,7 @@ class PlayerView(QGraphicsItem):
                     self.moveBy(0, delta.y())
                 self._start_pos = event.scenePos()
             super().mouseMoveEvent(event)
-            self.signals.itemMoved.emit(self.pos())
+            self.emit_item_moved_signal(self.pos())
 
     def mouseReleaseEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         self.setZValue(2)
@@ -96,7 +96,7 @@ class PlayerView(QGraphicsItem):
     def mouseDoubleClickEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         self.ungrabMouse()
         if self.scene().mode is Mode.MOVE:
-            self.signals.itemDoubleClicked.emit()
+            self.emit_item_double_clicked_signal()
 
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
         if self.scene().mode in (Mode.MOVE, Mode.ROUTE, Mode.BLOCK, Mode.MOTION):
@@ -114,9 +114,29 @@ class PlayerView(QGraphicsItem):
         self._hover_state = False
         # super().hoverLeaveEvent(event)
 
+    @log_method_decorator()
+    def emit_item_moved_signal(self, pos: 'QPointF') -> None:
+        self._signals.itemMoved.emit(pos)
+
+    @log_method_decorator()
+    def emit_item_double_clicked_signal(self) -> None:
+        self._signals.itemDoubleClicked.emit()
+
+    @log_method_decorator()
+    def emit_action_painted_signal(self, painted_action_data) -> None:
+        self._signals.actionPainted.emit(painted_action_data)
+
+    @log_method_decorator()
+    def emit_action_remove_clicked(self, action_model_uuid: 'UUID'):
+        self._signals.actionRemoveClicked.emit(action_model_uuid)
+
     @property
     def model_uuid(self) -> 'UUID':
         return self._model_uuid
+
+    @property
+    def signals(self) -> 'PlayerSignals':
+        return self._signals
 
     @property
     def hover_state(self) -> bool:
@@ -252,6 +272,9 @@ class FirstTeamPlayerView(PlayerView):
             gradient.setColorAt(1, QColor('#afffffff'))
         self._gradient_fill = QBrush(gradient)
 
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} (model_uuid: {self._model_uuid}; team_type: {self._team_type}) at {hex(id(self))}'
+
 
 class SecondTeamPlayerView(PlayerView):
     _letter_symbol_font = QFont('Times New Roman', 10, QFont.Bold)
@@ -330,7 +353,8 @@ class SecondTeamPlayerView(PlayerView):
         self._hover_pen.setColor(player_color)
         self._blank_letter_pen.setColor(player_color)
 
-
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} (model_uuid: {self._model_uuid}; team_type: {self._team_type}) at {hex(id(self))}'
 
 
 

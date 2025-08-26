@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Union, Generic, TypeVar
 
+from Core import log_method_decorator
+
 if TYPE_CHECKING:
     from Presenters.scheme_presenter import SchemePresenter
     from Presenters.player_presenter import PlayerPresenter
@@ -32,12 +34,14 @@ class PresenterMixin(Generic[T_Presenter]):
 
 
 class SchemeMapper(BaseMapper['SchemeModel', 'SchemeWidget'], PresenterMixin['SchemePresenter']):
+    @log_method_decorator()
     def __init__(self, presenter: 'SchemePresenter', model: 'SchemeModel', view: 'SchemeWidget'):
         BaseMapper.__init__(self, model, view)
         PresenterMixin.__init__(self, presenter)
 
 
 class PlayerMapper(BaseMapper['PlayerModel', Union['FirstTeamPlayerView', 'SecondTeamPlayerView']], PresenterMixin['PlayerPresenter']):
+    @log_method_decorator()
     def __init__(self, presenter: 'PlayerPresenter', model: 'PlayerModel',
                  view: Union['Graphics.FirstTeamPlayerView', 'Graphics.SecondTeamPlayerView']):
         BaseMapper.__init__(self, model, view)
@@ -45,6 +49,7 @@ class PlayerMapper(BaseMapper['PlayerModel', Union['FirstTeamPlayerView', 'Secon
 
 
 class FigureMapper(BaseMapper['FigureModel', Union['Rectangle', 'EllipseView']], PresenterMixin['FigurePresenter']):
+    @log_method_decorator()
     def __init__(self, presenter: 'FigurePresenter', model: 'FigureModel',
                  view: Union['Graphics.RectangleView', 'Graphics.EllipseView']):
         BaseMapper.__init__(self, model, view)
@@ -52,6 +57,7 @@ class FigureMapper(BaseMapper['FigureModel', Union['Rectangle', 'EllipseView']],
 
 
 class LabelMapper(BaseMapper['LabelModel', 'ProxyWidgetLabel'], PresenterMixin['LabelPresenter']):
+    @log_method_decorator()
     def __init__(self, presenter: 'LabelPresenter', model: 'LabelModel',
                  view: 'Graphics.ProxyWidgetLabel'):
         BaseMapper.__init__(self, model, view)
@@ -59,12 +65,14 @@ class LabelMapper(BaseMapper['LabelModel', 'ProxyWidgetLabel'], PresenterMixin['
 
 
 class PencilLineMapper(BaseMapper['PencilLineModel', 'PencilLineView']):
+    @log_method_decorator()
     def __init__(self, model: 'PencilLineModel',
                  view: 'Graphics.PencilLineView'):
         BaseMapper.__init__(self, model, view)
 
 
 class ActionMapper(BaseMapper['ActionModel', 'ActionView'], PresenterMixin['ActionPresenter']):
+    @log_method_decorator()
     def __init__(self, presenter: 'ActionPresenter', model: 'ActionModel',
                  view: 'Graphics.ActionView'):
         BaseMapper.__init__(self, model, view)
@@ -73,6 +81,7 @@ class ActionMapper(BaseMapper['ActionModel', 'ActionView'], PresenterMixin['Acti
 
 class ActionPartsMapper(BaseMapper[Union['ActionModel', 'FinalActionModel'],
                                    Union['ActionLineView', 'FinalActionRouteView', 'FinalActionBlockView']]):
+    @log_method_decorator()
     def __init__(self, model: Union['ActionLineModel', 'FinalActionModel'],
                  view: Union['Graphics.ActionLineView', 'Graphics.FinalActionRouteView',
                              'Graphics.FinalActionBlockView']):

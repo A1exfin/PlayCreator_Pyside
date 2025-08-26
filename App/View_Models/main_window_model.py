@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional
 from PySide6.QtCore import QObject, Signal, QSettings, Qt, QSize, QPoint
 
 import Core
-import Config
+from Core import log_method_decorator, logger
 from Core.Enums import AppTheme
 
 if TYPE_CHECKING:
@@ -27,6 +27,7 @@ class MainWindowModel(QObject):
         return self._playbook
 
     @playbook.setter
+    @log_method_decorator()
     def playbook(self, value: 'PlaybookModel') -> None:
         self._playbook = value
         self.playbookInstalled.emit(self._playbook)
@@ -40,6 +41,7 @@ class MainWindowModel(QObject):
         return self._x
 
     @x.setter
+    @log_method_decorator()
     def x(self, value: int) -> None:
         self._x = value
 
@@ -48,6 +50,7 @@ class MainWindowModel(QObject):
         return self._y
 
     @y.setter
+    @log_method_decorator()
     def y(self, value: int) -> None:
         self._y = value
 
@@ -56,6 +59,7 @@ class MainWindowModel(QObject):
         return self._width
 
     @width.setter
+    @log_method_decorator()
     def width(self, value: int) -> None:
         self._width = value
 
@@ -64,6 +68,7 @@ class MainWindowModel(QObject):
         return self._height
 
     @height.setter
+    @log_method_decorator()
     def height(self, value: int) -> None:
         self._height = value
 
@@ -72,6 +77,7 @@ class MainWindowModel(QObject):
         return self._is_maximized
 
     @is_maximized.setter
+    @log_method_decorator()
     def is_maximized(self, value: bool) -> None:
         self._is_maximized = value
 
@@ -80,6 +86,7 @@ class MainWindowModel(QObject):
         return self._theme
 
     @theme.setter
+    @log_method_decorator()
     def theme(self, value: 'AppTheme') -> None:
         self._theme = value
         self.modelChanged.emit(self)
@@ -89,6 +96,7 @@ class MainWindowModel(QObject):
         return self._show_remove_scheme_dialog
 
     @show_remove_scheme_dialog.setter
+    @log_method_decorator()
     def show_remove_scheme_dialog(self, value: bool) -> None:
         self._show_remove_scheme_dialog = value
         self.modelChanged.emit(self)
@@ -98,6 +106,7 @@ class MainWindowModel(QObject):
         return self._show_close_app_dialog
 
     @show_close_app_dialog.setter
+    @log_method_decorator()
     def show_close_app_dialog(self, value: bool) -> None:
         self._show_close_app_dialog = value
         self.modelChanged.emit(self)
@@ -107,6 +116,7 @@ class MainWindowModel(QObject):
         return self._show_save_changed_playbook_dialog
 
     @show_save_changed_playbook_dialog.setter
+    @log_method_decorator()
     def show_save_changed_playbook_dialog(self, value: bool) -> None:
         self._show_save_changed_playbook_dialog = value
         self.modelChanged.emit(self)
@@ -116,6 +126,7 @@ class MainWindowModel(QObject):
         return self._tool_bar_visible
 
     @tool_bar_visible.setter
+    @log_method_decorator()
     def tool_bar_visible(self, value: bool) -> None:
         self._tool_bar_visible = value
         self.modelChanged.emit(self)
@@ -125,6 +136,7 @@ class MainWindowModel(QObject):
         return self._tool_bar_area
 
     @tool_bar_area.setter
+    @log_method_decorator()
     def tool_bar_area(self, value: 'Qt.ToolBarArea') -> None:
         self._tool_bar_area = value
         self.modelChanged.emit(self)
@@ -134,10 +146,12 @@ class MainWindowModel(QObject):
         return self._presentation_mode
 
     @presentation_mode.setter
+    @log_method_decorator()
     def presentation_mode(self, value: bool) -> None:
         self._presentation_mode = value
         self.modelChanged.emit(self)
 
+    @log_method_decorator()
     def _restore_window_state(self, screen_rect_center: 'QPoint', main_window_minimum_size: 'QSize'):
         if Core.DEBUG:
             settings = QSettings('settings.ini', QSettings.Format.IniFormat)
@@ -161,6 +175,7 @@ class MainWindowModel(QObject):
         self._presentation_mode = False
         self._version = Core.VERSION
 
+    @log_method_decorator()
     def save_window_state(self):
         if Core.DEBUG:
             settings = QSettings('settings.ini', QSettings.Format.IniFormat)

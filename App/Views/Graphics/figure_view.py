@@ -4,14 +4,15 @@ from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsEllipseItem, QGraphics
 from PySide6.QtGui import QColor, QPainter, QPen, QCursor, QPixmap, QBrush
 from PySide6.QtCore import Qt, QRectF, QObject, Signal
 
-from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
+from Core.logger_settings import log_method_decorator, logger
 from Core.Enums import Mode, FigureType
+from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
+from Views import Graphics
 
 if TYPE_CHECKING:
     from uuid import UUID
     from PySide6.QtCore import QPointF
     from PySide6.QtWidgets import QStyleOptionGraphicsItem, QWidget
-    from .field_view import Field
 
 __all__ = ('RectangleView', 'EllipseView')
 
@@ -27,7 +28,7 @@ class FigureView:
                  border: bool, border_thickness: int, border_color: str,
                  fill: bool, fill_opacity: str, fill_color: str):
         self._model_uuid = model_uuid
-        self.signals = FigureSignals()
+        self._signals = FigureSignals()
         self._figure_type = figure_type
         self._border = border
         self._border_color = border_color
@@ -47,7 +48,7 @@ class FigureView:
         self.setBrush(self._brush)
         self.set_rect(x, y, width, height)
 
-    def scene(self) -> 'Field':
+    def scene(self) -> 'Graphics.Field':
         return super().scene()
 
     def paint(self, painter: 'QPainter', option: 'QStyleOptionGraphicsItem', widget: Optional['QWidget'] = None) -> None:
@@ -95,16 +96,16 @@ class FigureView:
         self.update_borders_pos()
         if self.scene().mode is Mode.MOVE:
             if self._border_selected:
-                self.signals.itemResized.emit(self.x(), self.y(), self.rect().width(), self.rect().height())
+                self.emit_item_resized_signal(self.x(), self.y(), self.rect().width(), self.rect().height())
             self._border_selected = None
             self._start_pos = None
             self.setZValue(0)
-            self.signals.itemMoved.emit(self.pos())
+            self.emit_item_moved_signal(self.pos())
         # super().mouseReleaseEvent(event)
 
     def mouseDoubleClickEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         if self.scene().mode is Mode.MOVE:
-            self.signals.itemDoubleClicked.emit()
+            self.emit_item_double_clicked_signal()
 
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
         self.update_borders_pos()
@@ -167,6 +168,22 @@ class FigureView:
                 'width': self.rect().width(), 'height': self.rect().height(),
                 'border': self._border, 'border_thickness': self._border_thickness, 'border_color': self._border_color,
                 'fill': self._fill, 'fill_color': self._fill_color, 'fill_opacity': self._fill_opacity}
+
+    @log_method_decorator()
+    def emit_item_moved_signal(self, pos: 'QPointF') -> None:
+        self._signals.itemMoved.emit(pos)
+
+    @log_method_decorator()
+    def emit_item_resized_signal(self, new_x: float, new_y: float, new_width: float, new_height: float) -> None:
+        self._signals.itemResized.emit(new_x, new_y, new_width, new_height)
+
+    @log_method_decorator()
+    def emit_item_double_clicked_signal(self) -> None:
+        self._signals.itemDoubleClicked.emit()
+
+    @property
+    def signals(self) -> 'FigureSignals':
+        return self._signals
 
 
 class RectangleView(FigureView, QGraphicsRectItem):
@@ -274,6 +291,9 @@ class RectangleView(FigureView, QGraphicsRectItem):
         self.update_borders_pos()
         self.scene().update()  # Для корректной отрисовки фигуры при отрицательной ширине и высоте фигуры
 
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} (model_uuid: {self._model_uuid}; figure_type: {self._figure_type} at {hex(id(self))}'
+
 
 class EllipseView(FigureView, QGraphicsEllipseItem):
     def __init__(self, x: float, y: float, width: float, height: float,
@@ -324,3 +344,6 @@ class EllipseView(FigureView, QGraphicsEllipseItem):
                 height = self.rect().height() + delta_y
                 self.set_rect(self.x(), self.y(), self.rect().width(), height)
         self.update_borders_pos()
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} (model_uuid: {self._model_uuid}; figure_type: {self._figure_type}) at {hex(id(self))}'

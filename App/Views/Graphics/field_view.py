@@ -17,18 +17,9 @@ if TYPE_CHECKING:
     from PySide6.QtWidgets import QGraphicsSceneMouseEvent
     from PySide6.QtGui import QFocusEvent
 
-__all__ = ('Field', )
+__all__ = ('Field', 'tmp_painted_action_data')
 
 tmp_painted_action_data = namedtuple('TmpActionData', 'action_lines final_actions')
-
-
-def timeit(func):
-    def wrapper(*args, **kwargs):
-        start = datetime.now()
-        result = func(*args, **kwargs)
-        print(datetime.now() - start)
-        return result
-    return wrapper
 
 
 @dataclass
@@ -359,7 +350,7 @@ class Field(QGraphicsScene):
             if self._current_action_action_painting:
                 self._current_action_action_painting.optionalActionPainted.emit(self._tmp_painted_action_data)
             else:
-                self._current_player_action_painting.signals.actionPainted.emit(self._tmp_painted_action_data)
+                self._current_player_action_painting.emit_action_painted_signal(self._tmp_painted_action_data)
             self.removeItem(self._tmp_painted_action_group)
             self._tmp_painted_action_group = None
             self._tmp_painted_action_data.action_lines.clear()
