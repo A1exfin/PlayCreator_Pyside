@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QGraphicsItem
 from PySide6.QtGui import QColor, QLinearGradient, QPen, QPainter, QFont, QPolygonF, QBrush
 from PySide6.QtCore import QPointF, QRectF, QLineF, Qt, QObject, Signal
 
-from Core import log_method_decorator
+from Core import log_method
 from Config import PlayerData
 from Views import Graphics
 from Core.Enums import TeamType, FillType, SymbolType, Mode, PlayerPositionType
@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from uuid import UUID
     from PySide6.QtWidgets import (QGraphicsSceneHoverEvent, QGraphicsSceneMouseEvent,
                                    QStyleOptionGraphicsItem, QWidget)
+    from .field_view import tmp_painted_action_data
 
 __all__ = ('PlayerView', 'FirstTeamPlayerView', 'SecondTeamPlayerView')
 
@@ -63,6 +64,7 @@ class PlayerView(QGraphicsItem):
     def boundingRect(self) -> 'QRectF':
         return QRectF(0, 0, self._size, self._size)
 
+    @log_method()
     def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         self.setZValue(20)
         if self.scene().mode is Mode.MOVE and event.button() == Qt.LeftButton:
@@ -72,6 +74,7 @@ class PlayerView(QGraphicsItem):
         elif event.button() == Qt.RightButton:  # Для того чтобы маршрут не рисовался от игрока по которому кликнули правой кнопкой
             self.ungrabMouse()
 
+    @log_method()
     def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         if self.scene().mode is Mode.MOVE:
             if self._start_pos:
@@ -86,6 +89,7 @@ class PlayerView(QGraphicsItem):
             super().mouseMoveEvent(event)
             self.emit_item_moved_signal(self.pos())
 
+    @log_method()
     def mouseReleaseEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         self.setZValue(2)
         if self.scene().mode is Mode.MOVE:
@@ -93,6 +97,7 @@ class PlayerView(QGraphicsItem):
             super().mouseReleaseEvent(event)
             self.setSelected(False)
 
+    @log_method()
     def mouseDoubleClickEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         self.ungrabMouse()
         if self.scene().mode is Mode.MOVE:
@@ -114,19 +119,19 @@ class PlayerView(QGraphicsItem):
         self._hover_state = False
         # super().hoverLeaveEvent(event)
 
-    @log_method_decorator()
+    @log_method()
     def emit_item_moved_signal(self, pos: 'QPointF') -> None:
         self._signals.itemMoved.emit(pos)
 
-    @log_method_decorator()
+    @log_method()
     def emit_item_double_clicked_signal(self) -> None:
         self._signals.itemDoubleClicked.emit()
 
-    @log_method_decorator()
-    def emit_action_painted_signal(self, painted_action_data) -> None:
+    @log_method()
+    def emit_action_painted_signal(self, painted_action_data: 'tmp_painted_action_data') -> None:
         self._signals.actionPainted.emit(painted_action_data)
 
-    @log_method_decorator()
+    @log_method()
     def emit_action_remove_clicked(self, action_model_uuid: 'UUID'):
         self._signals.actionRemoveClicked.emit(action_model_uuid)
 
@@ -178,15 +183,18 @@ class PlayerView(QGraphicsItem):
     def rect(self) -> 'QRectF':
         return self._rect
 
+    @log_method()
     def add_action_item(self, action_data: dict) -> 'Graphics.ActionView':
         action_item = Graphics.ActionView(**action_data, scene=self.scene(), player=self)
         self._actions.append(action_item)
         return action_item
 
+    @log_method()
     def remove_action_item(self, action_item: 'Graphics.ActionView') -> None:
         action_item.remove_all_action_parts()
         self._actions.remove(action_item)
 
+    @log_method
     def remove_all_action_items(self) -> None:
         if self._actions:
             for action in self._actions:
@@ -208,6 +216,7 @@ class FirstTeamPlayerView(PlayerView):
     def fill_type(self) -> 'FillType':
         return self._fill_type
 
+    @log_method()
     def set_player_style(self, fill_type: 'FillType', text: str, text_color: str, player_color: str) -> None:
         self._text = text
         self._text_color = text_color
@@ -342,6 +351,7 @@ class SecondTeamPlayerView(PlayerView):
     def symbol_type(self) -> 'SymbolType':
         return self._symbol_type
 
+    @log_method()
     def set_player_style(self, symbol_type: 'SymbolType', text: Optional[str], text_color: str,
                          player_color: str) -> None:
         self._symbol_type = symbol_type

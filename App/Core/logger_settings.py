@@ -14,11 +14,11 @@ from PySide6.QtWidgets import QMessageBox
 if TYPE_CHECKING:
     pass
 
-__all__ = ('logger', 'log_method_decorator')
+__all__ = ('logger', 'log_method')
 
-LOG_DIR = Path.home() / '.PlayCreator_Pyside' / 'logs'
+LOG_DIR = Path.home() / '.PlayCreator_desktop' / 'logs'
 LOG_DIR.mkdir(parents=True, exist_ok=True)
-LOG_FILE = LOG_DIR / f'PlayCreator_{datetime.now().strftime("%Y%m%d")}.log'
+LOG_FILE = LOG_DIR / f'PlayCreator_{datetime.now().strftime("%d-%m-%Y")}.log'
 
 DEBUG_1: Final = logging.DEBUG + 1
 INFO_1: Final = logging.INFO + 1
@@ -56,8 +56,8 @@ class CustomLogger:
 
         file_handler = RotatingFileHandler(
             LOG_FILE,
-            maxBytes=5_000_000,
-            backupCount=7,
+            maxBytes=10_000_000,
+            backupCount=10,
             encoding='utf-8'
         )
         file_handler.setFormatter(logging_formatter)
@@ -100,7 +100,7 @@ class CustomLogger:
                 instance = args[0]
                 class_name = instance.__class__.__name__
                 method_name = func.__name__
-                start_method_message = f'-> {class_name}.{method_name} '
+                start_method_message = f'-> {class_name}.{method_name} <- '
                 self._logger.log(
                     INFO_1, f'{start_method_message} "{extra_message}"' if extra_message else start_method_message
                 )
@@ -114,6 +114,8 @@ class CustomLogger:
                     result = func(*args, **kwargs)
                     execution_time = (datetime.now() - start_time).total_seconds()
                     success_message = f'SUCCESS: {class_name}.{method_name} completed in {execution_time: .3f}s'
+                    if result:
+                        success_message += f' returning {result}'
                     if execution_time > 0.1:
                         self._logger.warning(f'!!!SLOW {success_message}')
                     else:
@@ -134,4 +136,4 @@ custom_logger = CustomLogger()
 logger = custom_logger.get_logger()
 
 # Декораторы
-log_method_decorator = custom_logger.log_method_to_file
+log_method = custom_logger.log_method_to_file

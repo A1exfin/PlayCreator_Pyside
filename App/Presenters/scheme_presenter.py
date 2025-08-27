@@ -5,7 +5,7 @@ from PySide6.QtGui import QUndoStack, QImage, QPainter
 from PySide6.QtWidgets import QFileDialog
 
 import Config
-from Core import log_method_decorator, logger
+from Core import log_method, logger
 from Core.settings import UNDO_STACK_LIMIT
 from Commands import PlaceFirstTeamCommand, PlaceSecondTeamCommand, PlaceAdditionalPlayerCommand,\
     RemoveSecondTeamCommand, RemoveAdditionalOffencePlayerCommand, RemoveAllPlayersCommand,\
@@ -37,7 +37,7 @@ class SceneYPoints(NamedTuple):
 
 
 class SchemePresenter:
-    @log_method_decorator()
+    @log_method()
     def __init__(self, scheme_model: 'SchemeModel', view: 'PlayCreatorApp', scheme_view: 'SchemeWidget',
                  playbook_type: 'PlaybookType', playbook_items_fabric: 'PlaybookModelsFabric',
                  deletion_observer: 'DeletionObserver'):
@@ -56,7 +56,7 @@ class SchemePresenter:
         self._label_mappers: dict['UUID', 'LabelMapper'] = {}
         self._connect_signals()
 
-    @log_method_decorator()
+    @log_method()
     def _connect_signals(self) -> None:
         self._undo_stack.canUndoChanged.connect(lambda is_enabled: self._view.set_undo_action_state(is_enabled))
         self._undo_stack.canRedoChanged.connect(lambda is_enabled: self._view.set_redo_action_state(is_enabled))
@@ -88,24 +88,24 @@ class SchemePresenter:
         self._model.labelRemoved.connect(self._remove_label_item)
         self._model.allLabelsRemoved.connect(self._remove_all_label_items)
 
-    @log_method_decorator()
+    @log_method()
     def _execute_command(self, command: 'QUndoCommand') -> None:
         self._undo_stack.push(command)
 
-    @log_method_decorator()
+    @log_method()
     def clear_undo_stack(self) -> None:
         self._undo_stack.clear()
 
-    @log_method_decorator()
+    @log_method()
     def handle_view_point_changed(self, view_point_x: int, view_point_y: int) -> None:
         self._model.view_point_x = view_point_x
         self._model.view_point_y = view_point_y
 
-    @log_method_decorator()
+    @log_method()
     def handle_zoom_changed(self, zoom_value: int) -> None:
         self._model.zoom = zoom_value
 
-    @log_method_decorator()
+    @log_method()
     def handle_scheme_selected(self) -> None:
         self._view.select_scheme(self._scheme_view, self._scene,
                                  self._model.view_point_x, self._model.view_point_y, self._model.zoom,
@@ -113,15 +113,15 @@ class SchemePresenter:
                                  bool(self._model.additional_player), self._model.first_team_position,
                                  self._undo_stack.canUndo(), self._undo_stack.canRedo())
 
-    @log_method_decorator()
+    @log_method()
     def handle_undo(self) -> None:
         self._undo_stack.undo()
 
-    @log_method_decorator()
+    @log_method()
     def handle_redo(self) -> None:
         self._undo_stack.redo()
 
-    @log_method_decorator()
+    @log_method()
     def handle_edit_scheme(self) -> None:
         dialog_edit_scheme = DialogEditScheme(self._model.name, self._model.note, parent=self._view)
         dialog_edit_scheme.exec()
@@ -130,7 +130,7 @@ class SchemePresenter:
             self._model.name = data.name
             self._model.note = data.note
 
-    @log_method_decorator()
+    @log_method()
     def handle_place_first_team_players(self, team_type: 'TeamType', first_team_position: int) -> None:
         if not self._model.first_team:
             player_models_lst = self._playbook_items_fabric.create_new_first_team_player_models(
@@ -146,7 +146,7 @@ class SchemePresenter:
                                            player_model, self._view, player_view)
         self._first_team_player_mappers[player_model.uuid] = PlayerMapper(player_presenter, player_model, player_view)
 
-    @log_method_decorator()
+    @log_method()
     def handle_remove_all_players(self) -> None:
         if self._model.first_team:
             remove_all_players_command = RemoveAllPlayersCommand(self._deletion_observer, self._model)
@@ -156,7 +156,7 @@ class SchemePresenter:
         self._scene.remove_first_team_player_items()
         self._first_team_player_mappers.clear()
 
-    @log_method_decorator()
+    @log_method()
     def handle_place_second_team_players(self, team_type: 'TeamType') -> None:
         if not self._model.second_team:
             player_models_lst = self._playbook_items_fabric.create_new_second_team_player_models(
@@ -171,7 +171,7 @@ class SchemePresenter:
                                            player_model, self._view, player_view)
         self._second_team_player_mappers[player_model.uuid] = PlayerMapper(player_presenter, player_model, player_view)
 
-    @log_method_decorator()
+    @log_method()
     def handle_remove_second_team_players(self) -> None:
         if self._model.second_team:
             remove_second_team_command = RemoveSecondTeamCommand(self._deletion_observer, self._model)
@@ -181,7 +181,7 @@ class SchemePresenter:
         self._scene.remove_second_team_player_items()
         self._second_team_player_mappers.clear()
 
-    @log_method_decorator()
+    @log_method()
     def handle_place_additional_player(self) -> None:
         if not self._model.additional_player:
             player_model = self._playbook_items_fabric.create_new_additional_player_model(
@@ -197,7 +197,7 @@ class SchemePresenter:
         self._additional_player_mapper = PlayerMapper(player_presenter, player_model, player_view)
         self._view.set_gui_for_additional_player(bool(self._model.additional_player))
 
-    @log_method_decorator()
+    @log_method()
     def handle_remove_additional_player(self) -> None:
         if self._model.additional_player:
             remove_additional_player_command = RemoveAdditionalOffencePlayerCommand(self._deletion_observer,
@@ -209,12 +209,12 @@ class SchemePresenter:
         self._additional_player_mapper = None
         self._view.set_gui_for_additional_player(bool(self._model.additional_player))
 
-    @log_method_decorator()
+    @log_method()
     def handle_second_players_symbol_changed(self, new_symbol_type: 'SymbolType') -> None:
         change_second_team_symbols_command = ChangeSecondTeamSymbolsCommand(self._model, new_symbol_type)
         self._execute_command(change_second_team_symbols_command)
 
-    @log_method_decorator()
+    @log_method()
     def _handle_place_figure(self, figure_data: dict) -> None:
         if figure_data['width'] != 0 and figure_data['height'] != 0:
             figure_model = self._playbook_items_fabric.create_figure_model(self._model, **figure_data)
@@ -226,7 +226,7 @@ class SchemePresenter:
         figure_presenter = FigurePresenter(self._execute_command, figure_model, self._view, figure_view)
         self._figure_mappers[figure_model.uuid] = FigureMapper(figure_presenter, figure_model, figure_view)
 
-    @log_method_decorator()
+    @log_method()
     def _handle_remove_figure(self, figure_model_uuid: 'UUID') -> None:
         figure_model = self._figure_mappers[figure_model_uuid].model
         remove_figure_command = RemoveFigureCommand(self._deletion_observer, self._model, figure_model)
@@ -237,7 +237,7 @@ class SchemePresenter:
         self._scene.remove_figure_item(figure_item)
         mapper = self._figure_mappers.pop(figure_model.uuid)
 
-    @log_method_decorator()
+    @log_method()
     def handle_remove_all_figures(self) -> None:
         if self._model.figures:
             remove_all_figures_command = RemoveAllFiguresCommand(self._deletion_observer, self._model)
@@ -247,7 +247,7 @@ class SchemePresenter:
         self._scene.remove_all_figure_items()
         self._figure_mappers.clear()
 
-    @log_method_decorator()
+    @log_method()
     def _handle_place_pencil_lines(self, pencil_lines_data: list[dict]) -> None:
         pencil_line_models_list = [self._playbook_items_fabric.create_pencil_line_model(self._model, **pencil_line_data)
                                    for pencil_line_data in pencil_lines_data]
@@ -265,7 +265,7 @@ class SchemePresenter:
             self._scene.remove_pencil_line_item(pencil_line_view)
             mapper = self._pencil_line_mappers.pop(pencil_line_model.uuid)
 
-    @log_method_decorator()
+    @log_method()
     def handle_remove_all_pencil_lines(self) -> None:
         if self._model.pencil_lines:
             remove_pencil_lines_command = RemovePencilLinesCommand(self._deletion_observer, self._model)
@@ -275,7 +275,7 @@ class SchemePresenter:
         self._scene.remove_all_pencil_line_items()
         self._pencil_line_mappers.clear()
 
-    @log_method_decorator()
+    @log_method()
     def _handle_place_label(self, label_data: dict) -> None:
         label_model = self._playbook_items_fabric.create_label_model(self._model, **label_data)
         place_label_command = PlaceLabelCommand(self._model, label_model)
@@ -286,7 +286,7 @@ class SchemePresenter:
         label_presenter = LabelPresenter(self._execute_command, label_model, self._view, label_view)
         self._label_mappers[label_model.uuid] = LabelMapper(label_presenter, label_model, label_view)
 
-    @log_method_decorator()
+    @log_method()
     def _handle_remove_label(self, label_model_uuid: 'UUID') -> None:
         label_model = self._label_mappers[label_model_uuid].model
         remove_label_command = RemoveLabelCommand(self._deletion_observer, self._model, label_model)
@@ -297,7 +297,7 @@ class SchemePresenter:
         self._scene.remove_label_item(label_item)
         mapper = self._label_mappers.pop(label_model.uuid)
 
-    @log_method_decorator()
+    @log_method()
     def handle_remove_all_labels(self) -> None:
         if self._model.labels:
             remove_labels_command = RemoveAllLabelsCommand(self._deletion_observer, self._model)
@@ -307,12 +307,12 @@ class SchemePresenter:
         self._scene.remove_all_label_items()
         self._label_mappers.clear()
 
-    @log_method_decorator()
+    @log_method()
     def handle_remove_all_actions(self) -> None:
         remove_all_actions_command = RemoveAllActionsCommand(self._deletion_observer, self._model)
         self._execute_command(remove_all_actions_command)
 
-    @log_method_decorator()
+    @log_method()
     def handle_save_scheme_like_picture(self) -> None:
         save_window = QFileDialog(parent=self._view)
         save_window.setOption(QFileDialog.Option.DontConfirmOverwrite, False)

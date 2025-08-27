@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from Core import log_method_decorator, logger
+from Core import log_method, logger
 from .base_model import BaseModel
 
 if TYPE_CHECKING:
@@ -25,10 +25,9 @@ class ActionLineModel(BaseModel):
         self._thickness = thickness
         self._color = color
 
-    @log_method_decorator()
-    def _set_changed_flag(self) -> None:
+    def set_changed_flag(self) -> None:
         super().set_changed_flag()
-        self._playbook_model.changed = True
+        self._playbook_model.set_changed_flag()
 
     @property
     def action_type(self) -> 'ActionLineType':

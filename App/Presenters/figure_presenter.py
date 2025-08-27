@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Union
 
-from Core import log_method_decorator, logger
+from Core import log_method, logger
 from Commands import MoveFigureCommand, ChangeFigureStyleCommand, ChangeFigureSizeCommand
 from Views.Dialog_windows import DialogEditFigure
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class FigurePresenter:
-    @log_method_decorator()
+    @log_method()
     def __init__(self, execute_command_func: callable, figure_model: 'FigureModel', view: 'PlayCreatorApp',
                  figure_view: Union['Graphics.RectangleView', 'Graphics.EllipseView']):
         self._execute_command_func = execute_command_func
@@ -21,7 +21,7 @@ class FigurePresenter:
         self._model = figure_model
         self._connect_signals()
 
-    @log_method_decorator()
+    @log_method()
     def _connect_signals(self) -> None:
         self._figure_view.signals.itemMoved.connect(self._handle_figure_item_moved)
         self._model.coordsChanged.connect(self._move_figure_item)
@@ -30,7 +30,7 @@ class FigurePresenter:
         self._figure_view.signals.itemResized.connect(self._handle_figure_item_resized)
         self._model.sizeChanged.connect(self._change_figure_item_size)
 
-    @log_method_decorator()
+    @log_method()
     def _handle_figure_item_moved(self, new_pos: 'QPointF') -> None:
         if self._model.x != new_pos.x() or self._model.y != new_pos.y():
             move_figure_command = MoveFigureCommand(self._model, new_pos.x(), new_pos.y())
@@ -39,7 +39,7 @@ class FigurePresenter:
     def _move_figure_item(self, new_pos: 'QPointF') -> None:
         self._figure_view.setPos(new_pos)
 
-    @log_method_decorator()
+    @log_method()
     def _handle_edit_figure_item(self) -> None:
         dialog_edit_figure_config = DialogEditFigure(self._model.figure_type, self._model.border,
                                                      self._model.border_color, self._model.border_thickness,
@@ -65,7 +65,7 @@ class FigurePresenter:
         self._figure_view.set_figure_style(new_border, new_border_thickness, new_border_color, new_fill,
                                            new_fill_opacity, new_fill_color)
 
-    @log_method_decorator()
+    @log_method()
     def _handle_figure_item_resized(self, new_x: float, new_y: float, new_width: float, new_height: float) -> None:
         if self._model.x != new_x or self._model.y != new_y or self._model.width != new_width or self._model.height != new_height:
             change_figure_size_command = ChangeFigureSizeCommand(self._model, new_x, new_y, new_width, new_height)

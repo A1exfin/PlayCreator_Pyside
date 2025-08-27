@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtGui import QUndoCommand
 
-from Core import log_method_decorator, logger
+from Core import log_method, logger
 
 if TYPE_CHECKING:
     from View_Models import FigureModel
@@ -11,7 +11,7 @@ __all__ = ('MoveFigureCommand', 'ChangeFigureStyleCommand', 'ChangeFigureSizeCom
 
 
 class MoveFigureCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, figure_model: 'FigureModel', new_pos_x: float, new_pos_y: float):
         super().__init__('Перемещение фигуры.')
         self._figure_model = figure_model
@@ -20,11 +20,11 @@ class MoveFigureCommand(QUndoCommand):
         self._new_pos_x = new_pos_x
         self._new_pos_y = new_pos_y
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._figure_model.set_pos(self._new_pos_x, self._new_pos_y)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._figure_model.set_pos(self._last_pos_x, self._last_pos_y)
 
@@ -41,7 +41,7 @@ class MoveFigureCommand(QUndoCommand):
 
 
 class ChangeFigureStyleCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, figure_model: 'FigureModel',
                  new_border: bool, new_border_color: str, new_border_thickness: int,
                  new_fill: bool, new_fill_color: str, new_fill_opacity: str):
@@ -60,12 +60,12 @@ class ChangeFigureStyleCommand(QUndoCommand):
         self._new_fill_color = new_fill_color
         self._new_fill_opacity = new_fill_opacity
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._figure_model.set_figure_style(self._new_border, self._new_border_thickness, self._new_border_color,
                                             self._new_fill, self._new_fill_opacity, self._new_fill_color)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._figure_model.set_figure_style(self._last_border, self._last_border_thickness, self._last_border_color,
                                             self._last_fill, self._last_fill_opacity, self._last_fill_color)
@@ -86,7 +86,7 @@ class ChangeFigureStyleCommand(QUndoCommand):
 
 
 class ChangeFigureSizeCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, figure_model: 'FigureModel', new_pos_x: float, new_pos_y: float,
                  new_width: float, new_height: float):
         super().__init__('Изменение размера фигуры.')
@@ -100,11 +100,11 @@ class ChangeFigureSizeCommand(QUndoCommand):
         self._new_width = new_width
         self._new_height = new_height
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._figure_model.set_size(self._new_pos_x, self._new_pos_y, self._new_width, self._new_height)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._figure_model.set_size(self._last_pos_x, self._last_pos_y, self._last_width, self._last_height)
 

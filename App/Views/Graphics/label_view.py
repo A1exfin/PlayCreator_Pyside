@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QGraphicsProxyWidget, QTextEdit, QFrame, QApplicat
 from PySide6.QtCore import Qt, QRectF, QPointF, QObject, Signal
 from PySide6.QtGui import QCursor, QPen, QBrush, QPixmap, QFont, QTextCursor, QPainter
 
-from Core.logger_settings import log_method_decorator, logger
+from Core.logger_settings import log_method, logger
 from Core.Enums import Mode
 from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
 from Views import Graphics
@@ -43,6 +43,7 @@ class ProxyTextEdit(QTextEdit):
         self.setMaximumSize(self._proxy.max_width, self._proxy.max_height)
         self.textChanged.connect(self.update_height)
 
+    @log_method()
     def mouseDoubleClickEvent(self, event: 'QMouseEvent') -> None:
         if self._proxy.scene().mode is Mode.MOVE and event.button() == Qt.LeftButton and self.isReadOnly():
             self.setReadOnly(False)
@@ -61,7 +62,7 @@ class ProxyTextEdit(QTextEdit):
         self.releaseKeyboard()
         self.clearFocus()
         if self._tmp_label:
-            self._proxy.scene().labelPlaced.emit(self._proxy.get_data())
+            self._proxy.scene().emit_label_placed_signal(self._proxy.get_data())
             self._proxy.scene().labelDeselected.emit()
             self._proxy.scene().removeItem(self._proxy)
             self._proxy.deleteLater()
@@ -71,6 +72,7 @@ class ProxyTextEdit(QTextEdit):
                                          self.textColor().name(), self._proxy.y(), self._proxy.rect().height())
             self._proxy.scene().labelDeselected.emit()
 
+    @log_method()
     def focusOutEvent(self, event: 'QFocusEvent') -> None:
         if QApplication.focusWidget():
             object_name = QApplication.focusWidget().objectName()
@@ -81,6 +83,7 @@ class ProxyTextEdit(QTextEdit):
             self._clear_focus()
         super().focusOutEvent(event)
 
+    @log_method()
     def keyPressEvent(self, event: 'QKeyEvent') -> None:
         if event.key() == Qt.Key_Return and event.modifiers() == Qt.ShiftModifier:
             super().keyPressEvent(event)
@@ -107,15 +110,15 @@ class ProxyTextEdit(QTextEdit):
         self._proxy.setGeometry(self._proxy.x(), y, self._proxy.rect().width(), height)
         self._proxy._update_borders_pos()
 
-    @log_method_decorator()
+    @log_method()
     def emit_item_moved_signal(self, pos: 'QPointF') -> None:
         self._signals.itemMoved.emit(pos)
 
-    @log_method_decorator()
+    @log_method()
     def emit_item_resized_signal(self, new_x: float, new_y: float, new_width: float, new_height: float) -> None:
         self._signals.itemResized.emit(new_x, new_y, new_width, new_height)
 
-    @log_method_decorator()
+    @log_method()
     def emit_item_edited_signal(self, new_text: str, new_font_type: str, new_font_size: int, new_font_bold: bool,
                                 new_font_italic: bool, new_font_underline: bool, new_font_color: str,
                                 new_y: float, new_height: float) -> None:
@@ -179,6 +182,7 @@ class ProxyWidgetLabel(QGraphicsProxyWidget):
         rect = QRectF(self.x() - 10, self.y() - 10, self.rect().width() + 20, self.rect().height() + 20)
         self.scene().update(rect)
 
+    @log_method()
     def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         # print(self)
         self.setZValue(20)
@@ -188,10 +192,11 @@ class ProxyWidgetLabel(QGraphicsProxyWidget):
             self._start_pos = event.scenePos()
         elif self.scene().mode is Mode.ERASE and event.button() == Qt.LeftButton:
             self.setCursor(Qt.ArrowCursor)  # Возврат стандартного курсора сразу после клика
-            self.scene().labelRemoveClicked.emit(self._model_uuid)
+            self.scene().emit_label_remove_clicked_signal(self._model_uuid)
         elif self.scene().mode is Mode.MOVE and not self.widget().isReadOnly() and not self._selected_border:
             super().mousePressEvent(event)
 
+    @log_method()
     def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         if self.scene().mode is Mode.MOVE and self._selected_border and not self.widget().isReadOnly():
             self._interactive_resize(event.scenePos())
@@ -207,6 +212,7 @@ class ProxyWidgetLabel(QGraphicsProxyWidget):
         else:
             super().mouseMoveEvent(event)
 
+    @log_method()
     def mouseReleaseEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         self.setZValue(3)
         self._update_borders_pos()
@@ -298,12 +304,15 @@ class ProxyWidgetLabel(QGraphicsProxyWidget):
     def model_uuid(self) -> Optional['UUID']:
         return self._model_uuid
 
+    @log_method()
     def set_pos(self, new_pos: 'QPointF') -> None:
         self.setPos(new_pos)
 
+    @log_method()
     def set_rect(self, x: float, y: float, width: float, height: float) -> None:
         self.setGeometry(x, y, width, height)
 
+    @log_method()
     def set_text_attributes(self, text: str, font_type: str, font_size: int, font_bold: bool, font_italic: bool,
                             font_underline: bool, font_color: str, y: float, height: float) -> None:
         self.widget().setText(text)

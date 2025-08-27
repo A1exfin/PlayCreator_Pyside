@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsEllipseItem, QGraphics
 from PySide6.QtGui import QColor, QPainter, QPen, QCursor, QPixmap, QBrush
 from PySide6.QtCore import Qt, QRectF, QObject, Signal
 
-from Core.logger_settings import log_method_decorator, logger
+from Core.logger_settings import log_method, logger
 from Core.Enums import Mode, FigureType
 from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
 from Views import Graphics
@@ -66,19 +66,21 @@ class FigureView:
         #     painter.drawRect(QRectF(rect.x() - self.x(), rect.y() - self.y(), rect.width(), rect.height()))
         self.update()
 
+    @log_method()
     def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         # print(self)
-        self._border_selected = self.check_border_under_cursor(event.scenePos())
+        self._border_selected = self._check_border_under_cursor(event.scenePos())
         if self.scene().mode is Mode.MOVE and event.button() == Qt.LeftButton and not self._border_selected:
             self.setZValue(20)
             self._start_pos = event.scenePos()
         if self.scene().mode is Mode.ERASE and event.button() == Qt.LeftButton:
             self.setCursor(Qt.ArrowCursor)  # Возврат стандартного курсора сразу после клика
-            self.scene().figureRemoveClicked.emit(self._model_uuid)
+            self.scene().emit_figure_remove_clicked_signal(self._model_uuid)
 
+    @log_method()
     def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         if self.scene().mode is Mode.MOVE and self._border_selected:
-            self.interactive_resize(event.scenePos())
+            self._interactive_resize(event.scenePos())
         elif self.scene().mode is Mode.MOVE:
             if self._start_pos:
                 delta = event.scenePos() - self._start_pos
@@ -91,9 +93,10 @@ class FigureView:
                 self._start_pos = event.scenePos()
         # super().mouseMoveEvent(event)
 
+    @log_method()
     def mouseReleaseEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         self.normalizate()
-        self.update_borders_pos()
+        self._update_borders_pos()
         if self.scene().mode is Mode.MOVE:
             if self._border_selected:
                 self.emit_item_resized_signal(self.x(), self.y(), self.rect().width(), self.rect().height())
@@ -103,17 +106,18 @@ class FigureView:
             self.emit_item_moved_signal(self.pos())
         # super().mouseReleaseEvent(event)
 
+    @log_method()
     def mouseDoubleClickEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         if self.scene().mode is Mode.MOVE:
             self.emit_item_double_clicked_signal()
 
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
-        self.update_borders_pos()
+        self._update_borders_pos()
         if self.scene().mode in (Mode.MOVE, Mode.ERASE):
             self._hover = True
 
     def hoverMoveEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
-        border_under_cursor = self.check_border_under_cursor(event.scenePos())
+        border_under_cursor = self._check_border_under_cursor(event.scenePos())
         if self.scene().mode is Mode.ERASE:
             self._hover = True
             cursor = self.cursors['erase']
@@ -133,7 +137,7 @@ class FigureView:
         self.setCursor(Qt.ArrowCursor)
         self._hover = False
 
-    def check_border_under_cursor(self, point: 'QPointF') -> Optional['QRectF']:
+    def _check_border_under_cursor(self, point: 'QPointF') -> Optional['QRectF']:
         for border, rect in self._borders.items():
             if rect.contains(point):
                 return border
@@ -151,6 +155,7 @@ class FigureView:
         self.setPos(x, y)
         self.setRect(QRectF(0, 0, width, height))
 
+    @log_method()
     def set_figure_style(self, border: bool, border_thickness: int, border_color: str,
                          fill: bool, fill_opacity: str, fill_color: str) -> None:
         self._border, self._border_thickness, self._border_color, self._fill, self._fill_opacity, self._fill_color = \
@@ -169,15 +174,15 @@ class FigureView:
                 'border': self._border, 'border_thickness': self._border_thickness, 'border_color': self._border_color,
                 'fill': self._fill, 'fill_color': self._fill_color, 'fill_opacity': self._fill_opacity}
 
-    @log_method_decorator()
+    @log_method()
     def emit_item_moved_signal(self, pos: 'QPointF') -> None:
         self._signals.itemMoved.emit(pos)
 
-    @log_method_decorator()
+    @log_method()
     def emit_item_resized_signal(self, new_x: float, new_y: float, new_width: float, new_height: float) -> None:
         self._signals.itemResized.emit(new_x, new_y, new_width, new_height)
 
-    @log_method_decorator()
+    @log_method()
     def emit_item_double_clicked_signal(self) -> None:
         self._signals.itemDoubleClicked.emit()
 
@@ -205,7 +210,7 @@ class RectangleView(FigureView, QGraphicsRectItem):
                         'move': Qt.SizeAllCursor,
                         'erase': QCursor(QPixmap(ERASER_CURSOR_PATH), 0, 0)}
 
-    def update_borders_pos(self) -> None:
+    def _update_borders_pos(self) -> None:
         self._borders['left'] = QRectF(self.x() - self._border_thickness / 2 - 1, self.y() + self._border_thickness / 2,
                                        self._border_thickness + 1, self.rect().height() - self._border_thickness)
         self._borders['right'] = QRectF(self.x() + self.rect().width() - self._border_thickness / 2, self.y() + self._border_thickness / 2,
@@ -225,7 +230,7 @@ class RectangleView(FigureView, QGraphicsRectItem):
         self._borders['bot_right'] = QRectF(self.x() + self.rect().width() - self._border_thickness / 2, self.y() + self.rect().height() - self._border_thickness / 2,
                                             self._border_thickness, self._border_thickness)  # bot_right
 
-    def interactive_resize(self, mouse_pos: 'QPointF') -> None:
+    def _interactive_resize(self, mouse_pos: 'QPointF') -> None:
         if self._border_selected == 'left':
             if self.scene().check_field_x(mouse_pos.x()):
                 delta_x = mouse_pos.x() - self.x()
@@ -288,7 +293,7 @@ class RectangleView(FigureView, QGraphicsRectItem):
                 delta_y = mouse_pos.y() - self.rect().height() - self.y()
                 height = self.rect().height() + delta_y
                 self.set_rect(self.x(), self.y(), self.rect().width(), height)
-        self.update_borders_pos()
+        self._update_borders_pos()
         self.scene().update()  # Для корректной отрисовки фигуры при отрицательной ширине и высоте фигуры
 
     def __repr__(self) -> str:
@@ -310,7 +315,7 @@ class EllipseView(FigureView, QGraphicsEllipseItem):
                         'move': Qt.SizeAllCursor,
                         'erase': QCursor(QPixmap(ERASER_CURSOR_PATH), 0, 0)}
 
-    def update_borders_pos(self) -> None:
+    def _update_borders_pos(self) -> None:
         self._borders['left'] = QRectF(self.x() - self._border_thickness / 2 - 1, self.y() + self._border_thickness / 2,
                                        self._border_thickness + 1, self.rect().height() - self._border_thickness)
         self._borders['right'] = QRectF(self.x() + self.rect().width() - self._border_thickness / 2, self.y() + self._border_thickness / 2,
@@ -320,7 +325,7 @@ class EllipseView(FigureView, QGraphicsEllipseItem):
         self._borders['bot'] = QRectF(self.x() + self._border_thickness / 2, self.y() + self.rect().height() - self._border_thickness / 2,
                                       self.rect().width() - self._border_thickness, self._border_thickness)  # bot_mid
 
-    def interactive_resize(self, mouse_pos: 'QPointF') -> None:
+    def _interactive_resize(self, mouse_pos: 'QPointF') -> None:
         if self._border_selected == 'left':
             if self.scene().check_field_x(mouse_pos.x()):
                 delta_x = mouse_pos.x() - self.x()
@@ -343,7 +348,7 @@ class EllipseView(FigureView, QGraphicsEllipseItem):
                 delta_y = mouse_pos.y() - self.rect().height() - self.y()
                 height = self.rect().height() + delta_y
                 self.set_rect(self.x(), self.y(), self.rect().width(), height)
-        self.update_borders_pos()
+        self._update_borders_pos()
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} (model_uuid: {self._model_uuid}; figure_type: {self._figure_type}) at {hex(id(self))}'

@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtGui import QUndoCommand
 
-from Core import log_method_decorator, logger
+from Core import log_method, logger
 from View_Models import PlayerModel, ActionModel, ActionLineModel, FinalActionModel
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ __all__ = ('MovePlayerCommand', 'ChangePlayerStyleCommand', 'AddActionCommand', 
 
 
 class MovePlayerCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, deletion_observer: 'DeletionObserver', player_model: 'PlayerModel',
                  new_pos_x: float, new_pos_y: float):
         super().__init__('Перемещение игрока.')
@@ -26,7 +26,7 @@ class MovePlayerCommand(QUndoCommand):
         self._line_models_dict: dict[int: list['ActionLineModel']] = {}
         self._final_action_models_dict: dict[int, list['FinalActionModel']] = {}
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._player_model.set_pos(self._new_pos_x, self._new_pos_y)
         for i, action_model in enumerate(self._player_model.actions):
@@ -37,7 +37,7 @@ class MovePlayerCommand(QUndoCommand):
             self._deletion_observer.add_deleted_actions_ids(action_model)
         self._player_model.remove_all_actions()
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._player_model.set_pos(self._last_pos_x, self._last_pos_y)
         for i, action_model in self._actions_dict.items():
@@ -61,7 +61,7 @@ class MovePlayerCommand(QUndoCommand):
 
 
 class ChangePlayerStyleCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, player_model: 'PlayerModel', new_text: str,
                  new_text_color: str, new_player_color: str,
                  new_fill_type: Optional['FillType'] = None, new_symbol_type: Optional['SymbolType'] = None):
@@ -78,12 +78,12 @@ class ChangePlayerStyleCommand(QUndoCommand):
         self._new_text_color = new_text_color
         self._new_player_color = new_player_color
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._player_model.set_player_style(self._new_text, self._new_text_color, self._new_player_color,
                                             fill_type=self._new_fill_type, symbol_type=self._new_symbol_type)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._player_model.set_player_style(self._last_text, self._last_text_color, self._last_player_color,
                                             fill_type=self._last_fill_type, symbol_type=self._last_symbol_type)
@@ -103,7 +103,7 @@ class ChangePlayerStyleCommand(QUndoCommand):
 
 
 class AddActionCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, player_model: 'PlayerModel', action_model: 'ActionModel',
                  action_line_models_lst: list['ActionLineModel'], final_action_models_lst: list['FinalActionModel']):
         super().__init__('Добавление нового действия.')
@@ -112,19 +112,19 @@ class AddActionCommand(QUndoCommand):
         self._action_line_models_lst = action_line_models_lst
         self._final_action_models_lst = final_action_models_lst
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._player_model.add_action(self._new_action)
         self._new_action.add_action_parts(self._action_line_models_lst, self._final_action_models_lst)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._player_model.remove_action(self._new_action)
         self._new_action.remove_action_parts(self._action_line_models_lst, self._final_action_models_lst)
 
 
 class RemoveActionCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, deletion_observer: 'DeletionObserver', player_model: 'PlayerModel', action_model: 'ActionModel'):
         super().__init__('Удаление действия.')
         self._deletion_observer = deletion_observer
@@ -133,13 +133,13 @@ class RemoveActionCommand(QUndoCommand):
         self._line_models_lst = self._action_model.action_lines
         self._final_action_models_lst = self._action_model.final_actions
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._player_model.remove_action(self._action_model)
         self._action_model.remove_action_parts(self._line_models_lst, self._final_action_models_lst)
         self._deletion_observer.add_deleted_actions_ids(self._action_model)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._player_model.add_action(self._action_model)
         self._action_model.add_action_parts(self._line_models_lst, self._final_action_models_lst)

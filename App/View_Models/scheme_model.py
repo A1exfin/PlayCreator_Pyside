@@ -4,7 +4,7 @@ from uuid import UUID
 
 from PySide6.QtCore import Signal
 
-from Core import log_method_decorator, logger
+from Core import log_method, logger
 from Core.Enums import StorageType, PlaybookType, TeamType
 from Core.settings import FIRST_TEAM_MAX_POSITION, ZOOM_RANGE
 from .base_model import BaseModel
@@ -67,12 +67,10 @@ class SchemeModel(BaseModel):
         self.set_first_team_state(first_team, first_team_position)
         self.set_second_team_state(second_team)
 
-    @log_method_decorator()
-    def _set_changed_flag(self) -> None:
+    def set_changed_flag(self) -> None:
         super().set_changed_flag()
-        self._playbook_model.changed = True
+        self._playbook_model.set_changed_flag()
 
-    @log_method_decorator()
     def reset_id(self, storage_type: 'StorageType') -> None:
         super().reset_id(storage_type)
         self._reset_scheme_items_id(storage_type)
@@ -85,7 +83,6 @@ class SchemeModel(BaseModel):
             if item_model:
                 item_model.reset_id(storage_type)
 
-    @log_method_decorator()
     def set_new_uuid(self) -> None:
         super().set_new_uuid()
         self._set_scheme_items_new_uuid()
@@ -98,7 +95,6 @@ class SchemeModel(BaseModel):
             if item_model:
                 item_model.set_new_uuid()
 
-    @log_method_decorator()
     def reset_changed_flag(self) -> None:
         super().reset_changed_flag()
         self._reset_scheme_items_changed_flag()
@@ -116,10 +112,10 @@ class SchemeModel(BaseModel):
         return self._name
 
     @name.setter
-    @log_method_decorator()
+    @log_method()
     def name(self, name: str) -> None:
         self._name = name
-        self._set_changed_flag()
+        self.set_changed_flag()
         self.nameChanged.emit(name)
 
     @property
@@ -127,10 +123,10 @@ class SchemeModel(BaseModel):
         return self._note
 
     @note.setter
-    @log_method_decorator()
+    @log_method()
     def note(self, note: str) -> None:
         self._note = note
-        self._set_changed_flag()
+        self.set_changed_flag()
         self.noteChanged.emit(note)
 
     @property
@@ -138,7 +134,7 @@ class SchemeModel(BaseModel):
         return self._view_point_x
 
     @view_point_x.setter
-    @log_method_decorator()
+    @log_method()
     def view_point_x(self, value: int) -> None:
         # self._set_changed_flag()
         self._view_point_x = value
@@ -148,7 +144,7 @@ class SchemeModel(BaseModel):
         return self._view_point_y
 
     @view_point_y.setter
-    @log_method_decorator()
+    @log_method()
     def view_point_y(self, value: int) -> None:
         # self._set_changed_flag()
         self._view_point_y = value
@@ -158,7 +154,7 @@ class SchemeModel(BaseModel):
         return self._zoom
 
     @zoom.setter
-    @log_method_decorator()
+    @log_method()
     def zoom(self, value: int) -> None:
         if ZOOM_RANGE.min <= value <= ZOOM_RANGE.max:
             self._zoom = value
@@ -181,7 +177,7 @@ class SchemeModel(BaseModel):
     def first_team_players(self) -> list['PlayerModel']:
         return self._first_team_players.copy()
 
-    @log_method_decorator()
+    @log_method()
     def set_first_team_state(self, first_team_type: Optional['TeamType'], first_team_position: Optional[int]) -> None:
         if first_team_type and first_team_position:
             if self._playbook_type is PlaybookType.FOOTBALL:
@@ -200,10 +196,10 @@ class SchemeModel(BaseModel):
                 #     raise ValueError('Игроков первой команды должно быть 5.')
         self._first_team = first_team_type
         self._first_team_position = first_team_position
-        self._set_changed_flag()
+        self.set_changed_flag()
         self.firstTeamStateChanged.emit(self._first_team, self._first_team_position)
 
-    @log_method_decorator()
+    @log_method()
     def add_first_team_player(self, player_model: 'PlayerModel') -> None:
         if self._playbook_type is PlaybookType.FOOTBALL:
             if player_model.team_type not in (TeamType.OFFENCE, TeamType.KICKOFF, TeamType.PUNT, TeamType.FIELD_GOAL_OFF):
@@ -224,7 +220,7 @@ class SchemeModel(BaseModel):
     def second_team_players(self) -> list['PlayerModel']:
         return self._second_team_players.copy()
 
-    @log_method_decorator()
+    @log_method()
     def set_second_team_state(self, second_team_type: Optional['TeamType']) -> None:
         if second_team_type:
             if self._playbook_type is PlaybookType.FOOTBALL:
@@ -238,10 +234,10 @@ class SchemeModel(BaseModel):
                 # if len(self._second_team_players) != 5:
                 #     raise ValueError('Игроков второй команды должно быть 5.')
         self._second_team = second_team_type
-        self._set_changed_flag()
+        self.set_changed_flag()
         self.secondTeamStateChanged.emit(self._second_team)
 
-    @log_method_decorator()
+    @log_method()
     def add_second_team_player(self, player_model: 'PlayerModel') -> None:
         if self._playbook_type is PlaybookType.FOOTBALL and \
                 player_model.team_type not in (TeamType.DEFENCE, TeamType.KICK_RET, TeamType.PUNT_RET, TeamType.FIELD_GOAL_DEF):
@@ -262,7 +258,7 @@ class SchemeModel(BaseModel):
         return self._additional_player
 
     @additional_player.setter
-    @log_method_decorator()
+    @log_method()
     def additional_player(self, player_model: 'PlayerModel') -> None:
         if self._additional_player is not None:
             raise ValueError('Дополнительный игрок нападения уже добавлен.')
@@ -271,28 +267,28 @@ class SchemeModel(BaseModel):
         if self._first_team is not TeamType.OFFENCE:
             raise ValueError('Для добавления дополнительного игрока тип первой команды должен быть - нападение.')
         self._additional_player = player_model
-        self._set_changed_flag()
+        self.set_changed_flag()
         self.additionalPlayerAdded.emit(self.additional_player)
 
-    @log_method_decorator()
+    @log_method()
     def remove_first_team_players(self) -> None:
         self._first_team_players.clear()
         self.set_first_team_state(None, None)
         self.firstTeamPlayersRemoved.emit()
 
-    @log_method_decorator()
+    @log_method()
     def remove_second_team_players(self) -> None:
         self._second_team_players.clear()
         self.set_second_team_state(None)
         self.secondTeamPlayersRemoved.emit()
 
-    @log_method_decorator()
+    @log_method()
     def remove_additional_player(self) -> None:
         self._additional_player = None
-        self._set_changed_flag()
+        self.set_changed_flag()
         self.additionalPlayerRemoved.emit()
 
-    @log_method_decorator()
+    @log_method()
     def remove_all_players(self) -> None:
         # Порядок удаления команд важен для правильной установки GUI основного окна. Не менять.
         if self._additional_player:
@@ -308,66 +304,66 @@ class SchemeModel(BaseModel):
     def figures(self) -> list['FigureModel']:
         return self._figures.copy()
 
-    @log_method_decorator()
+    @log_method()
     def add_figure(self, figure: 'FigureModel') -> None:
         self._figures.append(figure)
-        self._set_changed_flag()
+        self.set_changed_flag()
         self.figureAdded.emit(figure)
 
-    @log_method_decorator()
+    @log_method()
     def remove_figure(self, figure: 'FigureModel') -> None:
         self._figures.remove(figure)
-        self._set_changed_flag()
+        self.set_changed_flag()
         self.figureRemoved.emit(figure)
 
-    @log_method_decorator()
+    @log_method()
     def remove_all_figures(self) -> None:
         self._figures.clear()
-        self._set_changed_flag()
+        self.set_changed_flag()
         self.allFiguresRemoved.emit()
 
     @property
     def labels(self) -> list['LabelModel']:
         return self._labels.copy()
 
-    @log_method_decorator()
+    @log_method()
     def add_label(self, label: 'LabelModel') -> None:
         self._labels.append(label)
-        self._set_changed_flag()
+        self.set_changed_flag()
         self.labelAdded.emit(label)
 
-    @log_method_decorator()
+    @log_method()
     def remove_label(self, label: 'LabelModel') -> None:
         self._labels.remove(label)
-        self._set_changed_flag()
+        self.set_changed_flag()
         self.labelRemoved.emit(label)
 
-    @log_method_decorator()
+    @log_method()
     def remove_all_labels(self) -> None:
         self._labels.clear()
-        self._set_changed_flag()
+        self.set_changed_flag()
         self.allLabelsRemoved.emit()
 
     @property
     def pencil_lines(self) -> list['PencilLineModel']:
         return self._pencil_lines.copy()
 
-    @log_method_decorator()
+    @log_method()
     def add_pencil_lines(self, pencil_lines: list['PencilLineModel']) -> None:
         self._pencil_lines.extend(pencil_lines)
-        self._set_changed_flag()
+        self.set_changed_flag()
         self.pencilLinesAdded.emit(pencil_lines)
 
-    @log_method_decorator()
+    @log_method()
     def remove_pencil_lines(self, pencil_line_models: list['PencilLineModel']) -> None:
         self._pencil_lines = list(set(self._pencil_lines) - set(pencil_line_models))
         # self._set_changed_flag()
         self.pencilLinesRemoved.emit(pencil_line_models)
 
-    @log_method_decorator()
+    @log_method()
     def remove_all_pencil_lines(self) -> None:
         self._pencil_lines.clear()
-        self._set_changed_flag()
+        self.set_changed_flag()
         self.allPencilLinesRemoved.emit()
 
     def to_dict(self) -> dict:

@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING, Union, Optional, Any
-from datetime import datetime
+from uuid import UUID
 from math import radians, cos, sin
 from dataclasses import dataclass
 from collections import namedtuple
@@ -8,10 +8,11 @@ from PySide6.QtWidgets import QGraphicsScene, QGraphicsItemGroup
 from PySide6.QtCore import Qt, Signal, QPointF, QLineF
 from PySide6.QtGui import QPen, QBrush, QColor, QTransform
 
-from .field_parts import FieldTriangle, FieldNumber
+from Core import log_method, logger
 from Config import football_field_data as football_field, flag_field_data as flag_field
 from Core.Enums import PlaybookType, Mode, FigureType, ActionLineType
 from Views import Graphics
+from .field_parts import FieldTriangle, FieldNumber
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QGraphicsSceneMouseEvent
@@ -59,20 +60,20 @@ class Field(QGraphicsScene):
         self._labels: list['Graphics.ProxyWidgetLabel'] = []  # Представления надписей
         self._pencil_lines: list['Graphics.PencilLineView'] = []  # Представления линий карандаша
         self._tmp_figure: Optional['Graphics.RectangleView', 'Graphics.EllipseView'] = None  # Используется при интерактивном рисовании новой фигуры
-        self._tmp_painted_pencil_lines: list['Graphics.PencilLineView'] = []  # Используется при интерактивном рисовании карандашом
+        self._tmp_painted_pencil_lines_group: Optional['QGraphicsItemGroup'] = None  # Используется при интерактивном рисовании карандашом
         self._tmp_painted_pencil_lines_data: list[dict] = []  # Используется при интерактивном рисовании карандашом. Эти данные получаются из нарисованной линии и передаются сигналом в презентер
 
         self._allow_action_painting_process: bool = False  # Флаг разрешения рисования, активируется по клику на игрока или на действия игрока. Процесс рисования действий заканчивается при клике правой кнопкой мыши
-        self._action_painting_process: bool = False  # Флаг показывает что сейчас идёт процесс рисования линия за линией. Процесс рисования действий заканчивается при клике правой кнопкой мыши
+        self._painting_process: bool = False  # Флаг показывает что сейчас идёт процесс рисования действий (линия за линией) фигур или карандаша. Процесс рисования действий заканчивается при клике правой кнопкой мыши
         self._painting_process_mouse_pressed: bool = False  # Флаг нажатия кнопки мыши. Нужен для того, чтобы при рисовании действия игрока исключить нажатие другой кнопки мыши (правой), при нажатой левой
         self._first_painting_action_line: bool = False  # Флаг рисования первого действия от игрока. Нужен для расчёта стартовой точки, рисуемого действия. Стартовая располагается на границе игрока.
         self._current_player_action_painting: Union[None, 'Graphics.FirstTeamPlayerView', 'Graphics.SecondTeamPlayerView'] = None  # Текущий игрок, для которого рисуется действие.
-        self._current_action_action_painting: Optional['Graphics.ActionView'] = None
+        self._current_action_action_painting: Optional['Graphics.ActionView'] = None  # Текущее действие, для которого рисуется опциональное действие
         self._start_pos: Optional['QPointF'] = None  # Координаты начала рисования действий, фигур и тд.
         self._last_start_pos: Optional['QPointF'] = None  # Координаты предыдущей стартовой точки. Используется при завершении рисования действия, для вычисления угла поворота стрелки маршрута или линии блока.
         self._current_action_line: Optional['Graphics.ActionLineView'] = None  # Текущая линия действия.
-        self._tmp_painted_action_group: Optional['QGraphicsItemGroup'] = None
-        self._tmp_painted_action_data = tmp_painted_action_data(list(), list())
+        self._tmp_painted_action_group: Optional['QGraphicsItemGroup'] = None  # Временная группа графичиеских итемов (линий) действия. После завршения процесса рисовния удаляется, данные этих линий перадются в презентер и далее уже создаётся модели этих действий.
+        self._tmp_painted_action_data = tmp_painted_action_data(list(), list())  # Временные данные рисуемого в данный момент действия
 
     @property
     def mode(self) -> 'Mode':
@@ -130,6 +131,27 @@ class Field(QGraphicsScene):
     def pencil_lines(self) -> list['Graphics.PencilLineView']:
         return self._pencil_lines.copy()
 
+    @log_method()
+    def emit_figure_painted_signal(self, figure_data: dict) -> None:
+        self.figurePainted.emit(figure_data)
+
+    @log_method()
+    def emit_figure_remove_clicked_signal(self, figure_model_uuid: 'UUID') -> None:
+        self.figureRemoveClicked.emit(figure_model_uuid)
+
+    @log_method()
+    def emit_pencil_painted_signal(self, pencil_data: list[dict]) -> None:
+        self.pencilPainted.emit(pencil_data)
+
+    @log_method()
+    def emit_label_placed_signal(self, label_data: dict) -> None:
+        self.labelPlaced.emit(label_data)
+
+    @log_method()
+    def emit_label_remove_clicked_signal(self, label_model_uuid: 'UUID') -> None:
+        self.labelRemoveClicked.emit(label_model_uuid)
+
+    @log_method()
     def set_config(self, key: str, value: Any) -> None:
         '''Установка конфига. Мод, Цвет, толщина линий, размер текста и тд.'''
         if not hasattr(self._config, key):
@@ -138,6 +160,7 @@ class Field(QGraphicsScene):
         if key == 'mode':
             self.modeChanged.emit(self._config.mode)
 
+    @log_method()
     def place_first_team_player_item(self, player_data: dict) -> 'Graphics.FirstTeamPlayerView':
         '''Размещение представления игрока первой команды на сцене.
         Возвращает представление этого игрока'''
@@ -146,6 +169,7 @@ class Field(QGraphicsScene):
         self._first_team_players.append(player_item)
         return player_item
 
+    @log_method()
     def place_second_team_player_item(self, player_data: dict) -> 'Graphics.SecondTeamPlayerView':
         '''Размещение представления игрока второй команды на сцене.
         Возвращает представление этого игрока'''
@@ -154,6 +178,7 @@ class Field(QGraphicsScene):
         self._second_team_players.append(player_item)
         return player_item
 
+    @log_method()
     def place_additional_player_item(self, player_data: dict) -> 'Graphics.FirstTeamPlayerView':
         '''Размещение представления дополнительного игрока команды нападения на сцене.
         Возвращает представление этого игрока'''
@@ -162,23 +187,27 @@ class Field(QGraphicsScene):
         self._additional_offence_player = player_item
         return player_item
 
+    @log_method()
     def remove_first_team_player_items(self) -> None:
         '''Удаление со сцены представлений игроков первой команды.'''
         removed_group = self.createItemGroup(self._first_team_players)
         self.removeItem(removed_group)
         self._first_team_players.clear()
 
+    @log_method()
     def remove_second_team_player_items(self) -> None:
         '''Удаление со сцены представлений игроков второй команды.'''
         removed_group = self.createItemGroup(self._second_team_players)
         self.removeItem(removed_group)
         self._second_team_players.clear()
 
+    @log_method()
     def remove_additional_player_item(self) -> None:
         '''Удаление со сцены представления дополнительного игрока команды нападения.'''
         self.removeItem(self._additional_offence_player)
         self._additional_offence_player = None
 
+    @log_method()
     def place_figure_item(self, figure_data: dict) -> Union['Graphics.RectangleView', 'Graphics.EllipseView']:
         if figure_data['figure_type'] is FigureType.RECTANGLE:
             figure_item = Graphics.RectangleView(**figure_data)
@@ -188,48 +217,57 @@ class Field(QGraphicsScene):
         self._figures.append(figure_item)
         return figure_item
 
+    @log_method()
     def remove_figure_item(self, figure_item: Union['Graphics.RectangleView', 'Graphics.EllipseView']) -> None:
         self.removeItem(figure_item)
         self._figures.remove(figure_item)
 
+    @log_method()
     def remove_all_figure_items(self) -> None:
         figures_group = self.createItemGroup(self._figures)
         self.removeItem(figures_group)
         self._figures.clear()
 
+    @log_method()
     def place_pencil_line_item(self, pencil_line_data: dict) -> 'Graphics.PencilLineView':
         pencil_line_item = Graphics.PencilLineView(**pencil_line_data)
         self.addItem(pencil_line_item)
         self._pencil_lines.append(pencil_line_item)
         return pencil_line_item
 
+    @log_method()
     def remove_pencil_line_item(self, pencil_line_item: 'Graphics.PencilLineView') -> None:
         self.removeItem(pencil_line_item)
         self._pencil_lines.remove(pencil_line_item)
 
+    @log_method()
     def remove_all_pencil_line_items(self) -> None:
         pencil_lines_group = self.createItemGroup(self._pencil_lines)
         self.removeItem(pencil_lines_group)
         self._pencil_lines.clear()
 
+    @log_method()
     def place_label_item(self, label_data: dict) -> 'Graphics.ProxyWidgetLabel':
         label_item = Graphics.ProxyWidgetLabel(**label_data)
         self.addItem(label_item)
         self._labels.append(label_item)
         return label_item
 
+    @log_method()
     def remove_label_item(self, label_item: 'Graphics.ProxyWidgetLabel') -> None:
         self.removeItem(label_item)
         self._labels.remove(label_item)
 
+    @log_method()
     def remove_all_label_items(self) -> None:
         labels_group = self.createItemGroup(self._labels)
         self.removeItem(labels_group)
         self._labels.clear()
 
+    @log_method()
     def focusOutEvent(self, event: 'QFocusEvent') -> None:
         self._allow_action_painting_process = False
-        self._action_painting_process = False
+        self._painting_process = False
         self._painting_process_mouse_pressed = False
         self._first_painting_action_line = False
         if self._current_player_action_painting:
@@ -250,10 +288,9 @@ class Field(QGraphicsScene):
         if self._tmp_figure:
             self.removeItem(self._tmp_figure)
             self._tmp_figure = None
-        if self._tmp_painted_pencil_lines:
-            pencil_lines_group = self.createItemGroup(self._tmp_painted_pencil_lines)
-            self.removeItem(pencil_lines_group)
-            self._tmp_painted_pencil_lines.clear()
+        if self._tmp_painted_pencil_lines_group:
+            self.removeItem(self._tmp_painted_pencil_lines_group)
+            self._tmp_painted_pencil_lines_group = None
         if self._tmp_painted_pencil_lines_data:
             self._tmp_painted_pencil_lines_data.clear()
         super().focusOutEvent(event)
@@ -287,11 +324,14 @@ class Field(QGraphicsScene):
         elif self._config.mode is Mode.ERASE:
             super().mousePressEvent(event)
         elif self._config.mode in (Mode.RECTANGLE, Mode.ELLIPSE):
-            self.figure_mousePressEvent(event)
+            if not self._painting_process and event.button() == Qt.LeftButton:
+                self.figure_mousePressEvent(event)
         elif self._config.mode is Mode.LABEL:
-            self.label_mousePressEvent(event)
+            if event.button() == Qt.LeftButton:
+                self.label_mousePressEvent(event)
         elif self._config.mode is Mode.PENCIL:
-            self.pencil_mousePressEvent(event)
+            if event.button() == Qt.LeftButton:
+                self.pencil_mousePressEvent(event)
 
     def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:  # Обработка движения курсора мыши и перенаправление на другие методы в зависимости от mode
         if self.mode is Mode.MOVE:
@@ -304,9 +344,11 @@ class Field(QGraphicsScene):
         elif self.mode is Mode.ERASE:
             super().mouseMoveEvent(event)
         elif self.mode in (Mode.RECTANGLE, Mode.ELLIPSE):
-            self.figure_mouseMoveEvent(event)
+            if self._painting_process and self._tmp_figure:
+                self.figure_mouseMoveEvent(event)
         elif self.mode is Mode.PENCIL:
-            self.pencil_mouseMoveEvent(event)
+            if self._painting_process:
+                self.pencil_mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:  # Обработка отпускания кнопки мыши и перенаправление на другие методы в зависимости от mode
         if self.mode is Mode.MOVE:
@@ -317,12 +359,15 @@ class Field(QGraphicsScene):
             # else:
             #     super().mouseReleaseEvent(event)
         elif self.mode in (Mode.RECTANGLE, Mode.ELLIPSE):
-            self.figure_mouseReleaseEvent(event)
+            if self._painting_process and self._tmp_figure and event.button() == Qt.LeftButton:
+                self.figure_mouseReleaseEvent(event)
         elif self.mode is Mode.PENCIL:
-            self.pencil_mouseReleaseEvent(event)
+            if self._painting_process and event.button() == Qt.LeftButton:
+                self.pencil_mouseReleaseEvent(event)
 
+    @log_method()
     def action_mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:  # Рисование действий игроков
-        if not self._action_painting_process and event.button() == Qt.LeftButton:
+        if not self._painting_process and event.button() == Qt.LeftButton:
             if self.check_field_borders(event.scenePos()):
                 if self._first_painting_action_line and not self._start_pos:
                     self._start_pos = self._get_action_line_start_pos(self._current_player_action_painting, event.scenePos())
@@ -331,9 +376,9 @@ class Field(QGraphicsScene):
                                                                     event.scenePos().x(), event.scenePos().y(),
                                                                     self._config.line_thickness, self._config.color)
                 self._tmp_painted_action_group.addToGroup(self._current_action_line)
-                self._action_painting_process = True
+                self._painting_process = True
                 self._painting_process_mouse_pressed = True
-        elif self._action_painting_process and not self._current_action_line and event.button() == Qt.LeftButton:
+        elif self._painting_process and not self._current_action_line and event.button() == Qt.LeftButton:
             if self.check_field_borders(event.scenePos()):
                 self._current_action_line = Graphics.ActionLineView(getattr(ActionLineType, self._config.mode.name),
                                                                     self._start_pos.x(), self._start_pos.y(),
@@ -341,14 +386,14 @@ class Field(QGraphicsScene):
                                                                     self._config.line_thickness, self._config.color)
                 self._tmp_painted_action_group.addToGroup(self._current_action_line)
                 self._painting_process_mouse_pressed = True
-        elif self._action_painting_process and not self._painting_process_mouse_pressed and \
+        elif self._painting_process and not self._painting_process_mouse_pressed and \
                 event.button() == Qt.RightButton:
             final_action_item = self._get_final_action(self.mode, self._last_start_pos, self._start_pos)
             if final_action_item:
                 self._tmp_painted_action_group.addToGroup(final_action_item)
                 self._tmp_painted_action_data.final_actions.append(final_action_item.get_data())
             if self._current_action_action_painting:
-                self._current_action_action_painting.optionalActionPainted.emit(self._tmp_painted_action_data)
+                self._current_action_action_painting.emit_optional_action_painted(self._tmp_painted_action_data)
             else:
                 self._current_player_action_painting.emit_action_painted_signal(self._tmp_painted_action_data)
             self.removeItem(self._tmp_painted_action_group)
@@ -365,10 +410,11 @@ class Field(QGraphicsScene):
             self._current_action_line = None
             self._start_pos = None
             self._last_start_pos = None
-            self._action_painting_process = False
+            self._painting_process = False
             self._allow_action_painting_process = False
             # self.update()
 
+    @log_method()
     def action_mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:  # Рисование действий игроков
         if self._current_action_line:
             if self._first_painting_action_line:
@@ -378,6 +424,7 @@ class Field(QGraphicsScene):
             else:
                 self._current_action_line.setLine(self._start_pos.x(), self._start_pos.y(), self._start_pos.x(), self._start_pos.y())
 
+    @log_method()
     def action_mouseReleaseEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:  # Рисование действий игроков
         if self._current_action_line and event.button() == Qt.LeftButton:
             if self.check_field_borders(event.scenePos()):
@@ -416,96 +463,100 @@ class Field(QGraphicsScene):
             return line
         return None
 
+    @log_method()
     def figure_mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:  # Рисование фигур
-        if not self._action_painting_process and event.button() == Qt.LeftButton:
-            if self.check_field_borders(event.scenePos()):
-                self._start_pos = event.scenePos()
-                if self.mode is Mode.RECTANGLE:
-                    self._tmp_figure = Graphics.RectangleView(self._start_pos.x(), self._start_pos.y(), 0, 0,
-                                                              True, self._config.line_thickness, self._config.color)
-                elif self.mode is Mode.ELLIPSE:
-                    self._tmp_figure = Graphics.EllipseView(self._start_pos.x(), self._start_pos.y(), 0, 0,
-                                                            True, self._config.line_thickness, self._config.color)
-                if self._tmp_figure:
-                    self.addItem(self._tmp_figure)
-                self._action_painting_process = True
+        if self.check_field_borders(event.scenePos()):
+            self._start_pos = event.scenePos()
+            if self.mode is Mode.RECTANGLE:
+                self._tmp_figure = Graphics.RectangleView(self._start_pos.x(), self._start_pos.y(), 0, 0,
+                                                          True, self._config.line_thickness, self._config.color)
+            elif self.mode is Mode.ELLIPSE:
+                self._tmp_figure = Graphics.EllipseView(self._start_pos.x(), self._start_pos.y(), 0, 0,
+                                                        True, self._config.line_thickness, self._config.color)
+            if self._tmp_figure:
+                self.addItem(self._tmp_figure)
+            self._painting_process = True
 
+    @log_method()
     def figure_mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:  # Рисование фигур
-        if self._action_painting_process and self._tmp_figure:
-            if self.check_field_borders(event.scenePos()):
-                self._tmp_figure.set_rect(self._start_pos.x(), self._start_pos.y(),
-                                          event.scenePos().x() - self._start_pos.x(),
-                                          event.scenePos().y() - self._start_pos.y())
-            else:
-                self._tmp_figure.set_rect(self._start_pos.x(), self._start_pos.y(), 0, 0)
-            self.update()
+        if self.check_field_borders(event.scenePos()):
+            self._tmp_figure.set_rect(self._start_pos.x(), self._start_pos.y(),
+                                      event.scenePos().x() - self._start_pos.x(),
+                                      event.scenePos().y() - self._start_pos.y())
+        else:
+            self._tmp_figure.set_rect(self._start_pos.x(), self._start_pos.y(), 0, 0)
+        self.update()
 
+    @log_method()
     def figure_mouseReleaseEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:  # Рисование фигур
-        if self._action_painting_process and self._tmp_figure and event.button() == Qt.LeftButton:
-            if self.check_field_borders(event.scenePos()):
-                self._tmp_figure.set_rect(self._start_pos.x(), self._start_pos.y(),
-                                          event.scenePos().x() - self._start_pos.x(),
-                                          event.scenePos().y() - self._start_pos.y())
-                self._tmp_figure.normalizate()
-                figure_data = self._tmp_figure.get_data()
-                self.removeItem(self._tmp_figure)
-                self._action_painting_process = False
-                self._start_pos = None
-                self._tmp_figure = None
-                self.figurePainted.emit(figure_data)
+        if self.check_field_borders(event.scenePos()):
+            self._tmp_figure.set_rect(self._start_pos.x(), self._start_pos.y(),
+                                      event.scenePos().x() - self._start_pos.x(),
+                                      event.scenePos().y() - self._start_pos.y())
+            self._tmp_figure.normalizate()
+            figure_data = self._tmp_figure.get_data()
+            self.removeItem(self._tmp_figure)
+            self._painting_process = False
+            self._start_pos = None
+            self._tmp_figure = None
+            self.emit_figure_painted_signal(figure_data)
 
+    @log_method()
     def label_mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         '''Размещение надписи на сцене'''
-        if event.button() == Qt.LeftButton:
-            self.set_config('mode', Mode.MOVE)
-            default_width = Graphics.ProxyWidgetLabel.default_width
-            default_height = Graphics.ProxyWidgetLabel.default_height
-            if event.scenePos().x() < 0:
-                x = 0
-            elif event.scenePos().x() + default_width > self.sceneRect().width():
-                x = event.scenePos().x() - (event.scenePos().x() + default_width - self.sceneRect().width())
-            else:
-                x = event.scenePos().x()
-            if event.scenePos().y() < 0:
-                y = 0
-            elif event.scenePos().y() + default_height > self.sceneRect().height():
-                y = event.scenePos().y() - (event.scenePos().y() + default_height - self.sceneRect().height())
-            else:
-                y = event.scenePos().y()
-            tmp_proxy_label = Graphics.ProxyWidgetLabel(x, y, '', self._config.font_type, self._config.font_size,
-                                                        self._config.bold, self._config.italic, self._config.underline,
-                                                        self._config.color, tmp_label=True)
-            self.addItem(tmp_proxy_label)
-            tmp_proxy_label.widget()
-            tmp_proxy_label.widget().setReadOnly(False)
-            tmp_proxy_label.widget().setFocus()
-            tmp_proxy_label.widget().update_height()
-            self.labelSelected.emit(tmp_proxy_label.widget())
+        self.set_config('mode', Mode.MOVE)
+        default_width = Graphics.ProxyWidgetLabel.default_width
+        default_height = Graphics.ProxyWidgetLabel.default_height
+        if event.scenePos().x() < 0:
+            x = 0
+        elif event.scenePos().x() + default_width > self.sceneRect().width():
+            x = event.scenePos().x() - (event.scenePos().x() + default_width - self.sceneRect().width())
+        else:
+            x = event.scenePos().x()
+        if event.scenePos().y() < 0:
+            y = 0
+        elif event.scenePos().y() + default_height > self.sceneRect().height():
+            y = event.scenePos().y() - (event.scenePos().y() + default_height - self.sceneRect().height())
+        else:
+            y = event.scenePos().y()
+        tmp_proxy_label = Graphics.ProxyWidgetLabel(x, y, '', self._config.font_type, self._config.font_size,
+                                                    self._config.bold, self._config.italic, self._config.underline,
+                                                    self._config.color, tmp_label=True)
+        self.addItem(tmp_proxy_label)
+        tmp_proxy_label.widget()
+        tmp_proxy_label.widget().setReadOnly(False)
+        tmp_proxy_label.widget().setFocus()
+        tmp_proxy_label.widget().update_height()
+        self.labelSelected.emit(tmp_proxy_label.widget())
 
+    @log_method()
     def pencil_mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:  # Рисование карандашом
-        if event.button() == Qt.LeftButton:
-            if self.check_field_borders(event.scenePos()):
-                self._start_pos = event.scenePos()
+        if self.check_field_borders(event.scenePos()):
+            self._start_pos = event.scenePos()
+            self._tmp_painted_pencil_lines_group = QGraphicsItemGroup()
+            self.addItem(self._tmp_painted_pencil_lines_group)
+            self._painting_process = True
 
+    @log_method()
     def pencil_mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:  # Рисование карандашом
         if self.check_field_borders(event.scenePos()):
             if self._start_pos:
                 line = Graphics.PencilLineView(self._start_pos.x(), self._start_pos.y(), event.scenePos().x(),
                                                event.scenePos().y(), self._config.line_thickness, self._config.color)
                 self.addItem(line)
-                self._tmp_painted_pencil_lines.append(line)
+                self._tmp_painted_pencil_lines_group.addToGroup(line)
                 self._tmp_painted_pencil_lines_data.append(line.get_data())
                 self._start_pos = event.scenePos()
                 # self.update()
 
+    @log_method()
     def pencil_mouseReleaseEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:  # Рисование карандашом
-        if event.button() == Qt.LeftButton:
-            self._start_pos = None
-            painted_pencil_lines_group = self.createItemGroup(self._tmp_painted_pencil_lines)
-            self.removeItem(painted_pencil_lines_group)
-            self._tmp_painted_pencil_lines.clear()
-            self.pencilPainted.emit(self._tmp_painted_pencil_lines_data)
-            self._tmp_painted_pencil_lines_data.clear()
+        self._start_pos = None
+        self.removeItem(self._tmp_painted_pencil_lines_group)
+        self._tmp_painted_pencil_lines_group = None
+        self.emit_pencil_painted_signal(self._tmp_painted_pencil_lines_data)
+        self._tmp_painted_pencil_lines_data.clear()
+        self._painting_process = False
 
     def check_field_x(self, pos_x: float) -> bool:
         '''Проверка попадания координаты в границы поля по оси X (при рисовании фигур, действий и тд.)'''

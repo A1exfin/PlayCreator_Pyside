@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QGraphicsLineItem
 from PySide6.QtGui import QColor, QPen, QPainter, QCursor, QPixmap
 from PySide6.QtCore import Qt
 
+from Core.logger_settings import log_method, logger
 from Core.Enums import Mode, ActionLineType
 from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
 from Views import Graphics
@@ -70,6 +71,7 @@ class ActionLineView(QGraphicsLineItem):
     def mouseDoubleClickEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         self.ungrabMouse()
 
+    @log_method()
     def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         # print(self)
         self.ungrabMouse()

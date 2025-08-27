@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 from PySide6.QtGui import QUndoCommand
 
-from Core import log_method_decorator, logger
+from Core import log_method, logger
 from View_Models import PlayerModel, FigureModel, LabelModel, PencilLineModel, ActionModel, ActionLineModel, FinalActionModel
 from Core.Enums import TeamType
 
@@ -29,7 +29,7 @@ class PlayerActionsMapper:
 
 
 class PlaceFirstTeamCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, scheme_model: 'SchemeModel', first_team_player_models_list: list['PlayerModel'],
                  team_type: 'TeamType', first_team_position: int):
         super().__init__('Размещение игроков первой команды.')
@@ -38,19 +38,19 @@ class PlaceFirstTeamCommand(QUndoCommand):
         self._team_type = team_type
         self._first_team_position = first_team_position
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         for player_model in self._players_lst:
             self._scheme_model.add_first_team_player(player_model)
         self._scheme_model.set_first_team_state(self._team_type, self._first_team_position)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._scheme_model.remove_first_team_players()
 
 
 class PlaceSecondTeamCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, scheme_model: 'SchemeModel', second_team_player_models_list: list['PlayerModel'],
                  team_type: 'TeamType'):
         super().__init__('Размещение игроков второй команды.')
@@ -58,35 +58,35 @@ class PlaceSecondTeamCommand(QUndoCommand):
         self._players_lst = second_team_player_models_list
         self._team_type = team_type
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         for player_model in self._players_lst:
             self._scheme_model.add_second_team_player(player_model)
         self._scheme_model.set_second_team_state(self._team_type)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._scheme_model.remove_second_team_players()
 
 
 class PlaceAdditionalPlayerCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, scheme_model: 'SchemeModel', additional_player_model: 'PlayerModel'):
         super().__init__('Размещение дополнительного игрока нападения.')
         self._scheme_model = scheme_model
         self._additional_player_model = additional_player_model
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._scheme_model.additional_player = self._additional_player_model
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._scheme_model.remove_additional_player()
 
 
 class RemoveSecondTeamCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, deletion_observer: 'DeletionObserver', scheme_model: 'SchemeModel'):
         super().__init__('Удаление игроков второй команды.')
         self._deletion_observer = deletion_observer
@@ -95,7 +95,7 @@ class RemoveSecondTeamCommand(QUndoCommand):
         self._deleted_team_type = self._scheme_model.second_team
         self._player_actions_mappers: list['PlayerActionsMapper'] = []
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         for player_model in self._scheme_model.second_team_players:
             player_actions_mapper = PlayerActionsMapper(player_model)
@@ -109,7 +109,7 @@ class RemoveSecondTeamCommand(QUndoCommand):
                 player_model.remove_action(action_model)
         self._scheme_model.remove_second_team_players()
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         for player_model in self._players_lst:
             self._scheme_model.add_second_team_player(player_model)
@@ -124,7 +124,7 @@ class RemoveSecondTeamCommand(QUndoCommand):
 
 
 class RemoveAdditionalOffencePlayerCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, deletion_observer: 'DeletionObserver', scheme_model: 'SchemeModel'):
         super().__init__('Удаление дополнительного игрока нападения.')
         self._deletion_observer = deletion_observer
@@ -132,7 +132,7 @@ class RemoveAdditionalOffencePlayerCommand(QUndoCommand):
         self._additional_player = self._scheme_model.additional_player
         self._additional_player_actions_mapper: Optional['PlayerActionsMapper'] = None
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._additional_player_actions_mapper = PlayerActionsMapper(self._additional_player)
         self._deletion_observer.add_deleted_players_ids(self._additional_player)
@@ -144,7 +144,7 @@ class RemoveAdditionalOffencePlayerCommand(QUndoCommand):
             self._additional_player.remove_action(action_model)
         self._scheme_model.remove_additional_player()
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._scheme_model.additional_player = self._additional_player
         self._deletion_observer.remove_deleted_players_ids(self._additional_player)
@@ -156,7 +156,7 @@ class RemoveAdditionalOffencePlayerCommand(QUndoCommand):
 
 
 class RemoveAllPlayersCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, deletion_observer: 'DeletionObserver', scheme_model: 'SchemeModel'):
         super().__init__('Удаление всех игроков.')
         self._deletion_observer = deletion_observer
@@ -171,7 +171,7 @@ class RemoveAllPlayersCommand(QUndoCommand):
         self._additional_player = self._scheme_model.additional_player
         self._additional_player_mapper: Optional['PlayerActionsMapper'] = None
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         for player_model in self._first_team_players_lst:
             self._deletion_observer.add_deleted_players_ids(player_model)
@@ -204,7 +204,7 @@ class RemoveAllPlayersCommand(QUndoCommand):
                 self._additional_player.remove_action(action_model)
         self._scheme_model.remove_all_players()
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         if self._first_team_players_lst:
             for player_model in self._first_team_players_lst:
@@ -241,23 +241,23 @@ class RemoveAllPlayersCommand(QUndoCommand):
 
 
 class PlaceFigureCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, scheme_model: 'SchemeModel', figure_model: 'FigureModel'):
         super().__init__('Размещение фигуры')
         self._scheme_model = scheme_model
         self._figure_model = figure_model
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._scheme_model.add_figure(self._figure_model)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._scheme_model.remove_figure(self._figure_model)
 
 
 class RemoveFigureCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, deletion_observer: 'DeletionObserver', scheme_model: 'SchemeModel', figure_model: 'FigureModel'):
         super().__init__('Удаление фигуры.')
         self._deletion_observer = deletion_observer
@@ -265,32 +265,32 @@ class RemoveFigureCommand(QUndoCommand):
         self._figure_model = figure_model
         self._deleted_item_ids = None
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._scheme_model.remove_figure(self._figure_model)
         self._deletion_observer.add_deleted_figures_ids(self._figure_model)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._scheme_model.add_figure(self._figure_model)
         self._deletion_observer.remove_deleted_figures_ids(self._figure_model)
 
 
 class RemoveAllFiguresCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, deletion_observer: 'DeletionObserver', scheme_model: 'SchemeModel'):
         super().__init__('Удаление всех фигур.')
         self._deletion_observer = deletion_observer
         self._scheme_model = scheme_model
         self._figures_models_lst = scheme_model.figures
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._scheme_model.remove_all_figures()
         for figure_model in self._figures_models_lst:
             self._deletion_observer.add_deleted_figures_ids(figure_model)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         for figure_model in self._figures_models_lst:
             self._scheme_model.add_figure(figure_model)
@@ -298,17 +298,17 @@ class RemoveAllFiguresCommand(QUndoCommand):
 
 
 class PlacePencilLinesCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, scheme_model: 'SchemeModel', pencil_line_models_lst: list['PencilLineModel']):
         super().__init__('Размещение линий карандаша.')
         self._scheme_model = scheme_model
         self._pencil_line_models_lst = pencil_line_models_lst
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._scheme_model.add_pencil_lines(self._pencil_line_models_lst)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._scheme_model.remove_pencil_lines(self._pencil_line_models_lst)
 
@@ -325,20 +325,20 @@ class PlacePencilLinesCommand(QUndoCommand):
 
 
 class RemovePencilLinesCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, deletion_observer: 'DeletionObserver', scheme_model: 'SchemeModel'):
         super().__init__('Удаление линий карандаша.')
         self._deletion_observer = deletion_observer
         self._scheme_model = scheme_model
         self._pencil_line_models_lst = self._scheme_model.pencil_lines
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._scheme_model.remove_all_pencil_lines()
         for pencil_line_model in self._pencil_line_models_lst:
             self._deletion_observer.add_deleted_pencil_lines_ids(pencil_line_model)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._scheme_model.add_pencil_lines(self._pencil_line_models_lst)
         for pencil_line_model in self._pencil_line_models_lst:
@@ -346,55 +346,55 @@ class RemovePencilLinesCommand(QUndoCommand):
 
 
 class PlaceLabelCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, scheme_model: 'SchemeModel', label_model: 'LabelModel'):
         super().__init__('Размещение надписи.')
         self._scheme_model = scheme_model
         self._label_model = label_model
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._scheme_model.add_label(self._label_model)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._scheme_model.remove_label(self._label_model)
 
 
 class RemoveLabelCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, deletion_observer: 'DeletionObserver', scheme_model: 'SchemeModel', label_model: 'LabelModel'):
         super().__init__('Удаление надписи.')
         self._deletion_observer = deletion_observer
         self._scheme_model = scheme_model
         self._label_model = label_model
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._scheme_model.remove_label(self._label_model)
         self._deletion_observer.add_deleted_labels_ids(self._label_model)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._scheme_model.add_label(self._label_model)
         self._deletion_observer.remove_deleted_labels_ids(self._label_model)
 
 
 class RemoveAllLabelsCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, deletion_observer: 'DeletionObserver', scheme_model: 'SchemeModel'):
         super().__init__('Удаление всех надписей.')
         self._deletion_observer = deletion_observer
         self._scheme_model = scheme_model
         self._label_models_lst = self._scheme_model.labels
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._scheme_model.remove_all_labels()
         for label_model in self._label_models_lst:
             self._deletion_observer.add_deleted_labels_ids(label_model)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         for label_model in self._label_models_lst:
             self._scheme_model.add_label(label_model)
@@ -402,7 +402,7 @@ class RemoveAllLabelsCommand(QUndoCommand):
 
 
 class ChangeSecondTeamSymbolsCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, scheme_model: 'SchemeModel', new_symbol_type: 'SymbolType'):
         super().__init__('Изменение символов игроков второй команды.')
         self._scheme_model = scheme_model
@@ -415,13 +415,13 @@ class ChangeSecondTeamSymbolsCommand(QUndoCommand):
         for player_model in scheme_model.second_team_players:
             self._second_team_last_symbols_dict[id(player_model)] = player_model.symbol_type
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         for player_model in self._second_team_player_models:
             player_model.set_player_style(player_model.text, player_model.text_color, player_model.player_color, None,
                                           self._new_symbol_type)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         for player_model in self._second_team_player_models:
             player_model.set_player_style(player_model.text, player_model.text_color, player_model.player_color, None,
@@ -440,7 +440,7 @@ class ChangeSecondTeamSymbolsCommand(QUndoCommand):
 
 
 class RemoveAllActionsCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, deletion_observer: 'DeletionObserver', scheme_model: 'SchemeModel'):
         super().__init__('Удаление всех действий игроков.')
         self._deletion_observer = deletion_observer
@@ -449,7 +449,7 @@ class RemoveAllActionsCommand(QUndoCommand):
         self._second_team_players_mappers: list['PlayerActionsMapper'] = []
         self._additional_player_mapper: Optional['PlayerActionsMapper'] = None
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         for player_model in self._scheme_model.first_team_players:
             player_actions_mapper = PlayerActionsMapper(player_model)
@@ -483,7 +483,7 @@ class RemoveAllActionsCommand(QUndoCommand):
                 self._scheme_model.additional_player.remove_action(action_model)
                 self._deletion_observer.add_deleted_actions_ids(action_model)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         for player_actions_mapper in self._first_team_players_mappers:
             for i, action_model in player_actions_mapper.action_models_dict.items():

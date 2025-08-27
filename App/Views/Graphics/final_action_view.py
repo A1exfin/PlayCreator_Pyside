@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QGraphicsPolygonItem, QGraphicsLineItem
 from PySide6.QtGui import QColor, QPen, QPainter, QBrush, QPolygonF, QCursor, QPixmap
 from PySide6.QtCore import QPointF, Qt, QLineF
 
+from Core.logger_settings import log_method, logger
 from Config import HOVER_SCENE_ITEM_COLOR, ERASER_CURSOR_PATH
 from Core.Enums import Mode, FinalActionType
 from Views import Graphics
@@ -51,6 +52,7 @@ class FinalActionView:
     def mouseDoubleClickEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         self.ungrabMouse()
 
+    @log_method()
     def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         # print(self)
         if self.scene().mode is Mode.ERASE and event.button() == Qt.LeftButton:

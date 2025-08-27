@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtGui import QUndoCommand
 
-from Core import log_method_decorator, logger
+from Core import log_method, logger
 
 if TYPE_CHECKING:
     from View_Models import LabelModel
@@ -11,7 +11,7 @@ __all__ = ('MoveLabelCommand', 'ChangeLabelTextAttributesCommand', 'ChangeLabelS
 
 
 class MoveLabelCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, label_model: 'LabelModel', new_pos_x: float, new_pos_y: float):
         super().__init__('Перемещение надписи.')
         self._label_model = label_model
@@ -20,11 +20,11 @@ class MoveLabelCommand(QUndoCommand):
         self._new_pos_x = new_pos_x
         self._new_pos_y = new_pos_y
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._label_model.set_pos(self._new_pos_x, self._new_pos_y)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._label_model.set_pos(self._last_pos_x, self._last_pos_y)
 
@@ -41,7 +41,7 @@ class MoveLabelCommand(QUndoCommand):
 
 
 class ChangeLabelTextAttributesCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, label_model: 'LabelModel', new_text: str, new_font_type: str, new_font_size: int,
                  new_font_bold: bool, new_font_italic: bool, new_font_underline: bool, new_font_color: str,
                  new_y: float, new_height: float):
@@ -66,13 +66,13 @@ class ChangeLabelTextAttributesCommand(QUndoCommand):
         self._new_y = new_y
         self._new_height = new_height
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._label_model.set_text_attributes(self._new_text, self._new_font_type, self._new_font_size,
                                               self._new_font_bold, self._new_font_italic, self._new_font_underline,
                                               self._new_font_color, self._new_y, self._new_height)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._label_model.set_text_attributes(self._last_text, self._last_font_type, self._last_font_size,
                                               self._last_font_bold, self._last_font_italic, self._last_font_underline,
@@ -96,7 +96,7 @@ class ChangeLabelTextAttributesCommand(QUndoCommand):
 
 
 class ChangeLabelSizeCommand(QUndoCommand):
-    @log_method_decorator()
+    @log_method()
     def __init__(self, label_model: 'LabelModel', new_x: float, new_y: float, new_width: float, new_height: float):
         super().__init__('Изменение размеров надписи.')
         self._label_model = label_model
@@ -109,11 +109,11 @@ class ChangeLabelSizeCommand(QUndoCommand):
         self._new_width = new_width
         self._new_height = new_height
 
-    @log_method_decorator()
+    @log_method()
     def redo(self) -> None:
         self._label_model.set_size(self._new_pos_x, self._new_pos_y, self._new_width, self._new_height)
 
-    @log_method_decorator()
+    @log_method()
     def undo(self) -> None:
         self._label_model.set_size(self._last_pos_x, self._last_pos_y, self._last_width, self._last_height)
 

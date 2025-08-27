@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import Qt
 
-from Core import log_method_decorator, logger
+from Core import log_method, logger
 from Core.Enums import StorageType, AppTheme, TeamType
 from Views.Dialog_windows import DialogInfo, DialogAbout, DialogNewPlaybook, DialogOpenPlaybook, DialogProgressBar,\
     DialogSaveChangedPlaybook
@@ -23,7 +23,7 @@ __all__ = ('MainWindowPresenter', )
 
 
 class MainWindowPresenter:
-    @log_method_decorator()
+    @log_method()
     def __init__(self):
         self._model: Optional['MainWindowModel'] = None
         self._view: Optional['PlayCreatorApp'] = None
@@ -32,7 +32,7 @@ class MainWindowPresenter:
         self._deletion_observer: Optional['DeletionObserver'] = None
         self._playbook_manager = PlaybookManager()
 
-    @log_method_decorator()
+    @log_method()
     def set_model_and_view(self, model: 'MainWindowModel', view: 'PlayCreatorApp') -> None:
         self._model = model
         self._connect_model_signals(model)
@@ -40,12 +40,12 @@ class MainWindowPresenter:
         self._connect_view_signals(view)
         self._set_initial_window_state()
 
-    @log_method_decorator()
+    @log_method()
     def _connect_model_signals(self, model: 'MainWindowModel') -> None:
         model.modelChanged.connect(self._update_window)
         model.playbookInstalled.connect(self._install_playbook)
 
-    @log_method_decorator()
+    @log_method()
     def _connect_view_signals(self, view: 'PlayCreatorApp') -> None:
         view.graphics_view.viewPointChanged.connect(self._transfer_to_playbook_presenter_view_point_changed)
         view.graphics_view.zoomChanged.connect(self._transfer_to_playbook_presenter_zoom_changed)
@@ -97,47 +97,47 @@ class MainWindowPresenter:
                                             self._model.show_remove_scheme_dialog, self._model.show_close_app_dialog,
                                             self._model.show_save_changed_playbook_dialog)
 
-    @log_method_decorator()
+    @log_method()
     def handle_move(self, x: int, y: int) -> None:
         self._model.x, self._model.y = x, y
 
-    @log_method_decorator()
+    @log_method()
     def handle_resize(self, width: int, height: int) -> None:
         self._model.width, self._model.height = width, height
 
-    @log_method_decorator()
+    @log_method()
     def handle_maximized_changed(self, is_maximized: bool) -> None:
         self._model.is_maximized = is_maximized
 
-    @log_method_decorator()
+    @log_method()
     def _handle_tool_bar_area_changed(self, tool_bar_area: 'Qt.ToolBarArea') -> None:
         self._model.tool_bar_area = tool_bar_area
 
-    @log_method_decorator()
+    @log_method()
     def _handle_dark_theme(self) -> None:
         self._model.theme = AppTheme.DARK
 
-    @log_method_decorator()
+    @log_method()
     def _handle_light_theme(self) -> None:
         self._model.theme = AppTheme.LIGHT
 
-    @log_method_decorator()
+    @log_method()
     def _handle_tool_bar_visible(self, visible: bool) -> None:
         self._model.tool_bar_visible = visible
 
-    @log_method_decorator()
+    @log_method()
     def _handle_show_remove_scheme_dialog(self, checked: bool) -> None:
         self._model.show_remove_scheme_dialog = checked
 
-    @log_method_decorator()
+    @log_method()
     def _handle_show_close_app_dialog(self, checked: bool) -> None:
         self._model.show_close_app_dialog = checked
 
-    @log_method_decorator()
+    @log_method()
     def _handle_show_save_changed_playbook_dialog(self, checked: bool) -> None:
         self._model.show_save_changed_playbook_dialog = checked
 
-    @log_method_decorator()
+    @log_method()
     def _handle_presentation_mode(self, checked: bool) -> None:
         self._model.presentation_mode = checked
 
@@ -146,7 +146,7 @@ class MainWindowPresenter:
                                  model.show_remove_scheme_dialog, model.show_close_app_dialog,
                                  model.show_save_changed_playbook_dialog)
 
-    @log_method_decorator()
+    @log_method()
     def _handle_about(self) -> None:
         dialog = DialogAbout(self._model.version, self._model.theme, parent=self._view)
         dialog.exec()
@@ -164,7 +164,7 @@ class MainWindowPresenter:
                     if dialog_save_playbook.check_box_save_remote.checkState() == Qt.CheckState.Checked:
                         print('Сохранить на сервере')
 
-    @log_method_decorator()
+    @log_method()
     def handle_close_app(self) -> bool:
         self._ask_save_changed_playbook()
         if self._model.show_close_app_dialog:
@@ -179,7 +179,7 @@ class MainWindowPresenter:
         self._model.save_window_state()
         return True
 
-    @log_method_decorator()
+    @log_method()
     def _handle_create_new_playbook(self) -> None:
         self._ask_save_changed_playbook()
         dialog_new_playbook = DialogNewPlaybook(self._view)
@@ -202,7 +202,7 @@ class MainWindowPresenter:
         self._playbook_presenter = playbook_presenter
         self._view.set_playbook(playbook_model.name, playbook_model.playbook_type, playbook_model.info)
 
-    @log_method_decorator()
+    @log_method()
     def _handle_open_playbook_local(self) -> None:
         self._ask_save_changed_playbook()
         local_playbooks_info = self._playbook_manager.get_all_obj_info()

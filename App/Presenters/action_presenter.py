@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Callable, Union
 
-from Core import log_method_decorator, logger
+from Core import log_method, logger
 from Commands import AddOptionalActionCommand
 from .Mappers import ActionPartsMapper
 
@@ -15,7 +15,7 @@ __all__ = ('ActionPresenter', )
 
 
 class ActionPresenter:
-    @log_method_decorator()
+    @log_method()
     def __init__(self, playbook_items_fabric: 'PlaybookModelsFabric', deletion_observer: 'DeletionObserver',
                  execute_command_func: Callable, action_model: 'ActionModel', action_view: 'Graphics.ActionView'):
         self._model = action_model
@@ -26,13 +26,13 @@ class ActionPresenter:
         self._action_parts_mappers: dict['UUID', 'ActionPartsMapper'] = {}
         self._connect_signals()
 
-    @log_method_decorator()
+    @log_method()
     def _connect_signals(self) -> None:
         self._action_view.optionalActionPainted.connect(self._handle_place_optional_action)
         self._model.actionPartsAdded.connect(self._place_optional_action_items)
         self._model.actionPartsRemoved.connect(self._remove_optional_action_items)
 
-    @log_method_decorator()
+    @log_method()
     def _handle_place_optional_action(self, action_data) -> None:
         action_line_models_lst = [
             self._playbook_items_fabric.create_action_line_model(parent=self._model, **action_line_data)
