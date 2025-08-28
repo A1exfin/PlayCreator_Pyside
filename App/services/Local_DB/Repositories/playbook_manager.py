@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Optional, Union
 from sqlalchemy import text, bindparam, inspect
 from sqlalchemy.orm import selectinload
 
+from Core.logger_settings import log_method, logger
 from ..mapper import PlaybookMapperLocalDB
 from ..Models import PlaybookORM, SchemeORM, FigureORM, LabelORM, PencilLineORM, PlayerORM, ActionORM, \
     ActionLineORM, FinalActionORM
@@ -21,6 +22,7 @@ class PlaybookManager(BaseManager):
         super().__init__()
         self._playbook_mapper = PlaybookMapperLocalDB()
 
+    @log_method()
     def save(self, playbook_model: 'PlaybookModel', is_new_playbook: bool = False,
              set_progress_func: Optional[callable] = None) -> 'PlaybookORM':
         if playbook_model.id_local_db and not is_new_playbook:
@@ -110,6 +112,7 @@ class PlaybookManager(BaseManager):
              for final_action_dto in action_dto.final_actions]
         )
 
+    @log_method()
     def _update(self, playbook_model: 'PlaybookModel', set_progress_func: Optional[callable] = None) -> 'PlaybookORM':  # Тут ещё должна быть очистка списков удалённых схем (deleted_schemes) и тд
         with self.start_transaction():
             playbook_id = playbook_model.id_local_db
@@ -212,6 +215,7 @@ class PlaybookManager(BaseManager):
             if set_progress_func: set_progress_func(95)
             return playbook_from_db
 
+    @log_method()
     def _delete_playbook_items_by_ids(self, deleted_actions: list[int], deleted_players: list[int],
                                       deleted_figures: list[int], deleted_labels: list[int],
                                       deleted_pencil_lines: list[int], deleted_schemes: list[int]) -> None:
@@ -239,6 +243,7 @@ class PlaybookManager(BaseManager):
                 bindparam('ids', expanding=True))
             self.session.execute(delete_schemes_query, {'ids': tuple(deleted_schemes)})
 
+    @log_method()
     def _update_orm_obj(self, dto_obj: Union['PlaybookOutDTO', 'SchemeOutDTO', 'FigureOutDTO', 'LabelOutDTO', 'PlayerOutDTO'],
                         orm_obj: Union['PlaybookORM', 'SchemeORM', 'FigureORM', 'LabelORM', 'PlayerORM']) -> None:
         dto_data = dto_obj.model_dump()
@@ -267,17 +272,20 @@ class PlaybookManager(BaseManager):
             #              ).get(playbook_id)
             # return playbook_orm
 
+    @log_method()
     def get_playbook_dto_by_id(self, playbook_id: int) -> Optional['PlaybookInputDTO']:
         playbook_orm = self._get_by_id(playbook_id)
         if playbook_orm:
             return self._playbook_mapper.orm_to_dto(playbook_orm)
         return None
 
+    @log_method()
     def delete_by_id(self, obj_id: int) -> None:
         with self.start_transaction():
             query = text('DELETE FROM playbooks WHERE id = :id').bindparams(id=obj_id)
             self.session.execute(query)
 
+    @log_method()
     def get_all_obj_info(self) -> list[tuple]:
         with self.start_transaction():
             query = text('SELECT id, name, playbook_type, updated_at, created_at FROM playbooks')

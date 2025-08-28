@@ -2,14 +2,14 @@ from typing import TYPE_CHECKING, Union, Any, Generic
 
 from abc import abstractmethod
 
+from Core.logger_settings import log_method, logger
 from Core.Enums import StorageType
 from View_Models import PlaybookModel
-from .DTO.output_DTO import PlaybookOutDTO
+from .DTO import PlaybookOutDTO, PlaybookInputDTO
 from Services.Common.validators_DTO import validate_playbook_type
-from Services.Local_DB.Models import PlaybookORM, SchemeORM, FigureORM, LabelORM, PencilLineORM, PlayerORM, ActionORM, \
+from .Models import PlaybookORM, SchemeORM, FigureORM, LabelORM, PencilLineORM, PlayerORM, ActionORM, \
     ActionLineORM, FinalActionORM
 from Services.Common.base_mapper import T, M, O
-from .DTO.input_DTO import PlaybookInputDTO
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -106,19 +106,21 @@ class PlaybookMapperLocalDB():
         validate_playbook_type(playbook_type)
         return PlaybookOutDTO.model_validate(playbook_dict, context={"playbook_type": playbook_type})
 
+    @log_method()
     def get_playbook_dto(self, playbook_model: 'PlaybookModel', is_new_playbook: bool) -> 'PlaybookOutDTO':
         '''Получение провалидированного DTO-объекта для дальнейшего преобразования его в ORM-объект локальной БД
          или для сериализации и отправки на API'''
         return self._playbook_model_to_dto(is_new_playbook, playbook_model)
 
-    def _create_playbook_orm_with_nested_items(self, is_new_playbook: bool, playbook: 'PlaybookModel') -> 'PlaybookORM':
+    def _create_playbook_orm_with_nested_items(self, is_new_playbook: bool, playbook: 'PlaybookModel') -> 'PlaybookORM':  # НЕ ИСПОЛЬЗУЕТСЯ
         playbook_dto = self.get_playbook_dto(playbook, is_new_playbook)
         playbook_orm = PlaybookORM(**playbook_dto.model_dump(exclude={'schemes'}))
         for scheme_dto in playbook_dto.schemes:
             playbook_orm.schemes.append(self.create_scheme_orm_with_nested_items(scheme_dto))
         return playbook_orm
 
-    def create_scheme_orm_with_nested_items(self, scheme_dto: 'SchemeOutDTO') -> 'SchemeORM':
+    @log_method()
+    def create_scheme_orm_with_nested_items(self, scheme_dto: 'SchemeOutDTO') -> 'SchemeORM':  # НЕ ИСПОЛЬЗУЕТСЯ
         scheme_orm = SchemeORM(**scheme_dto.model_dump(exclude={'figures', 'labels', 'pencil_lines', 'players'}))
         scheme_orm.figures.extend(FigureORM(**figure.model_dump()) for figure in scheme_dto.figures)
         scheme_orm.labels.extend(LabelORM(**label.model_dump()) for label in scheme_dto.labels)
@@ -127,62 +129,75 @@ class PlaybookMapperLocalDB():
             scheme_orm.players.append(self.create_player_orm_with_nested_items(player_dto))
         return scheme_orm
 
-    def create_player_orm_with_nested_items(self, player_dto: 'PlayerOutDTO') -> 'PlayerORM':
+    @log_method()
+    def create_player_orm_with_nested_items(self, player_dto: 'PlayerOutDTO') -> 'PlayerORM':  # НЕ ИСПОЛЬЗУЕТСЯ
         player_orm = PlayerORM(**player_dto.model_dump(exclude={'actions'}))
         for action_dto in player_dto.actions:
             player_orm.actions.append(self.create_action_orm_with_nested_items(action_dto))
         return player_orm
 
-    def create_action_orm_with_nested_items(self, action_dto: 'ActionOutDTO') -> 'ActionORM':
+    @log_method()
+    def create_action_orm_with_nested_items(self, action_dto: 'ActionOutDTO') -> 'ActionORM':  # НЕ ИСПОЛЬЗУЕТСЯ
         action_orm = ActionORM(**action_dto.model_dump(exclude={'action_lines', 'final_actions'}))
         action_orm.action_lines.extend(ActionLineORM(**line.model_dump()) for line in action_dto.action_lines)
         action_orm.final_actions.extend(FinalActionORM(**final_action.model_dump()) for final_action in action_dto.final_actions)
         return action_orm
 
+    @log_method()
+    def get_playbook_orm(self, playbook_model: 'PlaybookModel', is_new_playbook: bool) -> 'PlaybookORM':  # НЕ ИСПОЛЬЗУЕТСЯ
+        '''Получение готового к сохранению в локальной БД ORM-объекта плейбука со всеми вложенными объектами схем и тд.'''
+        return self._create_playbook_orm_with_nested_items(is_new_playbook, playbook_model)
+
+    @log_method()
     def create_playbook_orm(self, playbook_dto: 'PlaybookOutDTO') -> 'PlaybookORM':
         return PlaybookORM(**playbook_dto.model_dump(exclude={'schemes'}))
 
+    @log_method()
     def create_scheme_orm(self, scheme_dto: 'SchemeOutDTO', playbook_orm: 'PlaybookORM') -> 'SchemeORM':
         return SchemeORM(**scheme_dto.model_dump(exclude={'figures', 'labels', 'pencil_lines', 'players'}),
                          playbook=playbook_orm, playbook_id=playbook_orm)
 
+    @log_method()
     def create_player_orm(self, player_dto: 'PlayerOutDTO', scheme_orm: 'SchemeORM') -> 'PlayerORM':
         return PlayerORM(**player_dto.model_dump(exclude={'actions'}), scheme=scheme_orm, scheme_id=scheme_orm.id)
 
+    @log_method()
     def create_action_orm(self, action_dto: 'ActionOutDTO', player_orm: 'PlayerORM') -> 'ActionORM':
         return ActionORM(**action_dto.model_dump(exclude={'action_lines', 'final_actions'}),
                          player=player_orm, player_id=player_orm.id)
 
+    @log_method()
     def create_action_line_orm(self, action_line_dto: 'ActionLineOutDTO', action_orm: 'ActionORM') -> 'ActionLineORM':
         action_line_orm = ActionLineORM(**action_line_dto.model_dump())
         action_line_orm.action_id = action_orm.id
         return action_line_orm
 
+    @log_method()
     def create_final_action_orm(self, final_action_dto: 'FinalActionOutDTO', action_orm: 'ActionORM') -> 'FinalActionORM':
         final_action_orm = FinalActionORM(**final_action_dto.model_dump())
         final_action_orm.action_id = action_orm.id
         return final_action_orm
 
+    @log_method()
     def create_figure_orm(self, figure_dto: 'FigureOutDTO', scheme_orm: 'SchemeORM') -> 'FigureORM':
         figure_orm = FigureORM(**figure_dto.model_dump())
         figure_orm.scheme_id = scheme_orm.id
         return figure_orm
 
+    @log_method()
     def create_label_orm(self, label_dto: 'LabelOutDTO', scheme_orm: 'SchemeORM') -> 'LabelORM':
         label_orm = LabelORM(**label_dto.model_dump())
         label_orm.scheme_id = scheme_orm.id
         return label_orm
 
+    @log_method()
     def create_pencil_line_orm(self, pencil_line_dto: 'PencilLineOutDTO', scheme_orm: 'SchemeORM') -> 'PencilLineORM':
         pencil_line_orm = PencilLineORM(**pencil_line_dto.model_dump())
         pencil_line_orm.scheme_id = scheme_orm.id
         return pencil_line_orm
 
-    def get_playbook_orm(self, playbook_model: 'PlaybookModel', is_new_playbook: bool) -> 'PlaybookORM':
-        '''Получение готового к сохранению в локальной БД ORM-объекта плейбука со всеми вложенными объектами схем и тд.'''
-        return self._create_playbook_orm_with_nested_items(is_new_playbook, playbook_model)
-
-    def update_app_model_ids_from_db(self, playbook_orm: 'PlaybookORM') -> None:
+    @log_method()
+    def update_app_model_ids_from_db(self, playbook_orm: 'PlaybookORM') -> dict:
         '''Обновление id_local_db (id из локальной БД) для объектов приложения.
          ДОЛЖЕН ВЫЗЫВАТЬСЯ ПОСЛЕ СОХРАНЕНИЯ ПЛЕЙБУКА В ЛОКАЛЬНУЮ БД'''
         self._update_playbook_model(playbook_orm)
@@ -200,8 +215,7 @@ class PlaybookMapperLocalDB():
                     self._update_model_id(action_orm)
                     # for action_part_orm in chain(action_orm.action_lines, action_orm.final_actions):
                     #     self._update_model_id(action_part_orm)
-
-        # print(f'{self._id_mapping = }')
+        return self._id_mapping
 
     def _update_model_id(self, orm_obj: Union['SchemeORM', 'FigureORM', 'LabelORM', 'PencilLineORM',
                                               'PlayerORM', 'ActionORM', 'ActionLineORM', 'FinalActionORM']) -> None:
@@ -213,10 +227,8 @@ class PlaybookMapperLocalDB():
         playbook_model.id_local_db = orm_obj.id
         playbook_model.clear_deleted_item_ids(StorageType.LOCAL_DB)
 
+    @log_method()
     def orm_to_dto(self, playbook_orm: 'PlaybookORM') -> 'PlaybookInputDTO':
         playbook_dto = PlaybookInputDTO.model_validate(playbook_orm)
         return playbook_dto
-
-    def _dto_to_app_obj(self, playbook: 'PlaybookOutDTO') -> 'PlaybookModel':
-        pass
 

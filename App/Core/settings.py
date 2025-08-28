@@ -23,4 +23,5 @@ ZOOM_RANGE = zoom_range(0, 200)
 LINE_THICKNESS_RANGE = thickness_range(2, 6)
 SCENE_LABELS_FONT_SIZE_RANGE = font_size_range(8, 36)
 
+LOGIN_API_URL: Final = ''
 

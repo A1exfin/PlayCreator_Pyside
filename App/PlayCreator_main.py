@@ -39,9 +39,9 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
     placeAdditionalPlayerClicked = Signal()
     secondTeamSymbolChanged = Signal(object)  # SymbolType
 
+    @log_method()
     def __init__(self, main_presenter: 'MainWindowPresenter'):
         super().__init__()
-        logger.info('Инициализация главного окна PlayCreatorApp')
         # self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.setupUi(self)
         self.main_presenter = main_presenter
@@ -65,37 +65,91 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
         mode_group.setExclusive(True)
         for mode in Mode:
             button = getattr(self, f'pushButton_{mode.name.lower()}')
-            button.pressed.connect(lambda mode=mode: self.selected_scene.set_config('mode', mode) if self.selected_scene else ...)
+            button.pressed.connect(
+                lambda m=mode: self.selected_scene.set_config('mode', m)
+                if self.selected_scene else ...
+            )
             mode_group.addButton(button)
         for i, color in enumerate(Config.DEFAULT_COLORS):
             button = getattr(self, f'pushButton_color_{i}')
             button.setStyleSheet(f'background-color: {color};')
-            button.pressed.connect(lambda color=color: self._set_color(color))
+            button.pressed.connect(lambda c=color: self._set_color(c))
 
-        self.comboBox_line_thickness.addItems(list(map(str, range(LINE_THICKNESS_RANGE.min, LINE_THICKNESS_RANGE.max + 1, 1))))
-        self.comboBox_font_size.addItems(list(map(str, range(SCENE_LABELS_FONT_SIZE_RANGE.min, SCENE_LABELS_FONT_SIZE_RANGE.max + 1, 1))))
+        self.comboBox_line_thickness.addItems(
+            list(map(str, range(LINE_THICKNESS_RANGE.min, LINE_THICKNESS_RANGE.max + 1, 1)))
+        )
+        self.comboBox_font_size.addItems(
+            list(map(str, range(SCENE_LABELS_FONT_SIZE_RANGE.min, SCENE_LABELS_FONT_SIZE_RANGE.max + 1, 1)))
+        )
 
-        self.toolBar_main.topLevelChanged.connect(lambda topLevel: self.toolBarAreaChanged.emit(self.toolBarArea(self.toolBar_main)) if not topLevel else ...)
-        self.lineEdit_yards.textChanged.connect(lambda text: getattr(self, f'_check_max_yards_{self.playbook_type.name}'.lower())(text))
-        self.pushButton_color_current.clicked.connect(self._get_user_color)
+        self.toolBar_main.topLevelChanged.connect(
+            lambda top_level: self.toolBarAreaChanged.emit(self.toolBarArea(self.toolBar_main))
+            if not top_level else ...
+        )
+        self.lineEdit_yards.textChanged.connect(
+            lambda text: getattr(self, f'_check_max_yards_{self.playbook_type.name}'.lower())(text)
+        )
+        self.pushButton_color_current.clicked.connect(
+            self._get_user_color
+        )
 
-        self.listWidget_schemes.itemDoubleClicked.connect(lambda scheme_widget: self.schemeItemDoubleClicked.emit(scheme_widget.model_uuid))
-        self.pushButton_remove_scheme.clicked.connect(lambda: self.removeSchemeBtnClicked.emit(self.listWidget_schemes.currentItem().model_uuid, self.listWidget_schemes.currentItem().text()))
-        self.pushButton_move_up_scheme.clicked.connect(lambda: self.moveUpSchemeBtnClicked.emit(self.listWidget_schemes.currentItem().model_uuid, self.listWidget_schemes.currentRow()))
-        self.pushButton_move_down_scheme.clicked.connect(lambda: self.moveDownSchemeBtnClicked.emit(self.listWidget_schemes.currentItem().model_uuid, self.listWidget_schemes.currentRow()))
-        self.pushButton_edit_scheme.clicked.connect(lambda: self.editSchemeClicked.emit(self.listWidget_schemes.currentItem().model_uuid))
+        self.listWidget_schemes.itemDoubleClicked.connect(
+            lambda scheme_widget: self.schemeItemDoubleClicked.emit(scheme_widget.model_uuid)
+        )
+        self.pushButton_remove_scheme.clicked.connect(
+            lambda: self.removeSchemeBtnClicked.emit(self.listWidget_schemes.currentItem().model_uuid, self.listWidget_schemes.currentItem().text())
+        )
+        self.pushButton_move_up_scheme.clicked.connect(
+            lambda: self.moveUpSchemeBtnClicked.emit(
+                self.listWidget_schemes.currentItem().model_uuid, self.listWidget_schemes.currentRow()
+            )
+        )
+        self.pushButton_move_down_scheme.clicked.connect(
+            lambda: self.moveDownSchemeBtnClicked.emit(
+                self.listWidget_schemes.currentItem().model_uuid, self.listWidget_schemes.currentRow()
+            )
+        )
+        self.pushButton_edit_scheme.clicked.connect(
+            lambda: self.editSchemeClicked.emit(self.listWidget_schemes.currentItem().model_uuid)
+        )
 
-        self.pushButton_place_first_team.clicked.connect(self._on_place_first_team_btn_click)
-        self.pushButton_place_second_team.clicked.connect(lambda: self.placeSecondTeamClicked.emit(TeamType(self.comboBox_team_type.currentIndex() + 4)))
-        self.pushButton_add_additional_off_player.clicked.connect(lambda: self.placeAdditionalPlayerClicked.emit())
-        self.comboBox_second_players_symbol.currentIndexChanged.connect(lambda: self.secondTeamSymbolChanged.emit(SymbolType(self.comboBox_second_players_symbol.currentIndex())))
+        self.pushButton_place_first_team.clicked.connect(
+            self._on_place_first_team_btn_click
+        )
+        self.pushButton_place_second_team.clicked.connect(
+            lambda: self.placeSecondTeamClicked.emit(TeamType(self.comboBox_team_type.currentIndex() + 4))
+        )
+        self.pushButton_add_additional_off_player.clicked.connect(
+            lambda: self.placeAdditionalPlayerClicked.emit()
+        )
+        self.comboBox_second_players_symbol.currentIndexChanged.connect(
+            lambda: self.secondTeamSymbolChanged.emit(SymbolType(self.comboBox_second_players_symbol.currentIndex()))
+        )
 
-        self.comboBox_line_thickness.currentTextChanged.connect(lambda thickness: self.selected_scene.set_config('line_thickness', int(thickness)) if self.selected_scene else ...)
-        self.comboBox_font_type.currentFontChanged.connect(lambda font: self._combobox_font_changed(self.selected_scene, font.family()) if self.selected_scene else ...)
-        self.comboBox_font_size.currentTextChanged.connect(lambda font_size: self._font_size_changed(self.selected_scene, font_size) if self.selected_scene else ...)
-        self.pushButton_font_bold.toggled.connect(lambda bold_condition: self._bold_changed(self.selected_scene, bold_condition) if self.selected_scene else ...)
-        self.pushButton_font_italic.toggled.connect(lambda italic_condition: self._italic_changed(self.selected_scene, italic_condition) if self.selected_scene else ...)
-        self.pushButton_font_underline.toggled.connect(lambda underline_condition: self._underline_changed(self.selected_scene, underline_condition) if self.selected_scene else ...)
+        self.comboBox_line_thickness.currentTextChanged.connect(
+            lambda thickness: self.selected_scene.set_config('line_thickness', int(thickness))
+            if self.selected_scene else ...
+        )
+        self.comboBox_font_type.currentFontChanged.connect(
+            lambda font: self._combobox_font_changed(self.selected_scene, font.family())
+            if self.selected_scene else ...
+        )
+        self.comboBox_font_size.currentTextChanged.connect(
+            lambda font_size: self._font_size_changed(self.selected_scene, font_size)
+            if self.selected_scene else ...
+        )
+        self.pushButton_font_bold.toggled.connect(
+            lambda bold_condition: self._bold_changed(self.selected_scene, bold_condition)
+            if self.selected_scene else ...
+        )
+        self.pushButton_font_italic.toggled.connect(
+            lambda italic_condition: self._italic_changed(self.selected_scene, italic_condition)
+            if self.selected_scene else ...
+        )
+        self.pushButton_font_underline.toggled.connect(
+            lambda underline_condition: self._underline_changed(self.selected_scene, underline_condition)
+            if self.selected_scene else ...
+        )
 
         self.set_initial_gui_state()
 
@@ -103,8 +157,6 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
         self.action_user_login.triggered.connect(self.user_log_in)
         self.action_user_logout.triggered.connect(self.user_log_out)
-        # self.action_open_playbook_offline.triggered.connect(self.open_playbook_offline)
-
 
         if Core.DEBUG:
             self.debug_btn.clicked.connect(self._debug_method)  ############################## тестовая функция
@@ -114,7 +166,6 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
         # self.user_log_in()    ##########################  Установить неактивным создание нового плейбука
         # self.sign_up()
-        logger.debug('Инициализация UI компонентов завершена')
 
     def _debug_method(self):
         ...
