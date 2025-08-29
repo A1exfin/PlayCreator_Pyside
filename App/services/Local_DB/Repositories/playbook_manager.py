@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 
 from Core.logger_settings import log_method, logger
 from ..mapper import PlaybookMapperLocalDB
-from ..Models import PlaybookORM, SchemeORM, FigureORM, LabelORM, PencilLineORM, PlayerORM, ActionORM, \
+from ..DB_Models import PlaybookORM, SchemeORM, FigureORM, LabelORM, PencilLineORM, PlayerORM, ActionORM, \
     ActionLineORM, FinalActionORM
 from .base_manager import BaseManager
 
@@ -113,7 +113,7 @@ class PlaybookManager(BaseManager):
         )
 
     @log_method()
-    def _update(self, playbook_model: 'PlaybookModel', set_progress_func: Optional[callable] = None) -> 'PlaybookORM':  # Тут ещё должна быть очистка списков удалённых схем (deleted_schemes) и тд
+    def _update(self, playbook_model: 'PlaybookModel', set_progress_func: Optional[callable] = None) -> 'PlaybookORM':
         with self.start_transaction():
             playbook_id = playbook_model.id_local_db
             playbook_dto = self._playbook_mapper.get_playbook_dto(playbook_model, is_new_playbook=False)

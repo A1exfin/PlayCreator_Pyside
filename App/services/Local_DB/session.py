@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.engine import Engine
 
 from Core import DB_URL
-from .Models.base import Base
+from .DB_Models.base import Base
 
 __all__ = ('session_factory', )
 

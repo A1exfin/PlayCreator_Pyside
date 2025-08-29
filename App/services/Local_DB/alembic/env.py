@@ -5,7 +5,7 @@ from sqlalchemy import pool
 
 from alembic import context
 from Services.Local_DB import Base###################################################
-from Services.Local_DB.Models import *
+from Services.Local_DB.DB_Models import *
 
 config = context.config
 

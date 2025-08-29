@@ -7,7 +7,7 @@ from Core.Enums import StorageType
 from View_Models import PlaybookModel
 from .DTO import PlaybookOutDTO, PlaybookInputDTO
 from Services.Common.validators_DTO import validate_playbook_type
-from .Models import PlaybookORM, SchemeORM, FigureORM, LabelORM, PencilLineORM, PlayerORM, ActionORM, \
+from .DB_Models import PlaybookORM, SchemeORM, FigureORM, LabelORM, PencilLineORM, PlayerORM, ActionORM, \
     ActionLineORM, FinalActionORM
 from Services.Common.base_mapper import T, M, O
 
