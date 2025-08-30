@@ -114,8 +114,9 @@ class DialogOpenPlaybook(QDialog):
             self.accept()
 
     def get_data(self) -> 'open_playbook_data':
+        selected_playbook_id = int(self._table_playbooks.item(self._table_playbooks.currentRow(), 0).text()) if self._table_playbooks.item(self._table_playbooks.currentRow(), 0) else None
         return open_playbook_data(
-            int(self._table_playbooks.item(self._table_playbooks.currentRow(), 0).text()),
+            selected_playbook_id,
             tuple(self._deleted_playbooks_ids)
         )
 

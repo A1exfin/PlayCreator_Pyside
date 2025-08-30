@@ -1,7 +1,10 @@
 from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import Qt
+import keyring
+from cryptography.fernet import Fernet
 
+import Core
 from Core import log_method, logger
 from Core.Enums import StorageType, AppTheme, TeamType
 from Views.Dialog_windows import DialogInfo, DialogAbout, DialogNewPlaybook, DialogOpenPlaybook, DialogProgressBar,\
@@ -9,7 +12,7 @@ from Views.Dialog_windows import DialogInfo, DialogAbout, DialogNewPlaybook, Dia
 from View_Models import PlaybookModel
 from .playbook_presenter import PlaybookPresenter
 from View_Models.Other import PlaybookModelsFabric, DeletionObserver
-from Services.Local_DB import PlaybookManager
+from Services.Local_DB import PlaybookManager, AuthTokenManager
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -30,7 +33,15 @@ class MainWindowPresenter:
         self._playbook_presenter: Optional['PlaybookPresenter'] = None
         self._playbook_items_fabric: Optional['PlaybookModelsFabric'] = None
         self._deletion_observer: Optional['DeletionObserver'] = None
+        self._token_manager = AuthTokenManager()
         self._playbook_manager = PlaybookManager()
+        # original_token = "1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9532"
+        # self._token_manager.save_token(original_token)
+        # token = self._token_manager.get_token()
+        # print(f'{self._token_manager.check_token() = }')
+        # print(f'{original_token = }')
+        # print(f'{token = }')
+        # print(f'{token == original_token = }')
 
     @log_method()
     def set_model_and_view(self, model: 'MainWindowModel', view: 'PlayCreatorApp') -> None:
@@ -217,7 +228,8 @@ class MainWindowPresenter:
             try:
                 playbook_dto = self._playbook_manager.get_playbook_dto_by_id(data.selected_playbook_id)
                 if playbook_dto:
-                    first_scheme_uuid = self._parse_playbook_dto_to_models(playbook_dto)
+                    first_scheme_uuid = self._get_first_scheme_uuid(playbook_dto)
+                    self._parse_playbook_dto_to_models(playbook_dto)
                     self._playbook_presenter.transfer_to_scheme_presenter_select_scheme(first_scheme_uuid)
                     self._model.playbook.reset_changed_flag()
                 else:
@@ -233,7 +245,12 @@ class MainWindowPresenter:
             finally:
                 dialog_progress.finish()
 
-    def _parse_playbook_dto_to_models(self, playbook_dto: 'PlaybookInputDTO') -> 'UUID':
+    def _get_first_scheme_uuid(self, playbook_dto: 'PlaybookInputDTO') -> 'UUID':
+        for scheme in playbook_dto.schemes:
+            if scheme.row_index == 0:
+                return scheme.uuid
+
+    def _parse_playbook_dto_to_models(self, playbook_dto: 'PlaybookInputDTO') -> None:
         playbook_model = PlaybookModel(**playbook_dto.model_dump(exclude={'id', 'schemes'}), id_local_db=playbook_dto.id)
         self._model.playbook = playbook_model
         for scheme_dto in playbook_dto.schemes:
@@ -288,7 +305,6 @@ class MainWindowPresenter:
                                                                                parent=action_model)
                          for final_action_dto in action_dto.final_actions]
                     )
-        return first_scheme_uuid
 
     def _transfer_to_playbook_presenter_save_playbook_local(self) -> None:
         self._playbook_presenter.handle_save_playbook_local(self._playbook_manager)
@@ -378,3 +394,4 @@ class MainWindowPresenter:
 
     def _transfer_to_playbook_presenter_save_all_like_picture(self) -> None:
         self._playbook_presenter.handle_save_all_schemes_like_picture()
+
