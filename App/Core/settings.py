@@ -1,6 +1,7 @@
 import os
 from typing import Final
 from collections import namedtuple
+from dataclasses import dataclass
 
 first_team_max_position = namedtuple('FirstTeamPosition', 'football flag')
 thickness_range = namedtuple('Thickness', 'min max')
@@ -25,3 +26,12 @@ SCENE_LABELS_FONT_SIZE_RANGE = font_size_range(8, 36)
 
 LOGIN_API_URL: Final = ''
 
+
+@dataclass(frozen=True)
+class APIEndpoints:
+    domain = 'localhost:8000' if DEBUG else 'playcreator.com'
+    api_base = '/api/desktop'
+    api_version = '/v1'
+    login = f'{domain}{api_base}{api_version}/authlogin/'
+    logout = f'{domain}{api_base}{api_version}/authlogout/'############################
+    playbooks = f'{domain}{api_base}{api_version}/playbooks/'

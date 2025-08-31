@@ -20,6 +20,7 @@ from sqlalchemy.orm import mapped_column
 
 class EnumInt(TypeDecorator, ABC):
     impl = Integer
+    cache_ok = True
 
     def __init__(self, enum_type: 'Enum', *args, **kwargs):
         super().__init__(*args, **kwargs)

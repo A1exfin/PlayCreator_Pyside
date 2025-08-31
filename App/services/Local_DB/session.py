@@ -54,3 +54,4 @@ class LocalDBSessionFactory:
 
 
 session_factory = LocalDBSessionFactory(echo=False)
+
