@@ -29,9 +29,10 @@ LOGIN_API_URL: Final = ''
 
 @dataclass(frozen=True)
 class APIEndpoints:
-    domain = 'localhost:8000' if DEBUG else 'playcreator.com'
-    api_base = '/api/desktop'
-    api_version = '/v1'
-    login = f'{domain}{api_base}{api_version}/authlogin/'
-    logout = f'{domain}{api_base}{api_version}/authlogout/'############################
-    playbooks = f'{domain}{api_base}{api_version}/playbooks/'
+    _domain = 'http://localhost:8000' if DEBUG else 'playcreator.com'
+    _api_base = '/api/desktop'
+    _api_version = '/v1'
+    login = f'{_domain}{_api_base}{_api_version}/auth/token/login/'
+    logout = f'{_domain}{_api_base}{_api_version}/auth/token/logout/'
+    playbooks = f'{_domain}{_api_base}{_api_version}/playbooks/'
+    user_info = f'{_domain}{_api_base}{_api_version}/users/me/'

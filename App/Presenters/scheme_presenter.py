@@ -1,18 +1,19 @@
 from typing import TYPE_CHECKING, Optional, NamedTuple
 
-from PySide6.QtCore import QRect, Qt
+from PySide6.QtCore import QRect, Qt, QBuffer, QByteArray
 from PySide6.QtGui import QUndoStack, QImage, QPainter
 from PySide6.QtWidgets import QFileDialog
 
 import Config
 from Core import log_method, logger
 from Core.settings import UNDO_STACK_LIMIT
-from Commands import PlaceFirstTeamCommand, PlaceSecondTeamCommand, PlaceAdditionalPlayerCommand,\
-    RemoveSecondTeamCommand, RemoveAdditionalOffencePlayerCommand, RemoveAllPlayersCommand,\
-    ChangeSecondTeamSymbolsCommand,\
-    PlaceFigureCommand, RemoveFigureCommand, RemoveAllFiguresCommand,\
-    PlacePencilLinesCommand, RemovePencilLinesCommand,\
-    PlaceLabelCommand, RemoveLabelCommand, RemoveAllLabelsCommand, RemoveAllActionsCommand
+from Commands import (PlaceFirstTeamCommand, PlaceSecondTeamCommand, PlaceAdditionalPlayerCommand,
+                      RemoveAllPlayersCommand, RemoveSecondTeamCommand, RemoveAdditionalOffencePlayerCommand,
+                      ChangeSecondTeamSymbolsCommand,
+                      PlaceFigureCommand, RemoveFigureCommand, RemoveAllFiguresCommand,
+                      PlacePencilLinesCommand, RemovePencilLinesCommand,
+                      PlaceLabelCommand, RemoveLabelCommand, RemoveAllLabelsCommand,
+                      RemoveAllActionsCommand)
 from Views.Graphics import Field
 from Views import SchemeWidget
 from Core.Enums import TeamType
@@ -87,6 +88,9 @@ class SchemePresenter:
         self._scene.labelRemoveClicked.connect(self._handle_remove_label)
         self._model.labelRemoved.connect(self._remove_label_item)
         self._model.allLabelsRemoved.connect(self._remove_all_label_items)
+
+
+        self._view.render_signal.connect(lambda: print(f'{self.render_to_bytes() = }'))
 
     @log_method()
     def _execute_command(self, command: 'QUndoCommand') -> None:
@@ -331,6 +335,19 @@ class SchemePresenter:
         self._scene.render(painter, source=rendering_area)
         img.save(f'{path}')
         painter.end()
+
+    def render_to_bytes(self) -> 'QByteArray':
+        rendering_area = self._get_default_rendering_area()
+        base_width = 1000
+        img = QImage(base_width, int(base_width * rendering_area.height() / rendering_area.width()), QImage.Format_ARGB8565_Premultiplied)
+        painter = QPainter(img)
+        painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform | QPainter.VerticalSubpixelPositioning | QPainter.LosslessImageRendering)
+        self._scene.render(painter, source=rendering_area)
+        painter.end()
+        buffer = QBuffer()
+        buffer.open(QBuffer.OpenModeFlag.ReadWrite)
+        img.save(buffer, 'PNG')
+        return buffer.data()
 
     def _get_user_rendering_area(self) -> 'QRect':
         polygon = self._view.graphics_view.mapToScene(

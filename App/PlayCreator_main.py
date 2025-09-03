@@ -39,6 +39,8 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
     placeAdditionalPlayerClicked = Signal()
     secondTeamSymbolChanged = Signal(object)  # SymbolType
 
+    render_signal = Signal()
+
     @log_method()
     def __init__(self, main_presenter: 'MainWindowPresenter'):
         super().__init__()
@@ -169,6 +171,10 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
     def _debug_method(self):
         ...
+        # import requests
+        # response = requests.post('http://localhost:8000/api/desktop/v1/auth/token/login/', json={'username': 'alexfin', 'password': 'Dgkfvtyb65733'})
+        # print(f'{response.json().get("auth_token") = }')
+        self.render_signal.emit()
 
     def _check_max_yards_football(self, value: str) -> None:
         try:
