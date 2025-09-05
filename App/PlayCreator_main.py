@@ -157,8 +157,8 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
 
 
-        self.action_user_login.triggered.connect(self.user_log_in)
-        self.action_user_logout.triggered.connect(self.user_log_out)
+        # self.action_user_login.triggered.connect(self.user_log_in)
+        # self.action_user_logout.triggered.connect(self.user_log_out)
 
         if Core.DEBUG:
             self.debug_btn.clicked.connect(self._debug_method)  ############################## тестовая функция
@@ -171,10 +171,14 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
     def _debug_method(self):
         ...
+        from Core.settings import WebAppUrls
         # import requests
-        # response = requests.post('http://localhost:8000/api/desktop/v1/auth/token/login/', json={'username': 'alexfin', 'password': 'Dgkfvtyb65733'})
-        # print(f'{response.json().get("auth_token") = }')
-        self.render_signal.emit()
+        # response = requests.post(WebAppUrls.api_login, json={'username': 'alexfin', 'password': 'Dgkfvtyb65733'})
+        # print(f'{response.json() = }')
+        # self.render_signal.emit()
+        from Views.Dialog_windows import DialogLogIn
+        dialog = DialogLogIn(parent=self)
+        dialog.exec()
 
     def _check_max_yards_football(self, value: str) -> None:
         try:
@@ -664,51 +668,51 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
 
 
-    def set_gui_enter_offline(self):
-        self.action_user_login.setEnabled(True)
-        self.action_new_playbook.setEnabled(True)
-        self.action_open_playbook_offline.setEnabled(True)
+    # def set_gui_enter_offline(self):
+    #     self.action_user_login.setEnabled(True)
+    #     self.action_new_playbook.setEnabled(True)
+    #     self.action_open_playbook_offline.setEnabled(True)
+    #
+    # def set_gui_enter_exit_online(self, condition: bool):
+    #     self.action_user_login.setEnabled(not condition)
+    #     self.action_user_logout.setEnabled(condition)
+    #     self.action_open_playbook_online.setEnabled(condition)
+    #     if self.playbook:
+    #         self.action_save_playbook_online.setEnabled(condition)
+    #     self.setWindowTitle(f'PlayCreator - {self.user}') if condition else self.setWindowTitle('PlayCreator')
 
-    def set_gui_enter_exit_online(self, condition: bool):
-        self.action_user_login.setEnabled(not condition)
-        self.action_user_logout.setEnabled(condition)
-        self.action_open_playbook_online.setEnabled(condition)
-        if self.playbook:
-            self.action_save_playbook_online.setEnabled(condition)
-        self.setWindowTitle(f'PlayCreator - {self.user}') if condition else self.setWindowTitle('PlayCreator')
+    # def user_log_in(self, wrong_login_pass=False):
+    #     dialog = DialogLogIn(wrong_login_pass=wrong_login_pass, parent=self)
+    #     dialog.exec()
+    #     result, login, password = dialog.result(), dialog.line_edit_login.text(), dialog.line_edit_password.text()
+    #     if result == 1:
+    #         if login == 'admin' and password == 'admin':
+    #             self.user = login
+    #             self.set_gui_enter_offline()
+    #             self.set_gui_enter_exit_online(True)
+    #         else:
+    #             self.user_log_in(wrong_login_pass=True)
+    #     elif result == 0:
+    #         self.set_gui_enter_offline()
+    #     elif result == 2:
+    #         ...
+    #         # print('Регистрация')
 
-    def user_log_in(self, wrong_login_pass=False):
-        dialog = DialogLogIn(wrong_login_pass=wrong_login_pass, parent=self)
-        dialog.exec()
-        result, login, password = dialog.result(), dialog.line_edit_login.text(), dialog.line_edit_password.text()
-        if result == 1:
-            if login == 'admin' and password == 'admin':
-                self.user = login
-                self.set_gui_enter_offline()
-                self.set_gui_enter_exit_online(True)
-            else:
-                self.user_log_in(wrong_login_pass=True)
-        elif result == 0:
-            self.set_gui_enter_offline()
-        elif result == 2:
-            ...
-            # print('Регистрация')
+    # def user_log_out(self):
+    #     if self.user and self.playbook:
+    #         dialog_save_current_playbook_online = QMessageBox(QMessageBox.Question, 'Сохранение', 'Сохранить текущий плейбук на сервере?', parent=self)
+    #         dialog_save_current_playbook_online.addButton("Да", QMessageBox.AcceptRole)  # результат устанавливается в 0
+    #         dialog_save_current_playbook_online.addButton("Нет", QMessageBox.RejectRole)  # результат устанавливается в 1
+    #         dialog_save_current_playbook_online.exec()
+    #         if not dialog_save_current_playbook_online.result():
+    #             ...
+    #             # print('СОХРАНЕНИЕ НА СЕРВЕРЕ')
+    #     self.user = None
+    #     self.set_gui_enter_exit_online(False)
 
-    def user_log_out(self):
-        if self.user and self.playbook:
-            dialog_save_current_playbook_online = QMessageBox(QMessageBox.Question, 'Сохранение', 'Сохранить текущий плейбук на сервере?', parent=self)
-            dialog_save_current_playbook_online.addButton("Да", QMessageBox.AcceptRole)  # результат устанавливается в 0
-            dialog_save_current_playbook_online.addButton("Нет", QMessageBox.RejectRole)  # результат устанавливается в 1
-            dialog_save_current_playbook_online.exec()
-            if not dialog_save_current_playbook_online.result():
-                ...
-                # print('СОХРАНЕНИЕ НА СЕРВЕРЕ')
-        self.user = None
-        self.set_gui_enter_exit_online(False)
-
-    def sign_up(self):
-        dialog = DialogSignUp(parent=self)
-        dialog.exec()
+    # def sign_up(self):
+    #     dialog = DialogSignUp(parent=self)
+    #     dialog.exec()
 
 
 if __name__ == '__main__':

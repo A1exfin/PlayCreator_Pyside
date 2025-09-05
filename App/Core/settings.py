@@ -24,15 +24,14 @@ ZOOM_RANGE = zoom_range(0, 200)
 LINE_THICKNESS_RANGE = thickness_range(2, 6)
 SCENE_LABELS_FONT_SIZE_RANGE = font_size_range(8, 36)
 
-LOGIN_API_URL: Final = ''
-
 
 @dataclass(frozen=True)
-class APIEndpoints:
-    _domain = 'http://localhost:8000' if DEBUG else 'playcreator.com'
+class WebAppUrls:
+    _domain = 'http://localhost:8000' if DEBUG else 'https://playcreator.com'
     _api_base = '/api/desktop'
     _api_version = '/v1'
-    login = f'{_domain}{_api_base}{_api_version}/auth/token/login/'
-    logout = f'{_domain}{_api_base}{_api_version}/auth/token/logout/'
-    playbooks = f'{_domain}{_api_base}{_api_version}/playbooks/'
-    user_info = f'{_domain}{_api_base}{_api_version}/users/me/'
+    signup = f'{_domain}?modal=signup'
+    api_login = f'{_domain}{_api_base}{_api_version}/auth/token/login/'
+    api_logout = f'{_domain}{_api_base}{_api_version}/auth/token/logout/'
+    api_playbooks = f'{_domain}{_api_base}{_api_version}/playbooks/'
+    api_user_info = f'{_domain}{_api_base}{_api_version}/users/me/'

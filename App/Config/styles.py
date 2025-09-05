@@ -1,10 +1,7 @@
 from typing import Final
 from dataclasses import dataclass
 
-from PySide6.QtCore import QFile
-from PySide6.QtGui import QColor, QIcon, QPixmap
-
-from Core.Enums import Mode
+from PySide6.QtGui import QColor
 
 
 __all__ = ('DEFAULT_COLORS', 'HOVER_SCENE_ITEM_COLOR', 'ERASER_CURSOR_PATH',
