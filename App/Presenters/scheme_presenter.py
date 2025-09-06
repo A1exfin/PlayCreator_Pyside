@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, NamedTuple
+from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import QRect, Qt, QBuffer, QByteArray
 from PySide6.QtGui import QUndoStack, QImage, QPainter
@@ -22,6 +22,7 @@ from .player_presenter import PlayerPresenter
 from .figure_presenter import FigurePresenter
 from .label_presenter import LabelPresenter
 from .Mappers import PlayerMapper, FigureMapper, LabelMapper, PencilLineMapper
+from Services.scheme_renderer import SchemeRenderer
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -30,11 +31,6 @@ if TYPE_CHECKING:
     from PlayCreator_main import PlayCreatorApp
     from View_Models import SchemeModel, PlayerModel, FigureModel, LabelModel, PencilLineModel
     from View_Models.Other import PlaybookModelsFabric, DeletionObserver
-
-
-class SceneYPoints(NamedTuple):
-    top_y: float
-    bot_y: float
 
 
 class SchemePresenter:
@@ -88,9 +84,6 @@ class SchemePresenter:
         self._scene.labelRemoveClicked.connect(self._handle_remove_label)
         self._model.labelRemoved.connect(self._remove_label_item)
         self._model.allLabelsRemoved.connect(self._remove_all_label_items)
-
-
-        self._view.render_signal.connect(lambda: print(f'{self.render_to_bytes() = }'))
 
     @log_method()
     def _execute_command(self, command: 'QUndoCommand') -> None:
@@ -317,94 +310,24 @@ class SchemePresenter:
         self._execute_command(remove_all_actions_command)
 
     @log_method()
-    def handle_save_scheme_like_picture(self) -> None:
-        save_window = QFileDialog(parent=self._view)
-        save_window.setOption(QFileDialog.Option.DontConfirmOverwrite, False)
-        filters = 'JPEG (*.jpg *.jpeg *.jpe *.jfif);; TIFF (*.tif *.tiff);; PNG (*.png)'
-        file_path, _ = save_window.getSaveFileName(self._view, 'Сохранить как изображение', filter=filters, selectedFilter='PNG (*.png)')
-        self.render_picture(file_path, self._get_user_rendering_area())
+    def save_scheme_like_picture(self, path: str, is_user_view_rendering: bool) -> None:
+        scheme_renderer = SchemeRenderer()
+        if is_user_view_rendering:
+            scheme_renderer.render_to_picture(path, self._scene, self._view.graphics_view)
+        else:
+            scheme_renderer.render_to_picture(path, self._scene, None)
 
-    def render_picture(self, path: str, rendering_area: Optional['QRect'] = None) -> None:
-        if not rendering_area:
-            rendering_area = self._get_default_rendering_area()
-        base_width = 1000
-        img = QImage(base_width, int(base_width * rendering_area.height() / rendering_area.width()), QImage.Format_ARGB8565_Premultiplied)
-        img.fill(Qt.white)
-        painter = QPainter(img)
-        painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform | QPainter.VerticalSubpixelPositioning | QPainter.LosslessImageRendering)
-        self._scene.render(painter, source=rendering_area)
-        img.save(f'{path}')
-        painter.end()
 
-    def render_to_bytes(self) -> 'QByteArray':
-        rendering_area = self._get_default_rendering_area()
-        base_width = 1000
-        img = QImage(base_width, int(base_width * rendering_area.height() / rendering_area.width()), QImage.Format_ARGB8565_Premultiplied)
-        painter = QPainter(img)
-        painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform | QPainter.VerticalSubpixelPositioning | QPainter.LosslessImageRendering)
-        self._scene.render(painter, source=rendering_area)
-        painter.end()
-        buffer = QBuffer()
-        buffer.open(QBuffer.OpenModeFlag.ReadWrite)
-        img.save(buffer, 'PNG')
-        return buffer.data()
 
-    def _get_user_rendering_area(self) -> 'QRect':
-        polygon = self._view.graphics_view.mapToScene(
-            QRect(0, 0, self._view.graphics_view.width() - 14, self._view.graphics_view.height() - 13)  # 14 и 13 - отступы из-за скроллбаров
-        )
-        rect = polygon.boundingRect()
-        if rect.x() < 0:
-            rect.setWidth(rect.width() + rect.x())
-            rect.setX(Config.FieldData.border_style.width() / 2)
-        if rect.y() <= 0:
-            rect.setHeight(rect.height() + rect.y())
-            rect.setY(Config.FieldData.border_style.width() / 2)
-        return rect
 
-    def _get_default_rendering_area(self) -> 'QRect':
-        extreme_scene_y_points = self._get_extreme_scene_y_points()
-        if extreme_scene_y_points:
-            return QRect(0, int(extreme_scene_y_points.top_y),
-                         int(self._scene.width()), int(extreme_scene_y_points.bot_y - extreme_scene_y_points.top_y))
-        return QRect(0, 0, int(self._scene.width()), int(self._scene.height()))
 
-    def _get_extreme_scene_y_points(self) -> Optional['SceneYPoints']:
-        top_y, bot_y = float('inf'), - float('inf')
-        for player_item in self._scene.first_team_players:
-            top_y = min(top_y, player_item.y())
-            bot_y = max(bot_y, player_item.y() + player_item.rect.height())
-            for action in player_item.actions:
-                for action_line in action.action_lines:
-                    top_y = min(top_y, action_line.line().y1(), action_line.line().y2())
-                    bot_y = max(bot_y, action_line.line().y1(), action_line.line().y2())
-        for player_item in self._scene.second_team_players:
-            top_y = min(top_y, player_item.y())
-            bot_y = max(bot_y, player_item.y() + player_item.rect.height())
-            for action in player_item.actions:
-                for action_line in action.action_lines:
-                    top_y = min(top_y, action_line.line().y1(), action_line.line().y2())
-                    bot_y = max(bot_y, action_line.line().y1(), action_line.line().y2())
-        if self._scene.additional_player:
-            top_y = min(top_y, self._scene.additional_player.y())
-            bot_y = max(bot_y, self._scene.additional_player.y() + self._scene.additional_player.rect.height())
-            for action in self._scene.additional_player.actions:
-                for action_line in action.action_lines:
-                    top_y = min(top_y, action_line.line().y1(), action_line.line().y2())
-                    bot_y = max(bot_y, action_line.line().y1(), action_line.line().y2())
-        for figure_item in self._scene.figures:
-            top_y = min(top_y, figure_item.y())
-            bot_y = max(bot_y, figure_item.y() + figure_item.rect().height())
-        for label_item in self._scene.labels:
-            top_y = min(top_y, label_item.y())
-            bot_y = max(bot_y, label_item.y() + label_item.rect().height())
-        for pencil_line in self._scene.pencil_lines:
-            top_y = min(top_y, pencil_line.line().y1(), pencil_line.line().y2())
-            bot_y = max(bot_y, pencil_line.line().y1(), pencil_line.line().y2())
-        # Ограничение верхней точки сохраняемой области c отступом от крайнего итема верхней границей сцены
-        top_y = max(top_y - 30, 0)
-        # Ограничение нижней точки сохраняемой области c отступом от крайнего итема нижней границей сцены
-        bot_y = min(bot_y + 30, self._scene.sceneRect().height())
-        if top_y != float('inf') and bot_y != - float('inf'):
-            return SceneYPoints(top_y, bot_y)
-        return None
+
+
+
+
+
+
+
+
+
+

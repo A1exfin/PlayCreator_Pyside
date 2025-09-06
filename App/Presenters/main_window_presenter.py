@@ -390,7 +390,7 @@ class MainWindowPresenter:
         self._playbook_presenter.transfer_to_scheme_presenter_remove_actions_clicked()
 
     def _transfer_to_playbook_presenter_save_like_picture(self) -> None:
-        self._playbook_presenter.transfer_to_scheme_presenter_save_like_picture()
+        self._playbook_presenter.handle_save_selected_scheme_like_picture()
 
     def _transfer_to_playbook_presenter_save_all_like_picture(self) -> None:
         self._playbook_presenter.handle_save_all_schemes_like_picture()

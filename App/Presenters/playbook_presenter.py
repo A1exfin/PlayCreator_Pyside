@@ -97,8 +97,17 @@ class PlaybookPresenter:
         scheme_model = self._scheme_mappers[model_uuid].model
         self._model.move_down_scheme(view_index, scheme_model)
 
+    @log_method()
     def _move_scheme_widget(self, last_index: int, new_index: int) -> None:
         self._view.move_scheme_widget(last_index, new_index)
+
+    @log_method()
+    def handle_save_selected_scheme_like_picture(self) -> None:
+        save_window = QFileDialog(parent=self._view)
+        save_window.setOption(QFileDialog.Option.DontConfirmOverwrite, False)
+        filters = 'JPEG (*.jpg *.jpeg *.jpe *.jfif);; TIFF (*.tif *.tiff);; PNG (*.png)'
+        file_path, _ = save_window.getSaveFileName(self._view, 'Сохранить как изображение', filter=filters, selectedFilter='PNG (*.png)')
+        self._selected_scheme_presenter.save_scheme_like_picture(path=file_path, is_user_view_rendering=True)
 
     @log_method()
     def handle_save_all_schemes_like_picture(self) -> None:
@@ -113,7 +122,7 @@ class PlaybookPresenter:
                 while os.path.exists(file_path):
                     file_path = f'{dir_path}/Новая схема-{counter}.png'
                     counter += 1
-                scheme_presenter.render_picture(file_path)
+                scheme_presenter.save_scheme_like_picture(path=file_path, is_user_view_rendering=False)
 
     def _get_valid_file_name(self, scheme_name: str) -> str:
         file_name = f'{scheme_name}'
@@ -210,7 +219,4 @@ class PlaybookPresenter:
 
     def transfer_to_scheme_presenter_remove_actions_clicked(self) -> None:
         self._selected_scheme_presenter.handle_remove_all_actions()
-
-    def transfer_to_scheme_presenter_save_like_picture(self) -> None:
-        self._selected_scheme_presenter.handle_save_scheme_like_picture()
 
