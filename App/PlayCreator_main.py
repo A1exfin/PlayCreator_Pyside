@@ -168,17 +168,30 @@ class PlayCreatorApp(QMainWindow, Ui_MainWindow):
 
         # self.user_log_in()    ##########################  Установить неактивным создание нового плейбука
         # self.sign_up()
+        self.timer = None
+
 
     def _debug_method(self):
         ...
         from Core.settings import WebAppUrls
+        from Services.Web_API.api_manager import RequestsManager
+        from Core.constants import API_MUTEX
         # import requests
         # response = requests.post(WebAppUrls.api_login, json={'username': 'alexfin', 'password': 'Dgkfvtyb65733'})
         # print(f'{response.json() = }')
         # self.render_signal.emit()
-        from Views.Dialog_windows import DialogLogIn
-        dialog = DialogLogIn(parent=self)
-        dialog.exec()
+        # from Views.Dialog_windows import DialogLogIn
+        # dialog = DialogLogIn(parent=self)
+        # dialog.exec()
+        # self.manager = RequestsManager(API_MUTEX)
+        # self.manager.login(username_email='alexfin16@gmail.com', password='Dgkfvtyb65733')
+        # self.manager.requestFinished.connect(lambda data: print(f'3333{data = }'))
+        # self.manager.thread.quit()
+
+        from Services.Web_API.api import ApiManager
+        api_ma = ApiManager(parent=self)
+        api_ma.login('Alexfin', 'Dgkfvtyb6573', lambda data: print(f'lambda {data = }'))
+
 
     def _check_max_yards_football(self, value: str) -> None:
         try:

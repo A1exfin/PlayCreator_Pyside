@@ -10,7 +10,7 @@ from .FigureType import FigureType
 from .ActionLineType import ActionLineType
 from .FinalActionType import FinalActionType
 from .PlayerPositionType import PlayerPositionType
-from .RequestMethods import RequestMethod
+from .RequestMethod import RequestMethod
 
 
 __all__ = ('AppTheme', 'Mode', 'StorageType', 'RequestMethod',

@@ -6,20 +6,20 @@ import requests
 import urllib3
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal, QMutexLocker
 
 import Core
 from Core.settings import WebAppUrls
-from Core.Enums import RequestMethods
+from Core.Enums import RequestMethod
 
 if TYPE_CHECKING:
-    pass
+    from Core.constants import API_MUTEX
 
 
 @dataclass
 class ApiRequest:
     url: str
-    method: RequestMethods
+    method: RequestMethod
     cookies: Optional[dict[str, str]] = field(default_factory=dict)
     headers: Optional[dict[str, str]] = field(default_factory=dict)
     data: Optional[dict[str, Any]] = field(default_factory=dict)
@@ -35,13 +35,16 @@ class ApiResponse:
 
 class ApiWorker(QObject):
     requestStarted = Signal()
-    requestFinished = Signal(dict)
+    requestFinished = Signal(object)  # ApiResponse
     requestFailed = Signal(str)
     requestProgress = Signal()
+    sendRequest = Signal(object)
 
-    def __init__(self):
+    def __init__(self, mutex: 'API_MUTEX'):
         super().__init__()
+        self._mutex = mutex
         self._session = self._setup_session()
+        self.sendRequest.connect(self.send_request)
 
     def _setup_session(self) -> 'requests.Session':
         session = requests.Session()
@@ -65,9 +68,11 @@ class ApiWorker(QObject):
     def _execute_request(self, request: 'ApiRequest') -> 'ApiResponse':
         try:
             if request.data:
-                response = self._session.request(request.method, request.url, json=request.data)
+                response = self._session.request(request.method.value, request.url,
+                                                 headers=request.headers, json=request.data)
             else:
-                response = self._session.request(request.method, request.url)
+                response = self._session.request(request.method.value, request.url,
+                                                 headers=request.headers)
 
             response.raise_for_status()
 
@@ -75,17 +80,51 @@ class ApiWorker(QObject):
                 result = response.json()
             except json.JSONDecodeError:
                 result = {'text': response.text}
-            return ApiResponse(True, data=result, status_code=response.status_code)
+            return ApiResponse(success=True, data=result, status_code=response.status_code)
         except requests.exceptions.RequestException as e:
             error_message = f'Ошибка запроса: {str(e)}.'
-            return ApiResponse(False, errors=error_message,
+            return ApiResponse(success=False, errors=error_message,
                                status_code=getattr(e.response, 'status_code', None) if hasattr(e, 'response') else None)
         except Exception as e:
-            self.requestFailed.emit(f'Неизвестная ошибка: {str(e)}')
+            error_type = type(e).__name__
+            error_message = repr(e)
+            return ApiResponse(success=False, errors=f'Ошибка: {error_type}\n{error_message}.')
 
     def send_request(self, request: 'ApiRequest') -> None:
-        result = self._execute_request(request)
-        if result.success:
-            self.requestFinished.emit(result)
-        else:
-            self.requestFailed.emit(result.errors)
+        with QMutexLocker(self._mutex):
+            result = self._execute_request(request)
+            if result.success:
+                self.requestFinished.emit(result)
+            else:
+                self.requestFailed.emit(result.errors)
+
+    # @Slot()
+    # def _execute_request(self, url: str, method: 'RequestMethod', data: dict = None, headers: dict = None) -> 'ApiResponse':
+    #     print(f'worker _execute_request {url= }, {method = }')
+    #     try:
+    #         if data:
+    #             response = self._session.request(method, url, json=data)
+    #         else:
+    #             response = self._session.request(method, url)
+    #
+    #         response.raise_for_status()
+    #
+    #         try:
+    #             result = response.json()
+    #         except json.JSONDecodeError:
+    #             result = {'text': response.text}
+    #         return ApiResponse(True, data=result, status_code=response.status_code)
+    #     except requests.exceptions.RequestException as e:
+    #         error_message = f'Ошибка запроса: {str(e)}.'
+    #         return ApiResponse(False, errors=error_message,
+    #                            status_code=getattr(e.response, 'status_code', None) if hasattr(e, 'response') else None)
+    #     except Exception as e:
+    #         self.requestFailed.emit(f'Неизвестная ошибка: {str(e)}')
+
+    # def send_request(self, url: str = WebAppUrls.api_login, method: 'RequestMethod' = 'POST', data: dict = None, headers: dict = None) -> None:
+    #     result = self._execute_request(url, method, data, headers)
+    #     print(f'{result = }')
+    #     if result.success:
+    #         self.requestFinished.emit(result)
+    #     else:
+    #         self.requestFailed.emit(result.errors)

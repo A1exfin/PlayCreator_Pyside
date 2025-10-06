@@ -47,7 +47,7 @@ class DialogProgressBar(QDialog):
         main_layout.addWidget(self._progress_bar)
         self.set_progress_value(start_value)
 
-        self.timer = QTimer()
+        self.timer = QTimer(parent=self)
         self.timer.timeout.connect(self._close_window)
 
     def set_progress_value(self, value: int) -> None:

@@ -70,9 +70,9 @@ class CustomLogger:
             console_handler.setFormatter(logging_formatter)
             console_handler.setLevel(logging.INFO)
             console_handler.addFilter(ConsoleFilter())
-            self._logger.addHandler(console_handler)
+            # self._logger.addHandler(console_handler)
 
-        sys.excepthook = self.handle_exception
+        # sys.excepthook = self.handle_exception
 
     def get_logger(self) -> logging.Logger:
         return self._logger

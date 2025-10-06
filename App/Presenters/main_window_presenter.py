@@ -1,8 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import Qt
-import keyring
-from cryptography.fernet import Fernet
 
 import Core
 from Core import log_method, logger
@@ -35,8 +33,9 @@ class MainWindowPresenter:
         self._deletion_observer: Optional['DeletionObserver'] = None
         self._token_manager = AuthTokenManager()
         self._playbook_manager = PlaybookManager()
+
         # original_token = "1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9532"
-        # self._token_manager.save_token(original_token)
+        # # self._token_manager.save_token(original_token)
         # token = self._token_manager.get_token()
         # print(f'{self._token_manager.check_token() = }')
         # print(f'{original_token = }')
